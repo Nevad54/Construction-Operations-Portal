@@ -40,12 +40,12 @@ const Header = ({ isSidebarActive, setIsSidebarActive, isNavLinksActive, setIsNa
               </Link>
             </li>
             <li className={activePage === 'about' ? 'active' : ''}>
-              <Link to="/pages/about" onClick={() => setIsNavLinksActive(false)}>
+              <Link to="/about" onClick={() => setIsNavLinksActive(false)}>
                 <i className="fas fa-info-circle"></i> About
               </Link>
             </li>
             <li className={activePage === 'services' ? 'active' : ''}>
-              <Link to="/pages/services" onClick={() => setIsNavLinksActive(false)}>
+              <Link to="/services" onClick={() => setIsNavLinksActive(false)}>
                 <i className="fas fa-cogs"></i> Services
               </Link>
             </li>
@@ -61,24 +61,45 @@ const Header = ({ isSidebarActive, setIsSidebarActive, isNavLinksActive, setIsNa
                 <i className="fas fa-handshake"></i> Commitment
               </a>
               <div className="dropdown-content">
-                <Link to="/pages/vision-mission" onClick={() => { setIsNavLinksActive(false); setIsDropdownOpen(false); }} className={activePage === 'vision-mission' ? 'active' : ''}>
+                <Link
+                  to="/vision-mission"
+                  onClick={() => {
+                    setIsNavLinksActive(false);
+                    setIsDropdownOpen(false);
+                  }}
+                  className={activePage === 'vision-mission' ? 'active' : ''}
+                >
                   <i className="fas fa-eye"></i> Vision & Mission
                 </Link>
-                <Link to="/pages/core-values" onClick={() => { setIsNavLinksActive(false); setIsDropdownOpen(false); }} className={activePage === 'core-values' ? 'active' : ''}>
+                <Link
+                  to="/core-values"
+                  onClick={() => {
+                    setIsNavLinksActive(false);
+                    setIsDropdownOpen(false);
+                  }}
+                  className={activePage === 'core-values' ? 'active' : ''}
+                >
                   <i className="fas fa-heart"></i> Core Values
                 </Link>
-                <Link to="/pages/safety" onClick={() => { setIsNavLinksActive(false); setIsDropdownOpen(false); }} className={activePage === 'safety' ? 'active' : ''}>
+                <Link
+                  to="/safety"
+                  onClick={() => {
+                    setIsNavLinksActive(false);
+                    setIsDropdownOpen(false);
+                  }}
+                  className={activePage === 'safety' ? 'active' : ''}
+                >
                   <i className="fas fa-shield-alt"></i> Safety
                 </Link>
               </div>
             </li>
             <li className={activePage === 'projects' ? 'active' : ''}>
-              <Link to="/pages/projects" onClick={() => setIsNavLinksActive(false)}>
+              <Link to="/projects" onClick={() => setIsNavLinksActive(false)}>
                 <i className="fas fa-project-diagram"></i> Projects
               </Link>
             </li>
             <li className={activePage === 'contact' ? 'active' : ''}>
-              <Link to="/pages/contact" onClick={() => setIsNavLinksActive(false)}>
+              <Link to="/contact" onClick={() => setIsNavLinksActive(false)}>
                 <i className="fas fa-envelope"></i> Contact
               </Link>
             </li>

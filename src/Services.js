@@ -200,8 +200,7 @@ const Services = () => {
         </section>
       </main>
 
-      {/* Footer */}    
-      <Footer /> {/* Use Footer component instead of inline footer */}
+    
 
       {/* Back to Top Button */}
       <button

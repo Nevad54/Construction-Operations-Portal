@@ -1,0 +1,72 @@
+:root {
+  /* Primary Colors */
+  --primary-100: #E3F2FD;  /* Lightest */
+  --primary-200: #90CAF9;
+  --primary-300: #42A5F5;
+  --primary-400: #1E88E5;
+  --primary-500: #1976D2;  /* Main Brand Color */
+  --primary-600: #1565C0;
+  --primary-700: #0D47A1;  /* Darkest */
+
+  /* Accent Colors */
+  --accent-100: #E8F5E9;
+  --accent-300: #66BB6A;
+  --accent-500: #43A047;  /* Success/Positive */
+  --accent-700: #2E7D32;
+
+  /* Neutral Colors */
+  --neutral-50: #FAFAFA;   /* Background */
+  --neutral-100: #F5F5F5;  /* Cards */
+  --neutral-200: #EEEEEE;  /* Borders */
+  --neutral-300: #E0E0E0;
+  --neutral-400: #BDBDBD;
+  --neutral-500: #9E9E9E;  /* Disabled text */
+  --neutral-600: #757575;  /* Secondary text */
+  --neutral-700: #616161;
+  --neutral-800: #424242;  /* Primary text */
+  --neutral-900: #212121;  /* Headings */
+
+  /* Feedback Colors */
+  --error: #D32F2F;
+  --warning: #FFA000;
+  --success: #43A047;
+  --info: #1976D2;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 3rem;     /* 48px */
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;    /* 4px */
+  --radius-md: 0.5rem;     /* 8px */
+  --radius-lg: 1rem;       /* 16px */
+  --radius-full: 9999px;   /* For pills and circles */
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Poppins', var(--font-sans);
+  
+  /* Font Sizes */
+  --text-xs: 0.75rem;      /* 12px */
+  --text-sm: 0.875rem;     /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg: 1.125rem;     /* 18px */
+  --text-xl: 1.25rem;      /* 20px */
+  --text-2xl: 1.5rem;      /* 24px */
+  --text-3xl: 1.875rem;    /* 30px */
+  --text-4xl: 2.25rem;     /* 36px */
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 350ms ease;
+} 
