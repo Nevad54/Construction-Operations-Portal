@@ -4,11 +4,17 @@ export const api = {
     // Projects
     getProjects: async () => {
         const response = await fetch(`${API_BASE_URL}/projects`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         return response.json();
     },
 
     getFeaturedProjects: async () => {
         const response = await fetch(`${API_BASE_URL}/projects/featured`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         return response.json();
     },
 
@@ -22,6 +28,9 @@ export const api = {
             method: 'POST',
             body: formData,
         });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         return response.json();
     },
 
@@ -35,6 +44,9 @@ export const api = {
             method: 'PUT',
             body: formData,
         });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         return response.json();
     },
 
@@ -42,6 +54,9 @@ export const api = {
         const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
             method: 'DELETE',
         });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         return response.json();
     },
 

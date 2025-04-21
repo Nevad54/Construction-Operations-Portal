@@ -13,8 +13,17 @@ const Contact = () => {
     name: '',
     email: '',
     message: '',
+    captchaAnswer: ''
   });
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
+  const [captchaData, setCaptchaData] = useState({
+    question: 'Loading CAPTCHA...',
+    images: [],
+    correct: ''
+  });
+  const [selectedCaptcha, setSelectedCaptcha] = useState(null);
 
   const location = useLocation();
 
@@ -84,17 +93,80 @@ const Contact = () => {
       newErrors.email = 'Email is invalid';
     }
     if (!formData.message.trim()) newErrors.message = 'Message is required';
+    if (!formData.captchaAnswer) newErrors.captcha = 'Please complete the CAPTCHA';
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const getCaptcha = async () => {
+    try {
+      const response = await fetch('/api/captcha');
+      if (!response.ok) {
+        throw new Error('Failed to fetch CAPTCHA');
+      }
+      const data = await response.json();
+      console.log('Received CAPTCHA data:', data);
+      setCaptchaData(data);
+      setSelectedCaptcha(null);
+      setFormData(prev => ({ ...prev, captchaAnswer: '' }));
+    } catch (error) {
+      console.error('Error fetching CAPTCHA:', error);
+      setErrors(prev => ({ ...prev, captcha: 'Error loading CAPTCHA' }));
+    }
+  };
+
+  useEffect(() => {
+    getCaptcha();
+  }, []);
+
+  const handleCaptchaSelect = (id) => {
+    setSelectedCaptcha(id);
+    setFormData(prev => ({ ...prev, captchaAnswer: id }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const formErrors = validateForm();
+    
     if (Object.keys(formErrors).length === 0) {
-      console.log('Form submitted:', formData);
-      alert('Thank you for your message! We will get back to you soon.');
-      setFormData({ name: '', email: '', message: '' });
-      setErrors({});
+      setIsSubmitting(true);
+      setSubmitStatus(null);
+      
+      try {
+        const response = await fetch('/api/contact', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setSubmitStatus({ type: 'success', message: 'Thank you for your message! We will get back to you soon.' });
+          setFormData({ name: '', email: '', message: '', captchaAnswer: '' });
+          setErrors({});
+          getCaptcha(); // Get new CAPTCHA for next submission
+        } else {
+          setSubmitStatus({ 
+            type: 'error', 
+            message: data.error || 'Failed to send message. Please try again.'
+          });
+          if (response.status === 429) {
+            // Rate limit reached, disable form temporarily
+            setIsSubmitting(true);
+          }
+          getCaptcha(); // Get new CAPTCHA after failed attempt
+        }
+      } catch (error) {
+        console.error('Error submitting form:', error);
+        setSubmitStatus({ 
+          type: 'error', 
+          message: 'Network error. Please check your connection and try again.'
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     } else {
       setErrors(formErrors);
     }
@@ -119,8 +191,13 @@ const Contact = () => {
         <div className="container">
           <h1>Contact Us</h1>
           <div className="contact-content">
-            <div className="contact-form fade-in">
-              <h2>Get in Touch</h2>
+            <div className="contact-form">
+              <h2>Send Us a Message</h2>
+              {submitStatus && (
+                <div className={`alert ${submitStatus.type === 'success' ? 'alert-success' : 'alert-error'}`}>
+                  {submitStatus.message}
+                </div>
+              )}
               <form onSubmit={handleSubmit} noValidate>
                 <div className="form-group">
                   <label htmlFor="name">Name</label>
@@ -132,6 +209,7 @@ const Contact = () => {
                     onChange={handleChange}
                     aria-required="true"
                     aria-describedby="name-error"
+                    disabled={isSubmitting}
                   />
                   {errors.name && <span id="name-error" className="error">{errors.name}</span>}
                 </div>
@@ -145,6 +223,7 @@ const Contact = () => {
                     onChange={handleChange}
                     aria-required="true"
                     aria-describedby="email-error"
+                    disabled={isSubmitting}
                   />
                   {errors.email && <span id="email-error" className="error">{errors.email}</span>}
                 </div>
@@ -158,27 +237,67 @@ const Contact = () => {
                     rows="5"
                     aria-required="true"
                     aria-describedby="message-error"
+                    disabled={isSubmitting}
                   ></textarea>
                   {errors.message && <span id="message-error" className="error">{errors.message}</span>}
                 </div>
-                <button type="submit" className="btn" aria-label="Send message">Send Message</button>
+                <div className="form-group captcha-group">
+                  <label>CAPTCHA Verification</label>
+                  <div className="captcha-question">
+                    Select the image that shows a {captchaData.correct}
+                  </div>
+                  <div className="captcha-images">
+                    {captchaData.images.map((image, index) => (
+                      <img
+                        key={index}
+                        src={image.src}
+                        alt={`CAPTCHA option ${index + 1}`}
+                        className={selectedCaptcha === image.id ? 'selected' : ''}
+                        onClick={() => handleCaptchaSelect(image.id)}
+                      />
+                    ))}
+                  </div>
+                  {errors.captcha && <span id="captcha-error" className="error">{errors.captcha}</span>}
+                </div>
+                <button 
+                  type="submit" 
+                  className="btn" 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
+                </button>
               </form>
             </div>
-            <div className="contact-info fade-in">
+            <div className="contact-info">
               <h2>Contact Information</h2>
-              <p><i className="fas fa-phone-alt"></i> <a href="tel:+639123456789">+63 912 345 6789</a></p>
-              <p><i className="fas fa-envelope"></i> <a href="mailto:inquiry@mastertech.com.ph">inquiry@mastertech.com.ph</a></p>
-              <p><i className="fas fa-map-marker-alt"></i> 320 Sta Rosa Tagaytay Road Purok 4 Brgy. Pasong Langka, Silang Cavite 4118</p>
+              <div className="info-group">
+                <h3><i className="fas fa-building"></i> Office Address</h3>
+                <p>320 Sta Rosa Tagaytay Road Purok 4,<br />Brgy. Pasong Langka,<br />Silang Cavite 4118</p>
+              </div>
+              <div className="info-group">
+                <h3><i className="fas fa-clock"></i> Office Hours</h3>
+                <p>Monday - Friday: 8:00 AM - 5:00 PM<br />Saturday: 8:00 AM - 12:00 PM<br />Sunday: Closed</p>
+              </div>
+              <div className="info-group">
+                <h3><i className="fas fa-phone-alt"></i> Phone & Email</h3>
+                <p>
+                  <a href="tel:+63465139424">(046) 513 9424</a><br />
+                  <a href="tel:+639669369678">0966 936 9678 - Melissa</a><br />
+                  <a href="tel:+639171668344">0917 166 8344 - Marlon</a><br />
+                  <a href="tel:+639178214720">0917 821 4720 - Gemma</a><br />
+                  <a href="mailto:inquiry@mastertech.com.ph">inquiry@mastertech.com.ph</a>
+                </p>
+              </div>
               <div className="map-container">
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d244.93515605421877!2d120.9966971517091!3d14.16017202394409!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7b0053a0280d%3A0x99434f55287e9a94!2sRestaurant!5e1!3m2!1sen!2sph!4v1743742491118!5m2!1sen!2sph"
-                  width="400"
+                  width="100%"
                   height="300"
                   style={{ border: 0 }}
                   allowFullScreen=""
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  title="MASTERTECH Location Map"
+                  title="Office Location Map"
                 ></iframe>
               </div>
             </div>

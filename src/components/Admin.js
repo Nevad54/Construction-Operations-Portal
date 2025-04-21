@@ -11,19 +11,27 @@ const Admin = () => {
     const [editingProject, setEditingProject] = useState(null);
     const modalRef = useRef(null);
 
+    // refs for shift-click range
+    const lastSelectedIndex = useRef({ ongoing: null, completed: null });
+    // Lasso selection state
+    const [isLassoActive, setLassoActive] = useState(false);
+    const [lassoStart, setLassoStart] = useState({ x: 0, y: 0 });
+    const [selectionBox, setSelectionBox] = useState(null);
+    const cardRefs = useRef({ ongoing: {}, completed: {} });
+
     // Form states
     const [formData, setFormData] = useState({
         title: '',
         description: '',
         location: '',
         date: '',
-        image: null,
+        image: '',
         status: 'ongoing',
         featured: false
     });
 
-    const [imagePreview, setImagePreview] = useState(null);
-    const [editImagePreview, setEditImagePreview] = useState(null);
+    const [imagePreview, setImagePreview] = useState('');
+    const [editImagePreview, setEditImagePreview] = useState('');
 
     // Handle image preview
     const handleImageChange = (e, isEdit = false) => {
@@ -129,14 +137,82 @@ const Admin = () => {
         }));
     };
 
-    // Handle individual selection
-    const handleSelect = (section, id, checked) => {
-        setSelectedProjects(prev => ({
-            ...prev,
-            [section]: checked
-                ? [...prev[section], id]
-                : prev[section].filter(projectId => projectId !== id)
-        }));
+    // Select all / clear all
+    const handleSelectAll = (section) => {
+        const ids = projects.filter(p => p.status === section).map(p => p._id);
+        setSelectedProjects(prev => ({ ...prev, [section]: ids }));
+    };
+    const handleClearAll = (section) => {
+        setSelectedProjects(prev => ({ ...prev, [section]: [] }));
+    };
+
+    // Google Drive-style card selection with shift for range
+    const handleCardSelect = (section, id, index, event) => {
+        const multi = event.ctrlKey || event.metaKey;
+        const shift = event.shiftKey;
+        const list = projects.filter(p => p.status === section);
+        setSelectedProjects(prev => {
+            if (shift && lastSelectedIndex.current[section] !== null) {
+                const start = Math.min(lastSelectedIndex.current[section], index);
+                const end = Math.max(lastSelectedIndex.current[section], index);
+                const rangeIds = list.slice(start, end + 1).map(p => p._id);
+                return { ...prev, [section]: rangeIds };
+            }
+            const already = prev[section].includes(id);
+            if (multi) {
+                return { ...prev, [section]: already ? prev[section].filter(x => x !== id) : [...prev[section], id] };
+            }
+            return { ...prev, [section]: already ? [] : [id] };
+        });
+        lastSelectedIndex.current[section] = index;
+    };
+
+    // Lasso select implementations
+    const handleLassoStart = (section, e) => {
+        if (e.target !== e.currentTarget) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        setLassoActive(true);
+        setLassoStart({ x, y });
+        setSelectionBox({ x, y, width: 0, height: 0 });
+    };
+    const handleLassoMove = (section, e) => {
+        if (!isLassoActive || !selectionBox) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const x0 = lassoStart.x;
+        const y0 = lassoStart.y;
+        setSelectionBox({
+            x: Math.min(x0, x),
+            y: Math.min(y0, y),
+            width: Math.abs(x - x0),
+            height: Math.abs(y - y0)
+        });
+    };
+    const handleLassoEnd = (section, e) => {
+        if (!isLassoActive || !selectionBox) return;
+        setLassoActive(false);
+        const list = projects.filter(p => p.status === section);
+        const rect = e.currentTarget.getBoundingClientRect();
+        const selectedIds = list.filter(p => {
+            const card = cardRefs.current[section][p._id];
+            if (!card) return false;
+            const cr = card.getBoundingClientRect();
+            const box = {
+                left: cr.left - rect.left,
+                top: cr.top - rect.top,
+                right: cr.left - rect.left + cr.width,
+                bottom: cr.top - rect.top + cr.height
+            };
+            return !(box.left > selectionBox.x + selectionBox.width ||
+                     box.right < selectionBox.x ||
+                     box.top > selectionBox.y + selectionBox.height ||
+                     box.bottom < selectionBox.y);
+        }).map(p => p._id);
+        setSelectedProjects(prev => ({ ...prev, [section]: selectedIds }));
+        setSelectionBox(null);
     };
 
     // Handle bulk delete
@@ -184,95 +260,93 @@ const Admin = () => {
             {loading && <div className="loading-spinner">Loading...</div>}
             {error && <div className="error-message">{error}</div>}
 
-            <form onSubmit={handleSubmit} className="project-form">
-                <input
-                    type="text"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleInputChange}
-                    placeholder="Project Title"
-                    required
-                />
-                <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    placeholder="Project Description"
-                    required
-                />
-                <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    placeholder="Project Location"
-                    required
-                />
-                <input
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleInputChange}
-                />
-                <input
-                    type="file"
-                    name="image"
-                    onChange={(e) => handleImageChange(e)}
-                    accept="image/*"
-                />
-                {imagePreview && (
-                    <img src={imagePreview} alt="Preview" className="image-preview" />
-                )}
-                <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    required
-                >
-                    <option value="ongoing">Ongoing</option>
-                    <option value="completed">Completed</option>
-                </select>
-                <label>
-                    <input
-                        type="checkbox"
-                        name="featured"
-                        checked={formData.featured}
-                        onChange={handleInputChange}
-                    />
-                    Featured Project
-                </label>
-                <button type="submit">Add Project</button>
-            </form>
+            <button className="floating-add-btn" onClick={() => setShowModal(true)}>
+                + New Project
+            </button>
+
+            {showModal && (
+                <div className="modal-overlay" onClick={e => { if (e.target.className === 'modal-overlay') setShowModal(false); }}>
+                  <div className="modal-card">
+                    <h2>{editingProject ? 'Edit Project' : 'Add New Project'}</h2>
+                    <form className="project-modal-form" onSubmit={editingProject ? handleEditSubmit : handleSubmit}>
+                      <input
+                        type="text"
+                        name="title"
+                        placeholder="Project Title"
+                        value={editingProject ? editingProject.title : formData.title}
+                        onChange={editingProject ? e => setEditingProject({ ...editingProject, title: e.target.value }) : handleInputChange}
+                        required
+                      />
+                      <textarea
+                        name="description"
+                        placeholder="Project Description"
+                        value={editingProject ? editingProject.description : formData.description}
+                        onChange={editingProject ? e => setEditingProject({ ...editingProject, description: e.target.value }) : handleInputChange}
+                        required
+                      ></textarea>
+                      <input
+                        type="text"
+                        name="location"
+                        placeholder="Location"
+                        value={editingProject ? editingProject.location : formData.location}
+                        onChange={editingProject ? e => setEditingProject({ ...editingProject, location: e.target.value }) : handleInputChange}
+                      />
+                      <input
+                        type="date"
+                        name="date"
+                        value={editingProject ? editingProject.date : formData.date}
+                        onChange={editingProject ? e => setEditingProject({ ...editingProject, date: e.target.value }) : handleInputChange}
+                      />
+                      <input
+                        type="file"
+                        name="image"
+                        accept="image/*"
+                        onChange={e => editingProject ? handleImageChange(e, true) : handleImageChange(e)}
+                      />
+                      {(editingProject ? editImagePreview : imagePreview) && (
+                        <img src={editingProject ? editImagePreview : imagePreview} alt="Preview" className="image-preview" />
+                      )}
+                      <select
+                        name="status"
+                        value={editingProject ? editingProject.status : formData.status}
+                        onChange={editingProject ? e => setEditingProject({ ...editingProject, status: e.target.value }) : handleInputChange}
+                      >
+                        <option value="ongoing">Ongoing</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          name="featured"
+                          checked={editingProject ? editingProject.featured : formData.featured}
+                          onChange={editingProject ? e => setEditingProject({ ...editingProject, featured: e.target.checked }) : handleInputChange}
+                        />
+                        Featured Project
+                      </label>
+                      <div className="modal-actions">
+                        <button type="button" className="cancel-btn" onClick={() => { setShowModal(false); setEditingProject(null); setImagePreview(null); setEditImagePreview(null); }}>Cancel</button>
+                        <button type="submit" className="submit-btn">{editingProject ? 'Save Changes' : 'Add Project'}</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+            )}
 
             <div className="projects-section">
                 <h2>Ongoing Projects</h2>
-                {ongoingProjects.length > 0 && (
-                    <div className="bulk-actions">
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={selectedProjects.ongoing.length === ongoingProjects.length}
-                                onChange={(e) => handleBulkSelect('ongoing', e.target.checked)}
-                            />
-                            Select All
-                        </label>
-                        <span>{selectedProjects.ongoing.length} items selected</span>
-                        <button
-                            onClick={() => handleBulkDelete('ongoing')}
-                            disabled={selectedProjects.ongoing.length === 0}
-                        >
-                            Delete Selected
-                        </button>
+                {selectedProjects.ongoing.length > 0 && (
+                <div className="bulk-toolbar">
+                    <span>{selectedProjects.ongoing.length} selected</span>
+                    <div className="bulk-toolbar-actions">
+                        <button onClick={() => handleSelectAll('ongoing')}>Select All</button>
+                        <button onClick={() => handleClearAll('ongoing')}>Clear All</button>
+                        <button onClick={() => handleBulkDelete('ongoing')}>Delete</button>
                     </div>
+                </div>
                 )}
-                <div className="projects-list">
-                    {ongoingProjects.map(project => (
-                        <div key={project._id} className="project">
-                            <input
-                                type="checkbox"
-                                checked={selectedProjects.ongoing.includes(project._id)}
-                                onChange={(e) => handleSelect('ongoing', project._id, e.target.checked)}
-                            />
+                <div className="projects-list" onMouseDown={e => handleLassoStart('ongoing', e)} onMouseMove={e => handleLassoMove('ongoing', e)} onMouseUp={e => handleLassoEnd('ongoing', e)} style={{ position: 'relative' }}>
+                    {ongoingProjects.map((project, idx) => (
+                        <div key={project._id} ref={el => cardRefs.current.ongoing[project._id] = el} className={`project${selectedProjects.ongoing.includes(project._id) ? ' selected' : ''}`} tabIndex={0} onClick={e => handleCardSelect('ongoing', project._id, idx, e)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleCardSelect('ongoing', project._id, idx, e); }}>
                             {project.image && <img src={project.image} alt={project.title} />}
                             <div className="project-content">
                                 <h3>
@@ -294,38 +368,25 @@ const Admin = () => {
                             </div>
                         </div>
                     ))}
+                    {selectionBox && <div className="lasso-box" style={{ left: selectionBox.x, top: selectionBox.y, width: selectionBox.width, height: selectionBox.height }} />}
                 </div>
             </div>
 
             <div className="projects-section">
                 <h2>Completed Projects</h2>
-                {completedProjects.length > 0 && (
-                    <div className="bulk-actions">
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={selectedProjects.completed.length === completedProjects.length}
-                                onChange={(e) => handleBulkSelect('completed', e.target.checked)}
-                            />
-                            Select All
-                        </label>
-                        <span>{selectedProjects.completed.length} items selected</span>
-                        <button
-                            onClick={() => handleBulkDelete('completed')}
-                            disabled={selectedProjects.completed.length === 0}
-                        >
-                            Delete Selected
-                        </button>
+                {selectedProjects.completed.length > 0 && (
+                <div className="bulk-toolbar">
+                    <span>{selectedProjects.completed.length} selected</span>
+                    <div className="bulk-toolbar-actions">
+                        <button onClick={() => handleSelectAll('completed')}>Select All</button>
+                        <button onClick={() => handleClearAll('completed')}>Clear All</button>
+                        <button onClick={() => handleBulkDelete('completed')}>Delete</button>
                     </div>
+                </div>
                 )}
-                <div className="projects-list">
-                    {completedProjects.map(project => (
-                        <div key={project._id} className="project">
-                            <input
-                                type="checkbox"
-                                checked={selectedProjects.completed.includes(project._id)}
-                                onChange={(e) => handleSelect('completed', project._id, e.target.checked)}
-                            />
+                <div className="projects-list" onMouseDown={e => handleLassoStart('completed', e)} onMouseMove={e => handleLassoMove('completed', e)} onMouseUp={e => handleLassoEnd('completed', e)} style={{ position: 'relative' }}>
+                    {completedProjects.map((project, idx) => (
+                        <div key={project._id} ref={el => cardRefs.current.completed[project._id] = el} className={`project${selectedProjects.completed.includes(project._id) ? ' selected' : ''}`} tabIndex={0} onClick={e => handleCardSelect('completed', project._id, idx, e)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleCardSelect('completed', project._id, idx, e); }}>
                             {project.image && <img src={project.image} alt={project.title} />}
                             <div className="project-content">
                                 <h3>
@@ -347,82 +408,17 @@ const Admin = () => {
                             </div>
                         </div>
                     ))}
+                    {selectionBox && <div className="lasso-box" style={{ left: selectionBox.x, top: selectionBox.y, width: selectionBox.width, height: selectionBox.height }} />}
                 </div>
             </div>
 
-            {showModal && editingProject && (
-                <div className="modal">
-                    <div className="modal-content" ref={modalRef}>
-                        <span className="close" onClick={() => setShowModal(false)}>×</span>
-                        <h2>Edit Project</h2>
-                        <form onSubmit={handleEditSubmit}>
-                            <input
-                                type="text"
-                                name="title"
-                                value={editingProject.title}
-                                onChange={(e) => setEditingProject({ ...editingProject, title: e.target.value })}
-                                placeholder="Project Title"
-                                required
-                            />
-                            <textarea
-                                name="description"
-                                value={editingProject.description}
-                                onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
-                                placeholder="Project Description"
-                                required
-                            />
-                            <input
-                                type="text"
-                                name="location"
-                                value={editingProject.location}
-                                onChange={(e) => setEditingProject({ ...editingProject, location: e.target.value })}
-                                placeholder="Project Location"
-                                required
-                            />
-                            <input
-                                type="date"
-                                name="date"
-                                value={editingProject.date ? new Date(editingProject.date).toISOString().split('T')[0] : ''}
-                                onChange={(e) => setEditingProject({ ...editingProject, date: e.target.value })}
-                            />
-                            <input
-                                type="file"
-                                name="image"
-                                onChange={(e) => handleImageChange(e, true)}
-                                accept="image/*"
-                            />
-                            {editImagePreview && (
-                                <img src={editImagePreview} alt="Preview" className="image-preview" />
-                            )}
-                            <select
-                                name="status"
-                                value={editingProject.status}
-                                onChange={(e) => setEditingProject({ ...editingProject, status: e.target.value })}
-                                required
-                            >
-                                <option value="ongoing">Ongoing</option>
-                                <option value="completed">Completed</option>
-                            </select>
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    name="featured"
-                                    checked={editingProject.featured}
-                                    onChange={(e) => setEditingProject({ ...editingProject, featured: e.target.checked })}
-                                />
-                                Featured Project
-                            </label>
-                            <button type="submit">Save Changes</button>
-                        </form>
-                    </div>
-                </div>
-            )}
+
 
             <button className="back-to-top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                ↑ Top
+                ↑
             </button>
         </div>
     );
 };
 
-export default Admin; 
+export default Admin;
