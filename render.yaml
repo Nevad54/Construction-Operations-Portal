@@ -1,36 +1,31 @@
-   services:
-     # Backend
-     - type: web
-       name: mastertech-backend
-       env: node
-       region: oregon
-       rootDirectory: backend
-       buildCommand: npm install
-       startCommand: node server.js
-       envVars:
-         - key: MONGO_URI
-           value: "mongodb://mtiuser:MtiPass123!@…&w=majority&appName=mti-cluster"
-         - key: ADMIN_USER
-           value: "admin"
-         - key: ADMIN_PASS
-           value: "1111"
-         - key: SESSION_SECRET
-           value: "<your‑session‑secret‑here>"
-         - key: EMAIL_USER
-           value: "sendermastertech@gmail.com"
-         - key: EMAIL_PASS
-           value: "hjbe okcw cmlf fyzr"
-         - key: CONTACT_EMAIL
-           value: "carldavenquimoyog@gmail.com"
+services:
+  - type: web
+    name: mastertech-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: MONGO_URI
+        value: ${MONGO_URI}
+      - key: ADMIN_USER
+        value: ${ADMIN_USER}
+      - key: ADMIN_PASS
+        value: ${ADMIN_PASS}
+      - key: SESSION_SECRET
+        value: ${SESSION_SECRET}
+      - key: EMAIL_USER
+        value: ${EMAIL_USER}
+      - key: EMAIL_PASS
+        value: ${EMAIL_PASS}
+      - key: CONTACT_EMAIL
+        value: ${CONTACT_EMAIL}
 
-     # Frontend
-     - type: static
-       name: mastertech-frontend
-       env: static
-       region: oregon
-       rootDirectory: .
-       buildCommand: npm install && npm run build
-       staticPublishPath: build
-       envVars:
-         - key: REACT_APP_API_BASE_URL
-           value: "[https://mastertech-backend.onrender.com/api"](https://mastertech-backend.onrender.com/api")
+  - type: web
+    name: mastertech-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: ${REACT_APP_API_URL}
