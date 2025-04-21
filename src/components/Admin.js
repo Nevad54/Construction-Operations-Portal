@@ -25,13 +25,13 @@ const Admin = () => {
         description: '',
         location: '',
         date: '',
-        image: '',
+        image: null,
         status: 'ongoing',
         featured: false
     });
 
-    const [imagePreview, setImagePreview] = useState('');
-    const [editImagePreview, setEditImagePreview] = useState('');
+    const [imagePreview, setImagePreview] = useState(null);
+    const [editImagePreview, setEditImagePreview] = useState(null);
 
     // Handle image preview
     const handleImageChange = (e, isEdit = false) => {
