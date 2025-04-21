@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import './styles.css';
 
 const Dropdown = ({ isActive, closeSidebar, closeNavLinks }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
