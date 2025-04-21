@@ -1,0 +1,36 @@
+   services:
+     # Backend
+     - type: web
+       name: mastertech-backend
+       env: node
+       region: oregon
+       rootDirectory: backend
+       buildCommand: npm install
+       startCommand: node server.js
+       envVars:
+         - key: MONGO_URI
+           value: "mongodb://mtiuser:MtiPass123!@…&w=majority&appName=mti-cluster"
+         - key: ADMIN_USER
+           value: "admin"
+         - key: ADMIN_PASS
+           value: "1111"
+         - key: SESSION_SECRET
+           value: "<your‑session‑secret‑here>"
+         - key: EMAIL_USER
+           value: "sendermastertech@gmail.com"
+         - key: EMAIL_PASS
+           value: "hjbe okcw cmlf fyzr"
+         - key: CONTACT_EMAIL
+           value: "carldavenquimoyog@gmail.com"
+
+     # Frontend
+     - type: static
+       name: mastertech-frontend
+       env: static
+       region: oregon
+       rootDirectory: .
+       buildCommand: npm install && npm run build
+       staticPublishPath: build
+       envVars:
+         - key: REACT_APP_API_BASE_URL
+           value: "[https://mastertech-backend.onrender.com/api"](https://mastertech-backend.onrender.com/api")
