@@ -63,18 +63,25 @@ app.get('/', (req, res) => {
 app.get('/api/captcha', (req, res) => {
     console.log('HIT /api/captcha');
     const imageOptions = [
-        { src: '/uploads/dog.jpg', id: 'dog' },
-        { src: '/uploads/cat.jpg', id: 'cat' },
-        { src: '/uploads/bird.jpg', id: 'bird' }
+        { src: '/uploads/dog.jpg', id: 'dog', label: 'Dog' },
+        { src: '/uploads/cat.jpg', id: 'cat', label: 'Cat' },
+        { src: '/uploads/bird.jpg', id: 'bird', label: 'Bird' }
     ];
     const correctIndex = Math.floor(Math.random() * imageOptions.length);
     const correctAnswer = imageOptions[correctIndex].id;
 
     req.session.captchaAnswer = correctAnswer;
-    console.log('Generated CAPTCHA:', { correctAnswer });
+    const question = `Please select the image that shows a ${imageOptions[correctIndex].label}`;
+    console.log('Generated CAPTCHA:', { correctAnswer, question });
 
     const shuffledImages = [...imageOptions].sort(() => Math.random() - 0.5);
-    res.json({ images: shuffledImages, correct: correctAnswer });
+    const response = {
+        images: shuffledImages,
+        correct: correctAnswer,
+        question: question
+    };
+    console.log('Sending response:', response);
+    res.json(response);
 });
 
 // Basic Auth for Admin Page

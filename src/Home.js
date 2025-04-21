@@ -121,7 +121,7 @@ const Home = () => {
               className="category-card fade-in"
             >
               <img
-                src="/Uploads/industrial-placeholder.jpg"
+                src="/Uploads/industrial.jpg"
                 alt="Industrial Projects"
                 loading="lazy"
               />
@@ -134,7 +134,7 @@ const Home = () => {
               className="category-card fade-in"
             >
               <img
-                src="/Uploads/residential-placeholder.jpg"
+                src="/Uploads/residential.jpg"
                 alt="Residential Projects"
                 loading="lazy"
               />
@@ -147,7 +147,7 @@ const Home = () => {
               className="category-card fade-in"
             >
               <img
-                src="/Uploads/commercial-placeholder.jpg"
+                src="/Uploads/commercial.jpg"
                 alt="Commercial Projects"
                 loading="lazy"
               />
@@ -160,7 +160,7 @@ const Home = () => {
               className="category-card fade-in"
             >
               <img
-                src="/Uploads/renovation-placeholder.jpg"
+                src="/Uploads/renovation.jpg"
                 alt="Renovation Projects"
                 loading="lazy"
               />

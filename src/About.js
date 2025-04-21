@@ -85,23 +85,36 @@ const About = () => {
           <h1>About Us</h1>
           <div className="about-content">
             <div className="about-text fade-in">
-              <h2>Who We Are</h2>
-              <p>MASTERTECH INTERGROUPPE INC. is a premier construction and industrial solutions provider based in Silang, Cavite. With over 15 years of experience, we specialize in delivering high-quality projects across industrial, residential, commercial, and renovation sectors.</p>
-              <p>Our team of skilled professionals is dedicated to excellence, ensuring every project meets the highest standards of quality, safety, and sustainability.</p>
+              <h2>Company Overview</h2>
+              <p>Mastertech Intergrouppe Inc. was duly incorporated and registered with the Securities and Exchange Commission (SEC) on February 13, 2014, under SEC Certificate No. CS201402904.</p>
+              <p>The Company is primarily engaged in General Construction Services, including but not limited to:</p>
+              <ul>
+                <li>Structural, Civil, and Architectural Works</li>
+                <li>Mechanical, Electrical, Plumbing, and Fire Protection (MEPS) Works</li>
+                <li>Fabrication and Automation for Industrial Plant Process Lines</li>
+                <li>Maintenance Services in Manufacturing Plants</li>
+              </ul>
             </div>
             <div className="about-image fade-in">
-              <img src="/Uploads/about-image.jpg" alt="MASTERTECH Team" loading="lazy" />
+              <img src="/Uploads/about-image.png" alt="MASTERTECH Headquarters" loading="lazy" />
             </div>
           </div>
-          <div className="about-milestones fade-in">
-            <h2>Our Milestones</h2>
+          <div className="about-services fade-in">
+            <h2>Secondary Business Lines</h2>
+            <p>As a secondary line of business, we supply both imported and locally sourced materials, including:</p>
             <ul>
-              <li><strong>2008:</strong> Founded MASTERTECH INTERGROUPPE INC.</li>
-              <li><strong>2012:</strong> Completed our first major industrial project.</li>
-              <li><strong>2015:</strong> Expanded services to residential and commercial sectors.</li>
-              <li><strong>2018:</strong> Achieved ISO 9001 certification.</li>
-              <li><strong>2022:</strong> Recognized as a leader in sustainable construction practices.</li>
+              <li>Painting Equipment and Parts</li>
+              <li>Industrial Tapes</li>
+              <li>Valves, Brass, and Stainless Fittings</li>
+              <li>Abrasives and Sealers</li>
+              <li>Wiping Rags</li>
+              <li>Automation and Control Materials</li>
+              <li>Other Productive and Non-productive Materials for Car Manufacturing</li>
             </ul>
+          </div>
+          <div className="about-location fade-in">
+            <h2>Office Location</h2>
+            <p>Sta Rosa Tagaytay Road Purok 4, Brgy. Pasong Langka, Silang Cavite 4118</p>
           </div>
         </div>
       </section>
