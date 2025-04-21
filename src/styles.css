@@ -1038,7 +1038,7 @@ footer {
         position: static !important;
         box-shadow: none !important;
         background: #f9f9f9 !important;
-        padding-left: 130px !important;
+    
         width: 100%;
         z-index: 1000;
         opacity: 1 !important;
