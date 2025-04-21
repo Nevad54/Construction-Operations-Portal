@@ -41,7 +41,7 @@ const Dropdown = ({ isActive, closeSidebar, closeNavLinks }) => {
       </a>
       <div className="dropdown-content">
         <Link
-          to="/pages/vision-mission"
+          to="/vision-mission"
           onClick={() => {
             closeSidebar();
             closeNavLinks();
@@ -52,7 +52,7 @@ const Dropdown = ({ isActive, closeSidebar, closeNavLinks }) => {
           <i className="fas fa-eye"></i> Vision & Mission
         </Link>
         <Link
-          to="/pages/core-values"
+          to="/core-values"
           onClick={() => {
             closeSidebar();
             closeNavLinks();
@@ -63,7 +63,7 @@ const Dropdown = ({ isActive, closeSidebar, closeNavLinks }) => {
           <i className="fas fa-heart"></i> Core Values
         </Link>
         <Link
-          to="/pages/safety"
+          to="/safety"
           onClick={() => {
             closeSidebar();
             closeNavLinks();

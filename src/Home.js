@@ -16,13 +16,13 @@ const Home = () => {
     const path = location.pathname;
     console.log('Current path:', path);
     if (path === '/') return 'home';
-    if (path === '/pages/about') return 'about';
-    if (path === '/pages/services') return 'services';
-    if (path === '/pages/vision-mission') return 'vision-mission';
-    if (path === '/pages/core-values') return 'core-values';
-    if (path === '/pages/safety') return 'safety';
-    if (path === '/pages/projects') return 'projects';
-    if (path === '/pages/contact') return 'contact';
+    if (path === '/about') return 'about';
+    if (path === '/services') return 'services';
+    if (path === '/vision-mission') return 'vision-mission';
+    if (path === '/core-values') return 'core-values';
+    if (path === '/safety') return 'safety';
+    if (path === '/projects') return 'projects';
+    if (path === '/contact') return 'contact';
     return 'home';
   };
 
@@ -104,7 +104,7 @@ const Home = () => {
             Your Trusted Partner in Construction and Industrial Solutions
           </p>
           <Link
-            to="/pages/contact"
+            to="/contact"
             className="btn fade-in"
             aria-label="Contact us"
           >
@@ -117,7 +117,7 @@ const Home = () => {
           <h2>Our Expertise</h2>
           <div className="categories-grid">
             <Link
-              to="/pages/projects#industrial"
+              to="/projects#industrial"
               className="category-card fade-in"
             >
               <img
@@ -130,7 +130,7 @@ const Home = () => {
               </div>
             </Link>
             <Link
-              to="/pages/projects#residential"
+              to="/projects#residential"
               className="category-card fade-in"
             >
               <img
@@ -143,7 +143,7 @@ const Home = () => {
               </div>
             </Link>
             <Link
-              to="/pages/projects#commercial"
+              to="/projects#commercial"
               className="category-card fade-in"
             >
               <img
@@ -156,7 +156,7 @@ const Home = () => {
               </div>
             </Link>
             <Link
-              to="/pages/projects#renovation"
+              to="/projects#renovation"
               className="category-card fade-in"
             >
               <img

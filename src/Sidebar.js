@@ -21,12 +21,12 @@ const Sidebar = ({ isSidebarActive, setIsSidebarActive, setIsNavLinksActive, act
           </Link>
         </li>
         <li>
-          <Link to="/pages/about" onClick={closeSidebar} className={activePage === 'about' ? 'active' : ''}>
+          <Link to="/about" onClick={closeSidebar} className={activePage === 'about' ? 'active' : ''}>
             <i className="fas fa-info-circle"></i> About
           </Link>
         </li>
         <li>
-          <Link to="/pages/services" onClick={closeSidebar} className={activePage === 'services' ? 'active' : ''}>
+          <Link to="/services" onClick={closeSidebar} className={activePage === 'services' ? 'active' : ''}>
             <i className="fas fa-cogs"></i> Services
           </Link>
         </li>
@@ -36,12 +36,12 @@ const Sidebar = ({ isSidebarActive, setIsSidebarActive, setIsNavLinksActive, act
           closeNavLinks={closeNavLinks}
         />
         <li>
-          <Link to="/pages/projects" onClick={closeSidebar} className={activePage === 'projects' ? 'active' : ''}>
+          <Link to="/projects" onClick={closeSidebar} className={activePage === 'projects' ? 'active' : ''}>
             <i className="fas fa-project-diagram"></i> Projects
           </Link>
         </li>
         <li>
-          <Link to="/pages/contact" onClick={closeSidebar} className={activePage === 'contact' ? 'active' : ''}>
+          <Link to="/contact" onClick={closeSidebar} className={activePage === 'contact' ? 'active' : ''}>
             <i className="fas fa-envelope"></i> Contact
           </Link>
         </li>
