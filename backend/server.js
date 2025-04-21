@@ -107,7 +107,7 @@ app.get('/pages/:page', (req, res) => {
 });
 
 // MongoDB Connection
-const mongoURI = process.env.MONGO_URI || process.env.MONGODB_URI;
+const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/mti-projects';
 console.log('Attempting to connect to MongoDB with URI:', mongoURI);
 const connectDB = async () => {
     try {
