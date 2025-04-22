@@ -7,19 +7,19 @@ services:
     startCommand: node server.js
     envVars:
       - key: MONGO_URI
-        value: ${MONGO_URI}
+        sync: false
       - key: ADMIN_USER
-        value: ${ADMIN_USER}
+        sync: false
       - key: ADMIN_PASS
-        value: ${ADMIN_PASS}
+        sync: false
       - key: SESSION_SECRET
-        value: ${SESSION_SECRET}
+        sync: false
       - key: EMAIL_USER
-        value: ${EMAIL_USER}
+        sync: false
       - key: EMAIL_PASS
-        value: ${EMAIL_PASS}
+        sync: false
       - key: CONTACT_EMAIL
-        value: ${CONTACT_EMAIL}
+        sync: false
 
   - type: web
     name: mastertech-frontend
@@ -28,4 +28,4 @@ services:
     staticPublishPath: build
     envVars:
       - key: REACT_APP_API_URL
-        value: ${REACT_APP_API_URL}
+        sync: false
