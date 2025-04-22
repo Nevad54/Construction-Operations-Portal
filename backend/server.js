@@ -254,12 +254,7 @@ app.post('/api/contact', async (req, res) => {
             submissions: []
         };
         const userSession = req.session[clientIp];
-        // Fixed maximum attempts
         const maxAttempts = 5;
-        // Reset attempts if it's incorrect
-        if (userSession.attempts > maxAttempts) {
-            userSession.attempts = 0;
-        }
         const maxHourlySubmissions = 3;
         const maxDailySubmissions = 10;
         const now = Date.now();
@@ -268,13 +263,10 @@ app.post('/api/contact', async (req, res) => {
             timestamp => now - timestamp < 24 * 60 * 60 * 1000
         );
 
-        // Check hourly submissions BEFORE adding the current one
         const hourlySubmissions = userSession.submissions.filter(
             timestamp => now - timestamp < 60 * 60 * 1000
         );
         console.log('Current hourly submissions:', hourlySubmissions.length, 'of', maxHourlySubmissions);
-        
-        // Strict check: if we already have 3 or more submissions in the last hour, reject
         if (hourlySubmissions.length >= maxHourlySubmissions) {
             console.log('Hourly submission limit reached:', { ip: clientIp, submissions: hourlySubmissions.length });
             return res.status(429).json({
