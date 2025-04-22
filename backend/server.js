@@ -51,7 +51,6 @@ app.use('/uploads', express.static(uploadsPath, {
     }
 }));
 app.use('/assets', express.static(assetsPath));
-app.use('/pages', express.static(pagesPath));
 
 // Root Route
 app.get('/', (req, res) => {
