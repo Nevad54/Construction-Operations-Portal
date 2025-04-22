@@ -15,7 +15,8 @@ const Contact = () => {
     name: '',
     email: '',
     message: '',
-    captchaAnswer: ''
+    captchaAnswer: '',
+    token: '' // Add token to store CAPTCHA token
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,7 +24,7 @@ const Contact = () => {
   const [captchaData, setCaptchaData] = useState({
     question: 'Loading CAPTCHA...',
     images: [],
-    correct: ''
+    token: ''
   });
   const [selectedCaptcha, setSelectedCaptcha] = useState(null);
 
@@ -101,7 +102,7 @@ const Contact = () => {
 
   const getCaptcha = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/captcha`, { credentials: 'include' });
+      const response = await fetch(`${API_BASE_URL}/api/captcha`);
       if (!response.ok) {
         throw new Error('Failed to fetch CAPTCHA');
       }
@@ -109,7 +110,11 @@ const Contact = () => {
       console.log('Received CAPTCHA data:', data);
       setCaptchaData(data);
       setSelectedCaptcha(null);
-      setFormData(prev => ({ ...prev, captchaAnswer: '' }));
+      setFormData(prev => ({ 
+        ...prev, 
+        captchaAnswer: '',
+        token: data.token // Store the token
+      }));
     } catch (error) {
       console.error('Error fetching CAPTCHA:', error);
       setErrors(prev => ({ ...prev, captcha: 'Error loading CAPTCHA' }));
@@ -135,7 +140,6 @@ const Contact = () => {
       
       try {
         const response = await fetch(`${API_BASE_URL}/api/contact`, {
-          credentials: 'include',
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

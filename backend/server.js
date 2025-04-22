@@ -27,8 +27,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Middleware
-// Enable CORS with credentials to preserve session cookies for CAPTCHA
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
@@ -70,14 +69,16 @@ app.get('/api/captcha', (req, res) => {
     const correctIndex = Math.floor(Math.random() * imageOptions.length);
     const correctAnswer = imageOptions[correctIndex].id;
 
-    req.session.captchaAnswer = correctAnswer;
+    // Create a token that encodes the correct answer
+    const token = Buffer.from(correctAnswer).toString('base64');
+    
     const question = `Please select the image that shows a ${imageOptions[correctIndex].label}`;
-    console.log('Generated CAPTCHA:', { correctAnswer, question });
+    console.log('Generated CAPTCHA:', { correctAnswer, question, token });
 
     const shuffledImages = [...imageOptions].sort(() => Math.random() - 0.5);
     const response = {
         images: shuffledImages,
-        correct: correctAnswer,
+        token: token, // Send token instead of correct answer
         question: question
     };
     console.log('Sending response:', response);
@@ -292,12 +293,34 @@ app.post('/api/contact', async (req, res) => {
             });
         }
 
-        const correctAnswer = req.session.captchaAnswer;
-        if (!correctAnswer || captchaAnswer !== correctAnswer) {
+        // Decode the token from the request
+        let correctAnswer;
+        try {
+            // Get token from request body
+            const { token } = req.body;
+            if (!token) {
+                userSession.attempts += 1;
+                console.log('Missing CAPTCHA token:', { attempts: userSession.attempts });
+                return res.status(400).json({
+                    error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                });
+            }
+            
+            // Decode the token to get the correct answer
+            correctAnswer = Buffer.from(token, 'base64').toString('ascii');
+            
+            if (captchaAnswer !== correctAnswer) {
+                userSession.attempts += 1;
+                console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
+                return res.status(400).json({
+                    error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                });
+            }
+        } catch (error) {
             userSession.attempts += 1;
-            console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
+            console.error('Error decoding CAPTCHA token:', error);
             return res.status(400).json({
-                error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
             });
         }
 
@@ -323,7 +346,7 @@ app.post('/api/contact', async (req, res) => {
 
         userSession.submissions.push(now);
         userSession.attempts = 0;
-        req.session.captchaAnswer = null;
+        // No need to clear session captcha answer anymore
 
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (err) {
