@@ -251,7 +251,7 @@ const Contact = () => {
                 <div className="form-group captcha-group">
                   <label>CAPTCHA Verification</label>
                   <div className="captcha-question">
-                    Select the image that shows a {captchaData.correct}
+                    {captchaData.question}
                   </div>
                   <div className="captcha-images">
                     {captchaData.images.map((image, index) => (
