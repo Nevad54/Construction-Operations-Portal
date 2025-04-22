@@ -155,25 +155,15 @@ const Contact = () => {
           setErrors({});
           getCaptcha(); // Get new CAPTCHA for next submission
         } else {
-          // Handle different error types
           setSubmitStatus({ 
             type: 'error', 
             message: data.error || 'Failed to send message. Please try again.'
           });
-          
           if (response.status === 429) {
             // Rate limit reached, disable form temporarily
             setIsSubmitting(true);
-            // Show a more user-friendly message with countdown
-            const waitTime = data.error.includes('hourly') ? '1 hour' : '24 hours';
-            setSubmitStatus({ 
-              type: 'error', 
-              message: `${data.error} Please wait ${waitTime} before trying again.`
-            });
-          } else {
-            // For other errors, get a new CAPTCHA
-            getCaptcha();
           }
+          getCaptcha(); // Get new CAPTCHA after failed attempt
         }
       } catch (error) {
         console.error('Error submitting form:', error);
