@@ -24,10 +24,7 @@ services:
   - type: web
     name: mastertech-frontend
     env: static
-    buildCommand: |
-      npm install
-      npm run build
-      cp static.json build/
+    buildCommand: npm install && npm run build
     staticPublishPath: build
     envVars:
       - key: REACT_APP_API_URL
