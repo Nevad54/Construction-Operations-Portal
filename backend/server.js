@@ -242,40 +242,56 @@ app.delete('/api/projects/:id', async (req, res) => {
     }
 });
 
-// Contact Form Route (unchanged from last version)
+// Create a schema for contact submissions
+const contactSubmissionSchema = new mongoose.Schema({
+    ip: String,
+    email: String,
+    timestamp: { type: Date, default: Date.now },
+    captchaAttempts: { type: Number, default: 0 }
+});
+
+// Create a model if it doesn't exist
+const ContactSubmission = mongoose.models.ContactSubmission || mongoose.model('ContactSubmission', contactSubmissionSchema);
+
+// Contact Form Route with MongoDB-based rate limiting
 app.post('/api/contact', async (req, res) => {
     try {
         const clientIp = requestIp.getClientIp(req);
         console.log('Raw request body:', req.body);
-        const { name, email, message, captchaAnswer } = req.body;
+        const { name, email, message, captchaAnswer, token } = req.body;
 
-        req.session[clientIp] = req.session[clientIp] || {
-            attempts: 0,
-            submissions: []
-        };
-        const userSession = req.session[clientIp];
-        const maxAttempts = 5; // CAPTCHA attempt limit
+        const maxAttempts = 3; // CAPTCHA attempt limit (3 attempts max)
         const maxHourlySubmissions = 3;
         const maxDailySubmissions = 10;
-        const now = Date.now();
+        const now = new Date();
+        const oneHourAgo = new Date(now - 60 * 60 * 1000);
+        const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000);
 
-        userSession.submissions = userSession.submissions.filter(
-            timestamp => now - timestamp < 24 * 60 * 60 * 1000
-        );
+        // Get submission counts from MongoDB
+        const hourlyCount = await ContactSubmission.countDocuments({
+            ip: clientIp,
+            timestamp: { $gte: oneHourAgo }
+        });
 
-        const hourlySubmissions = userSession.submissions.filter(
-            timestamp => now - timestamp < 60 * 60 * 1000
-        );
-        console.log('Current hourly submissions:', hourlySubmissions.length, 'of', maxHourlySubmissions);
-        if (hourlySubmissions.length >= maxHourlySubmissions) {
-            console.log('Hourly submission limit reached:', { ip: clientIp, submissions: hourlySubmissions.length });
+        const dailyCount = await ContactSubmission.countDocuments({
+            ip: clientIp,
+            timestamp: { $gte: oneDayAgo }
+        });
+
+        console.log('Current hourly submissions:', hourlyCount, 'of', maxHourlySubmissions);
+        console.log('Current daily submissions:', dailyCount, 'of', maxDailySubmissions);
+
+        // Check hourly limit
+        if (hourlyCount >= maxHourlySubmissions) {
+            console.log('Hourly submission limit reached:', { ip: clientIp, submissions: hourlyCount });
             return res.status(429).json({
                 error: `You've reached the hourly limit of ${maxHourlySubmissions} submissions. Please try again later.`
             });
         }
 
-        if (userSession.submissions.length >= maxDailySubmissions) {
-            console.log('Daily submission limit reached:', { ip: clientIp, submissions: userSession.submissions.length });
+        // Check daily limit
+        if (dailyCount >= maxDailySubmissions) {
+            console.log('Daily submission limit reached:', { ip: clientIp, submissions: dailyCount });
             return res.status(429).json({
                 error: `You've reached the daily limit of ${maxDailySubmissions} submissions. Please try again tomorrow.`
             });
@@ -300,10 +316,31 @@ app.post('/api/contact', async (req, res) => {
             // Get token from request body
             const { token } = req.body;
             if (!token) {
-                userSession.attempts += 1;
-                console.log('Missing CAPTCHA token:', { attempts: userSession.attempts });
+                // Find or create a CAPTCHA attempts record
+                let captchaAttempt = await ContactSubmission.findOne({
+                    ip: clientIp,
+                    email: email,
+                    captchaAttempts: { $exists: true }
+                }).sort({ timestamp: -1 });
+                
+                if (!captchaAttempt) {
+                    captchaAttempt = new ContactSubmission({
+                        ip: clientIp,
+                        email: email,
+                        captchaAttempts: 1,
+                        timestamp: now
+                    });
+                } else {
+                    captchaAttempt.captchaAttempts += 1;
+                    captchaAttempt.timestamp = now;
+                }
+                
+                await captchaAttempt.save();
+                const attemptsRemaining = Math.max(0, maxAttempts - captchaAttempt.captchaAttempts);
+                
+                console.log('Missing CAPTCHA token:', { attempts: captchaAttempt.captchaAttempts, remaining: attemptsRemaining });
                 return res.status(400).json({
-                    error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                    error: `Invalid CAPTCHA. Attempts remaining: ${attemptsRemaining}`
                 });
             }
             
@@ -311,10 +348,37 @@ app.post('/api/contact', async (req, res) => {
             correctAnswer = Buffer.from(token, 'base64').toString('ascii');
             
             if (captchaAnswer !== correctAnswer) {
-                userSession.attempts += 1;
-                console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
+                // Find or create a CAPTCHA attempts record
+                let captchaAttempt = await ContactSubmission.findOne({
+                    ip: clientIp,
+                    email: email,
+                    captchaAttempts: { $exists: true }
+                }).sort({ timestamp: -1 });
+                
+                if (!captchaAttempt) {
+                    captchaAttempt = new ContactSubmission({
+                        ip: clientIp,
+                        email: email,
+                        captchaAttempts: 1,
+                        timestamp: now
+                    });
+                } else {
+                    captchaAttempt.captchaAttempts += 1;
+                    captchaAttempt.timestamp = now;
+                }
+                
+                await captchaAttempt.save();
+                const attemptsRemaining = Math.max(0, maxAttempts - captchaAttempt.captchaAttempts);
+                
+                console.log('CAPTCHA verification failed:', { 
+                    captchaAnswer, 
+                    correctAnswer, 
+                    attempts: captchaAttempt.captchaAttempts,
+                    remaining: attemptsRemaining
+                });
+                
                 return res.status(400).json({
-                    error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                    error: `Incorrect CAPTCHA selection. Attempts remaining: ${attemptsRemaining}`
                 });
             }
         } catch (error) {
@@ -345,24 +409,46 @@ app.post('/api/contact', async (req, res) => {
         await transporter.sendMail(mailOptions);
         console.log('Email sent:', { name, email, message });
 
-        // Add the current submission timestamp
-        userSession.submissions.push(now);
-        // Reset CAPTCHA attempts counter
-        userSession.attempts = 0;
-        // Log the submission count
-        const updatedHourlySubmissions = userSession.submissions.filter(
-            timestamp => now - timestamp < 60 * 60 * 1000
-        );
-        console.log('After submission, hourly count:', updatedHourlySubmissions.length, 'of', maxHourlySubmissions);
+        // Store the submission in MongoDB
+        await new ContactSubmission({
+            ip: clientIp,
+            email: email,
+            timestamp: now
+        }).save();
+        
+        // Get updated counts
+        const updatedHourlyCount = await ContactSubmission.countDocuments({
+            ip: clientIp,
+            timestamp: { $gte: oneHourAgo }
+        });
+        
+        console.log('After submission, hourly count:', updatedHourlyCount, 'of', maxHourlySubmissions);
 
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (err) {
         const clientIp = requestIp.getClientIp(req);
-        req.session[clientIp] = req.session[clientIp] || { attempts: 0, submissions: [] };
-        req.session[clientIp].attempts += 1;
-        console.error('Error processing contact form:', err, { attempts: req.session[clientIp].attempts });
+        
+        // Store CAPTCHA attempt in MongoDB
+        let captchaAttempt = await ContactSubmission.findOne({
+            ip: clientIp,
+            captchaAttempts: { $exists: true }
+        }).sort({ timestamp: -1 });
+        
+        if (!captchaAttempt) {
+            captchaAttempt = new ContactSubmission({
+                ip: clientIp,
+                captchaAttempts: 1,
+                timestamp: new Date()
+            });
+        } else {
+            captchaAttempt.captchaAttempts += 1;
+            captchaAttempt.timestamp = new Date();
+        }
+        
+        await captchaAttempt.save();
+        console.error('Error processing contact form:', err, { ip: clientIp });
         res.status(500).json({
-            error: `Failed to send message. Attempts remaining: ${5 - req.session[clientIp].attempts}`
+            error: `Failed to send message. Please try again later.`
         });
     }
 });
