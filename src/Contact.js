@@ -15,8 +15,7 @@ const Contact = () => {
     name: '',
     email: '',
     message: '',
-    captchaAnswer: '',
-    token: '' // Add token to store CAPTCHA token
+    captchaAnswer: ''
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,7 +23,7 @@ const Contact = () => {
   const [captchaData, setCaptchaData] = useState({
     question: 'Loading CAPTCHA...',
     images: [],
-    token: ''
+    correct: ''
   });
   const [selectedCaptcha, setSelectedCaptcha] = useState(null);
 
@@ -110,11 +109,7 @@ const Contact = () => {
       console.log('Received CAPTCHA data:', data);
       setCaptchaData(data);
       setSelectedCaptcha(null);
-      setFormData(prev => ({ 
-        ...prev, 
-        captchaAnswer: '',
-        token: data.token // Store the token
-      }));
+      setFormData(prev => ({ ...prev, captchaAnswer: '' }));
     } catch (error) {
       console.error('Error fetching CAPTCHA:', error);
       setErrors(prev => ({ ...prev, captcha: 'Error loading CAPTCHA' }));
@@ -251,7 +246,7 @@ const Contact = () => {
                 <div className="form-group captcha-group">
                   <label>CAPTCHA Verification</label>
                   <div className="captcha-question">
-                    {captchaData.question}
+                    Select the image that shows a {captchaData.correct}
                   </div>
                   <div className="captcha-images">
                     {captchaData.images.map((image, index) => (
