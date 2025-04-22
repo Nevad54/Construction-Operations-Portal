@@ -69,16 +69,14 @@ app.get('/api/captcha', (req, res) => {
     const correctIndex = Math.floor(Math.random() * imageOptions.length);
     const correctAnswer = imageOptions[correctIndex].id;
 
-    // Create a token that encodes the correct answer
-    const token = Buffer.from(correctAnswer).toString('base64');
-    
+    req.session.captchaAnswer = correctAnswer;
     const question = `Please select the image that shows a ${imageOptions[correctIndex].label}`;
-    console.log('Generated CAPTCHA:', { correctAnswer, question, token });
+    console.log('Generated CAPTCHA:', { correctAnswer, question });
 
     const shuffledImages = [...imageOptions].sort(() => Math.random() - 0.5);
     const response = {
         images: shuffledImages,
-        token: token, // Send token instead of correct answer
+        correct: correctAnswer,
         question: question
     };
     console.log('Sending response:', response);
@@ -249,23 +247,12 @@ app.post('/api/contact', async (req, res) => {
         console.log('Raw request body:', req.body);
         const { name, email, message, captchaAnswer } = req.body;
 
-        // Initialize or retrieve user session
-        if (!req.session[clientIp]) {
-            req.session[clientIp] = {
-                attempts: 0,
-                submissions: [],
-                lastReset: Date.now() // Track when attempts were last reset
-            };
-        }
-        
-        // Reset attempts counter if it's been more than an hour
-        const ONE_HOUR = 60 * 60 * 1000;
-        if (Date.now() - req.session[clientIp].lastReset > ONE_HOUR) {
-            req.session[clientIp].attempts = 0;
-            req.session[clientIp].lastReset = Date.now();
-        }
+        req.session[clientIp] = req.session[clientIp] || {
+            attempts: 0,
+            submissions: []
+        };
         const userSession = req.session[clientIp];
-        const maxAttempts = 5; // Maximum CAPTCHA attempts
+        const maxAttempts = 5;
         const maxHourlySubmissions = 3;
         const maxDailySubmissions = 10;
         const now = Date.now();
@@ -277,8 +264,6 @@ app.post('/api/contact', async (req, res) => {
         const hourlySubmissions = userSession.submissions.filter(
             timestamp => now - timestamp < 60 * 60 * 1000
         );
-        
-        // Check BEFORE processing this submission
         if (hourlySubmissions.length >= maxHourlySubmissions) {
             console.log('Hourly submission limit reached:', { ip: clientIp, submissions: hourlySubmissions.length });
             return res.status(429).json({
@@ -306,34 +291,12 @@ app.post('/api/contact', async (req, res) => {
             });
         }
 
-        // Decode the token from the request
-        let correctAnswer;
-        try {
-            // Get token from request body
-            const { token } = req.body;
-            if (!token) {
-                userSession.attempts += 1;
-                console.log('Missing CAPTCHA token:', { attempts: userSession.attempts });
-                return res.status(400).json({
-                    error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
-                });
-            }
-            
-            // Decode the token to get the correct answer
-            correctAnswer = Buffer.from(token, 'base64').toString('ascii');
-            
-            if (captchaAnswer !== correctAnswer) {
-                userSession.attempts += 1;
-                console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
-                return res.status(400).json({
-                    error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
-                });
-            }
-        } catch (error) {
+        const correctAnswer = req.session.captchaAnswer;
+        if (!correctAnswer || captchaAnswer !== correctAnswer) {
             userSession.attempts += 1;
-            console.error('Error decoding CAPTCHA token:', error);
+            console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
             return res.status(400).json({
-                error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
             });
         }
 
@@ -357,25 +320,9 @@ app.post('/api/contact', async (req, res) => {
         await transporter.sendMail(mailOptions);
         console.log('Email sent:', { name, email, message });
 
-        // Add the current submission timestamp FIRST
         userSession.submissions.push(now);
-        
-        // Now check if we've exceeded the limit AFTER adding this submission
-        const updatedHourlySubmissions = userSession.submissions.filter(
-            timestamp => now - timestamp < 60 * 60 * 1000
-        );
-        
-        if (updatedHourlySubmissions.length > maxHourlySubmissions) {
-            // Remove the submission we just added
-            userSession.submissions.pop();
-            console.log('Hourly submission limit reached (post-check):', { ip: clientIp, submissions: hourlySubmissions.length });
-            return res.status(429).json({
-                error: `You've reached the hourly limit of ${maxHourlySubmissions} submissions. Please try again later.`
-            });
-        }
-        
         userSession.attempts = 0;
-        // No need to clear session captcha answer anymore
+        req.session.captchaAnswer = null;
 
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (err) {
