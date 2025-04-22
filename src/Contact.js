@@ -6,6 +6,7 @@ import Footer from './Footer';
 import './styles.css';
 
 const Contact = () => {
+  const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
   const [isSidebarActive, setIsSidebarActive] = useState(false);
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -250,7 +251,7 @@ const Contact = () => {
                     {captchaData.images.map((image, index) => (
                       <img
                         key={index}
-                        src={image.src}
+                        src={`${IMAGE_BASE_URL}${image.src}`}
                         alt={`CAPTCHA option ${index + 1}`}
                         className={selectedCaptcha === image.id ? 'selected' : ''}
                         onClick={() => handleCaptchaSelect(image.id)}
@@ -316,7 +317,7 @@ const Contact = () => {
       {/* Footer */}
       <footer role="contentinfo">
         <div className="container_footer">
-          <p>© 2025 MASTERTECH INTERGROUPPE INC. All Rights Reserved.</p>
+          <p> 2025 MASTERTECH INTERGROUPPE INC. All Rights Reserved.</p>
         </div>
       </footer>
     </div>
