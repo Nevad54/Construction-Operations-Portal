@@ -246,8 +246,7 @@ app.delete('/api/projects/:id', async (req, res) => {
 const contactSubmissionSchema = new mongoose.Schema({
     ip: String,
     email: String,
-    timestamp: { type: Date, default: Date.now },
-    captchaAttempts: { type: Number, default: 0 }
+    timestamp: { type: Date, default: Date.now }
 });
 
 // Create a model if it doesn't exist
@@ -261,6 +260,7 @@ app.post('/api/contact', async (req, res) => {
         const { name, email, message, captchaAnswer, token } = req.body;
 
         const maxAttempts = 3; // CAPTCHA attempt limit (3 attempts max)
+        req.session.captchaAttempts = req.session.captchaAttempts || 0;
         const maxHourlySubmissions = 3;
         const maxDailySubmissions = 10;
         const now = new Date();
@@ -316,29 +316,10 @@ app.post('/api/contact', async (req, res) => {
             // Get token from request body
             const { token } = req.body;
             if (!token) {
-                // Find or create a CAPTCHA attempts record
-                let captchaAttempt = await ContactSubmission.findOne({
-                    ip: clientIp,
-                    email: email,
-                    captchaAttempts: { $exists: true }
-                }).sort({ timestamp: -1 });
+                req.session.captchaAttempts += 1;
+                const attemptsRemaining = Math.max(0, maxAttempts - req.session.captchaAttempts);
                 
-                if (!captchaAttempt) {
-                    captchaAttempt = new ContactSubmission({
-                        ip: clientIp,
-                        email: email,
-                        captchaAttempts: 1,
-                        timestamp: now
-                    });
-                } else {
-                    captchaAttempt.captchaAttempts += 1;
-                    captchaAttempt.timestamp = now;
-                }
-                
-                await captchaAttempt.save();
-                const attemptsRemaining = Math.max(0, maxAttempts - captchaAttempt.captchaAttempts);
-                
-                console.log('Missing CAPTCHA token:', { attempts: captchaAttempt.captchaAttempts, remaining: attemptsRemaining });
+                console.log('Missing CAPTCHA token:', { attempts: req.session.captchaAttempts, remaining: attemptsRemaining });
                 return res.status(400).json({
                     error: `Invalid CAPTCHA. Attempts remaining: ${attemptsRemaining}`
                 });
@@ -348,32 +329,13 @@ app.post('/api/contact', async (req, res) => {
             correctAnswer = Buffer.from(token, 'base64').toString('ascii');
             
             if (captchaAnswer !== correctAnswer) {
-                // Find or create a CAPTCHA attempts record
-                let captchaAttempt = await ContactSubmission.findOne({
-                    ip: clientIp,
-                    email: email,
-                    captchaAttempts: { $exists: true }
-                }).sort({ timestamp: -1 });
-                
-                if (!captchaAttempt) {
-                    captchaAttempt = new ContactSubmission({
-                        ip: clientIp,
-                        email: email,
-                        captchaAttempts: 1,
-                        timestamp: now
-                    });
-                } else {
-                    captchaAttempt.captchaAttempts += 1;
-                    captchaAttempt.timestamp = now;
-                }
-                
-                await captchaAttempt.save();
-                const attemptsRemaining = Math.max(0, maxAttempts - captchaAttempt.captchaAttempts);
+                req.session.captchaAttempts += 1;
+                const attemptsRemaining = Math.max(0, maxAttempts - req.session.captchaAttempts);
                 
                 console.log('CAPTCHA verification failed:', { 
                     captchaAnswer, 
                     correctAnswer, 
-                    attempts: captchaAttempt.captchaAttempts,
+                    attempts: req.session.captchaAttempts,
                     remaining: attemptsRemaining
                 });
                 
@@ -409,43 +371,29 @@ app.post('/api/contact', async (req, res) => {
         await transporter.sendMail(mailOptions);
         console.log('Email sent:', { name, email, message });
 
-        // Store the submission in MongoDB
+        // Add the current submission timestamp
         await new ContactSubmission({
             ip: clientIp,
             email: email,
             timestamp: now
         }).save();
+
+        // Reset CAPTCHA attempts on successful submission
+        req.session.captchaAttempts = 0;
         
         // Get updated counts
         const updatedHourlyCount = await ContactSubmission.countDocuments({
             ip: clientIp,
             timestamp: { $gte: oneHourAgo }
         });
-        
+
         console.log('After submission, hourly count:', updatedHourlyCount, 'of', maxHourlySubmissions);
 
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (err) {
         const clientIp = requestIp.getClientIp(req);
         
-        // Store CAPTCHA attempt in MongoDB
-        let captchaAttempt = await ContactSubmission.findOne({
-            ip: clientIp,
-            captchaAttempts: { $exists: true }
-        }).sort({ timestamp: -1 });
-        
-        if (!captchaAttempt) {
-            captchaAttempt = new ContactSubmission({
-                ip: clientIp,
-                captchaAttempts: 1,
-                timestamp: new Date()
-            });
-        } else {
-            captchaAttempt.captchaAttempts += 1;
-            captchaAttempt.timestamp = new Date();
-        }
-        
-        await captchaAttempt.save();
+        req.session.captchaAttempts = (req.session.captchaAttempts || 0) + 1;
         console.error('Error processing contact form:', err, { ip: clientIp });
         res.status(500).json({
             error: `Failed to send message. Please try again later.`
