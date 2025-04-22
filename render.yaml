@@ -26,11 +26,31 @@ services:
     env: static
     buildCommand: npm install && npm run build
     staticPublishPath: build
-    # Rewrite all routes to index.html for SPA
+    headers:
+      - source: /**
+        headers:
+          - key: Cache-Control
+            value: no-store
     routes:
+      # Serve static files
       - type: rewrite
-        src: "/*"
-        dest: "/index.html"
+        source: /static/*
+        destination: /static/*
+      # Serve other static assets
+      - type: rewrite
+        source: /assets/*
+        destination: /assets/*
+      # Serve manifest and favicon
+      - type: rewrite
+        source: /manifest.json
+        destination: /manifest.json
+      - type: rewrite
+        source: /favicon.ico
+        destination: /favicon.ico
+      # For all other routes, serve index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: REACT_APP_API_URL
         value: ${REACT_APP_API_URL}
