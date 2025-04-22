@@ -12,6 +12,17 @@ import Contact from './Contact';
 import Admin from './components/Admin';
 
 function App() {
+  React.useEffect(() => {
+    // Check if we have a redirect URL stored
+    const redirectUrl = sessionStorage.getItem('redirectUrl');
+    if (redirectUrl) {
+      // Clear it
+      sessionStorage.removeItem('redirectUrl');
+      // Use react-router to navigate
+      window.history.replaceState(null, '', redirectUrl);
+    }
+  }, []);
+
   return (
     <ProjectProvider>
       <Router>

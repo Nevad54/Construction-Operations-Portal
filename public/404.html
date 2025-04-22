@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Redirecting...</title>
+  <script>
+    // Store the URL the user was trying to access
+    sessionStorage.setItem('redirectUrl', window.location.pathname);
+    // Redirect to the root
+    window.location.replace('/');
+  </script>
+</head>
+<body>
+  Redirecting...
+</body>
+</html>
