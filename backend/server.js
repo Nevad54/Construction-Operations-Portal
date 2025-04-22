@@ -249,12 +249,20 @@ app.post('/api/contact', async (req, res) => {
         console.log('Raw request body:', req.body);
         const { name, email, message, captchaAnswer } = req.body;
 
+        // Initialize or get the user session
         req.session[clientIp] = req.session[clientIp] || {
             attempts: 0,
             submissions: []
         };
+        
+        // Reset attempts if it's been more than an hour since last attempt
+        const lastAttemptTime = req.session[clientIp].lastAttemptTime || 0;
+        if (now - lastAttemptTime > 60 * 60 * 1000) {
+            req.session[clientIp].attempts = 0;
+        }
+        req.session[clientIp].lastAttemptTime = now;
         const userSession = req.session[clientIp];
-        const maxAttempts = 5;
+        const maxAttempts = 5; // Maximum CAPTCHA attempts
         const maxHourlySubmissions = 3;
         const maxDailySubmissions = 10;
         const now = Date.now();
@@ -266,6 +274,7 @@ app.post('/api/contact', async (req, res) => {
         const hourlySubmissions = userSession.submissions.filter(
             timestamp => now - timestamp < 60 * 60 * 1000
         );
+        // Check hourly submissions BEFORE processing the current submission
         if (hourlySubmissions.length >= maxHourlySubmissions) {
             console.log('Hourly submission limit reached:', { ip: clientIp, submissions: hourlySubmissions.length });
             return res.status(429).json({
@@ -300,9 +309,9 @@ app.post('/api/contact', async (req, res) => {
             const { token } = req.body;
             if (!token) {
                 userSession.attempts += 1;
-                console.log('Missing CAPTCHA token:', { attempts: userSession.attempts });
+                console.log('Missing CAPTCHA token:', { attempts: userSession.attempts, maxAttempts });
                 return res.status(400).json({
-                    error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                    error: `Invalid CAPTCHA. Attempts remaining: ${Math.max(0, maxAttempts - userSession.attempts)}`
                 });
             }
             
@@ -311,16 +320,16 @@ app.post('/api/contact', async (req, res) => {
             
             if (captchaAnswer !== correctAnswer) {
                 userSession.attempts += 1;
-                console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
+                console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts, maxAttempts });
                 return res.status(400).json({
-                    error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                    error: `Incorrect CAPTCHA selection. Attempts remaining: ${Math.max(0, maxAttempts - userSession.attempts)}`
                 });
             }
         } catch (error) {
             userSession.attempts += 1;
             console.error('Error decoding CAPTCHA token:', error);
             return res.status(400).json({
-                error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                error: `Invalid CAPTCHA. Attempts remaining: ${Math.max(0, maxAttempts - userSession.attempts)}`
             });
         }
 
@@ -344,7 +353,20 @@ app.post('/api/contact', async (req, res) => {
         await transporter.sendMail(mailOptions);
         console.log('Email sent:', { name, email, message });
 
+        // Add this submission to the list BEFORE checking if we've reached the limit
         userSession.submissions.push(now);
+        
+        // Re-check hourly submissions after adding this one
+        const updatedHourlySubmissions = userSession.submissions.filter(
+            timestamp => now - timestamp < 60 * 60 * 1000
+        );
+        
+        // Log the submission count for debugging
+        console.log('Submission counts:', {
+            hourly: updatedHourlySubmissions.length,
+            daily: userSession.submissions.length,
+            ip: clientIp
+        });
         userSession.attempts = 0;
         // No need to clear session captcha answer anymore
 
