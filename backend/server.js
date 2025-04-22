@@ -27,8 +27,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Middleware
-// Enable CORS with credentials to preserve session cookies for CAPTCHA
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({
+  origin: ['https://mastertech-frontend-yqjb.onrender.com', 'http://localhost:3000', 'http://localhost:3003'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
