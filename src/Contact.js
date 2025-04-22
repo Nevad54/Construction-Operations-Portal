@@ -6,7 +6,8 @@ import Footer from './Footer';
 import './styles.css';
 
 const Contact = () => {
-  const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+  const IMAGE_BASE_URL = API_BASE_URL;
   const [isSidebarActive, setIsSidebarActive] = useState(false);
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -100,7 +101,7 @@ const Contact = () => {
 
   const getCaptcha = async () => {
     try {
-      const response = await fetch('/api/captcha');
+      const response = await fetch(`${API_BASE_URL}/api/captcha`);
       if (!response.ok) {
         throw new Error('Failed to fetch CAPTCHA');
       }
@@ -133,7 +134,7 @@ const Contact = () => {
       setSubmitStatus(null);
       
       try {
-        const response = await fetch('/api/contact', {
+        const response = await fetch(`${API_BASE_URL}/api/contact`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
