@@ -254,7 +254,7 @@ app.post('/api/contact', async (req, res) => {
             submissions: []
         };
         const userSession = req.session[clientIp];
-        const maxAttempts = 5;
+        const maxAttempts = 5; // CAPTCHA attempt limit
         const maxHourlySubmissions = 3;
         const maxDailySubmissions = 10;
         const now = Date.now();
@@ -266,6 +266,7 @@ app.post('/api/contact', async (req, res) => {
         const hourlySubmissions = userSession.submissions.filter(
             timestamp => now - timestamp < 60 * 60 * 1000
         );
+        console.log('Current hourly submissions:', hourlySubmissions.length, 'of', maxHourlySubmissions);
         if (hourlySubmissions.length >= maxHourlySubmissions) {
             console.log('Hourly submission limit reached:', { ip: clientIp, submissions: hourlySubmissions.length });
             return res.status(429).json({
@@ -344,9 +345,15 @@ app.post('/api/contact', async (req, res) => {
         await transporter.sendMail(mailOptions);
         console.log('Email sent:', { name, email, message });
 
+        // Add the current submission timestamp
         userSession.submissions.push(now);
+        // Reset CAPTCHA attempts counter
         userSession.attempts = 0;
-        // No need to clear session captcha answer anymore
+        // Log the submission count
+        const updatedHourlySubmissions = userSession.submissions.filter(
+            timestamp => now - timestamp < 60 * 60 * 1000
+        );
+        console.log('After submission, hourly count:', updatedHourlySubmissions.length, 'of', maxHourlySubmissions);
 
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (err) {
