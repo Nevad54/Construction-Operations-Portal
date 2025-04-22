@@ -7,11 +7,11 @@ services:
     startCommand: node server.js
     envVars:
       - key: MONGO_URI
-        value: ${MONGO_URI}
+        value: mongodb://mtiuser:MtiPass123!@ac-thlzd0c-shard-00-00.ayq9k3f.mongodb.net:27017,ac-thlzd0c-shard-00-01.ayq9k3f.mongodb.net:27017,ac-thlzd0c-shard-00-02.ayq9k3f.mongodb.net:27017/mti-projects?ssl=true&replicaSet=atlas-s9yn0c-shard-0&authSource=admin&retryWrites=true&w=majority&appName=mti-cluster
       - key: ADMIN_USER
-        value: ${ADMIN_USER}
+        value: admin
       - key: ADMIN_PASS
-        value: ${ADMIN_PASS}
+        value: "1111"
       - key: SESSION_SECRET
         value: ${SESSION_SECRET}
       - key: EMAIL_USER
