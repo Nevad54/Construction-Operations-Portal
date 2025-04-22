@@ -6,6 +6,7 @@ import Footer from './Footer';
 import './styles.css';
 
 const Home = () => {
+  const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
   const [isSidebarActive, setIsSidebarActive] = useState(false);
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -121,7 +122,7 @@ const Home = () => {
               className="category-card fade-in"
             >
               <img
-                src="/Uploads/industrial.jpg"
+                src={`${IMAGE_BASE_URL}/uploads/industrial.jpg`}
                 alt="Industrial Projects"
                 loading="lazy"
               />
@@ -134,7 +135,7 @@ const Home = () => {
               className="category-card fade-in"
             >
               <img
-                src="/Uploads/residential.jpg"
+                src={`${IMAGE_BASE_URL}/uploads/residential.jpg`}
                 alt="Residential Projects"
                 loading="lazy"
               />
@@ -147,7 +148,7 @@ const Home = () => {
               className="category-card fade-in"
             >
               <img
-                src="/Uploads/commercial.jpg"
+                src={`${IMAGE_BASE_URL}/uploads/commercial.jpg`}
                 alt="Commercial Projects"
                 loading="lazy"
               />
@@ -160,7 +161,7 @@ const Home = () => {
               className="category-card fade-in"
             >
               <img
-                src="/Uploads/renovation.jpg"
+                src={`${IMAGE_BASE_URL}/uploads/renovation.jpg`}
                 alt="Renovation Projects"
                 loading="lazy"
               />

@@ -7,6 +7,7 @@ import Sidebar from '../Sidebar';
 import Footer from '../Footer';
 
 const Projects = () => {
+  const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -154,7 +155,7 @@ const Projects = () => {
                 >
                   {project.image && (
                     <img 
-                      src={project.image} 
+                      src={`${IMAGE_BASE_URL}${project.image}`} 
                       alt={project.title} 
                       className="project-image"
                     />
@@ -183,7 +184,7 @@ const Projects = () => {
                 >
                   {project.image && (
                     <img 
-                      src={project.image} 
+                      src={`${IMAGE_BASE_URL}${project.image}`} 
                       alt={project.title} 
                       className="project-image"
                     />
@@ -213,7 +214,7 @@ const Projects = () => {
               </div>
               {selectedProject.image && (
                 <img 
-                  src={selectedProject.image} 
+                  src={`${IMAGE_BASE_URL}${selectedProject.image}`} 
                   alt={selectedProject.title} 
                   className="modal-image"
                 />
