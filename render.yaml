@@ -26,6 +26,17 @@ services:
     env: static
     buildCommand: npm install && npm run build
     staticPublishPath: build
+    routes:
+      - source: /static/*
+        destination: /static/*
+      - source: /assets/*
+        destination: /assets/*
+      - source: /manifest.json
+        destination: /manifest.json
+      - source: /favicon.ico
+        destination: /favicon.ico
+      - source: /(.*)
+        destination: /index.html
     envVars:
       - key: REACT_APP_API_URL
         value: ${REACT_APP_API_URL}
