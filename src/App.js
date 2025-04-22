@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ProjectProvider } from './context/ProjectContext';
 import Home from './Home';
 import About from './About';
@@ -12,6 +12,17 @@ import Contact from './Contact';
 import Admin from './components/Admin';
 
 function App() {
+  React.useEffect(() => {
+    // Check if we have a redirect URL stored
+    const redirectUrl = sessionStorage.getItem('redirectUrl');
+    if (redirectUrl) {
+      // Clear it
+      sessionStorage.removeItem('redirectUrl');
+      // Use react-router to navigate
+      window.history.replaceState(null, '', redirectUrl);
+    }
+  }, []);
+
   return (
     <ProjectProvider>
       <Router>
