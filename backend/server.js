@@ -254,9 +254,8 @@ app.post('/api/contact', async (req, res) => {
             submissions: []
         };
         const userSession = req.session[clientIp];
-        // Reset maxAttempts to 5 to fix the counter issue
         const maxAttempts = 5;
-        const maxHourlySubmissions = 3; // Maximum submissions per hour - STRICTLY ENFORCED
+        const maxHourlySubmissions = 3;
         const maxDailySubmissions = 10;
         const now = Date.now();
 
@@ -264,15 +263,9 @@ app.post('/api/contact', async (req, res) => {
             timestamp => now - timestamp < 24 * 60 * 60 * 1000
         );
 
-        // Check if user has already made 3 submissions in the last hour
         const hourlySubmissions = userSession.submissions.filter(
             timestamp => now - timestamp < 60 * 60 * 1000
         );
-        
-        // Log for debugging
-        console.log('STRICT CHECK - Current hourly submissions:', hourlySubmissions.length, 'of', maxHourlySubmissions);
-        
-        // STRICT ENFORCEMENT: Block if already at or above the limit (3)
         if (hourlySubmissions.length >= maxHourlySubmissions) {
             console.log('Hourly submission limit reached:', { ip: clientIp, submissions: hourlySubmissions.length });
             return res.status(429).json({
@@ -306,21 +299,10 @@ app.post('/api/contact', async (req, res) => {
             // Get token from request body
             const { token } = req.body;
             if (!token) {
-                // Increment attempts counter
                 userSession.attempts += 1;
-                
-                // Ensure we don't exceed maxAttempts
-                if (userSession.attempts > maxAttempts) {
-                    userSession.attempts = maxAttempts;
-                }
-                
-                // Calculate remaining attempts
-                const remainingAttempts = Math.max(0, maxAttempts - userSession.attempts);
-                
-                console.log('Missing CAPTCHA token:', { attempts: userSession.attempts, remaining: remainingAttempts });
-                
+                console.log('Missing CAPTCHA token:', { attempts: userSession.attempts });
                 return res.status(400).json({
-                    error: `Invalid CAPTCHA. Attempts remaining: ${remainingAttempts}`
+                    error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
                 });
             }
             
@@ -328,21 +310,10 @@ app.post('/api/contact', async (req, res) => {
             correctAnswer = Buffer.from(token, 'base64').toString('ascii');
             
             if (captchaAnswer !== correctAnswer) {
-                // Increment attempts counter
                 userSession.attempts += 1;
-                
-                // Ensure we don't exceed maxAttempts
-                if (userSession.attempts > maxAttempts) {
-                    userSession.attempts = maxAttempts;
-                }
-                
-                // Calculate remaining attempts
-                const remainingAttempts = Math.max(0, maxAttempts - userSession.attempts);
-                
-                console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts, remaining: remainingAttempts });
-                
+                console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
                 return res.status(400).json({
-                    error: `Incorrect CAPTCHA selection. Attempts remaining: ${remainingAttempts}`
+                    error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
                 });
             }
         } catch (error) {
@@ -373,18 +344,8 @@ app.post('/api/contact', async (req, res) => {
         await transporter.sendMail(mailOptions);
         console.log('Email sent:', { name, email, message });
 
-        // Add this submission timestamp to the list
         userSession.submissions.push(now);
-        
-        // Reset attempts counter
         userSession.attempts = 0;
-        
-        // Log the submission count for debugging
-        const newHourlySubmissions = userSession.submissions.filter(
-            timestamp => now - timestamp < 60 * 60 * 1000
-        );
-        console.log('After submission, hourly count:', newHourlySubmissions.length, 'of', maxHourlySubmissions);
-        
         // No need to clear session captcha answer anymore
 
         res.status(200).json({ message: 'Message sent successfully' });
