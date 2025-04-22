@@ -249,12 +249,23 @@ app.post('/api/contact', async (req, res) => {
         console.log('Raw request body:', req.body);
         const { name, email, message, captchaAnswer } = req.body;
 
-        req.session[clientIp] = req.session[clientIp] || {
-            attempts: 0,
-            submissions: []
-        };
+        // Initialize or retrieve user session
+        if (!req.session[clientIp]) {
+            req.session[clientIp] = {
+                attempts: 0,
+                submissions: [],
+                lastReset: Date.now() // Track when attempts were last reset
+            };
+        }
+        
+        // Reset attempts counter if it's been more than an hour
+        const ONE_HOUR = 60 * 60 * 1000;
+        if (Date.now() - req.session[clientIp].lastReset > ONE_HOUR) {
+            req.session[clientIp].attempts = 0;
+            req.session[clientIp].lastReset = Date.now();
+        }
         const userSession = req.session[clientIp];
-        const maxAttempts = 5;
+        const maxAttempts = 5; // Maximum CAPTCHA attempts
         const maxHourlySubmissions = 3;
         const maxDailySubmissions = 10;
         const now = Date.now();
@@ -266,6 +277,8 @@ app.post('/api/contact', async (req, res) => {
         const hourlySubmissions = userSession.submissions.filter(
             timestamp => now - timestamp < 60 * 60 * 1000
         );
+        
+        // Check BEFORE processing this submission
         if (hourlySubmissions.length >= maxHourlySubmissions) {
             console.log('Hourly submission limit reached:', { ip: clientIp, submissions: hourlySubmissions.length });
             return res.status(429).json({
@@ -344,7 +357,23 @@ app.post('/api/contact', async (req, res) => {
         await transporter.sendMail(mailOptions);
         console.log('Email sent:', { name, email, message });
 
+        // Add the current submission timestamp FIRST
         userSession.submissions.push(now);
+        
+        // Now check if we've exceeded the limit AFTER adding this submission
+        const updatedHourlySubmissions = userSession.submissions.filter(
+            timestamp => now - timestamp < 60 * 60 * 1000
+        );
+        
+        if (updatedHourlySubmissions.length > maxHourlySubmissions) {
+            // Remove the submission we just added
+            userSession.submissions.pop();
+            console.log('Hourly submission limit reached (post-check):', { ip: clientIp, submissions: hourlySubmissions.length });
+            return res.status(429).json({
+                error: `You've reached the hourly limit of ${maxHourlySubmissions} submissions. Please try again later.`
+            });
+        }
+        
         userSession.attempts = 0;
         // No need to clear session captcha answer anymore
 
