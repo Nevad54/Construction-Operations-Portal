@@ -318,10 +318,23 @@ app.delete('/api/projects/:id', async (req, res) => {
 // Contact Form Route
 app.post('/api/contact', async (req, res) => {
     try {
+        console.log('Received contact form submission:', {
+            name: req.body.name,
+            email: req.body.email,
+            hasMessage: !!req.body.message,
+            hasRecaptcha: !!req.body.recaptchaToken
+        });
+
         const clientIp = requestIp.getClientIp(req);
         const { name, email, message, recaptchaToken } = req.body;
 
         if (!name || !email || !message || !recaptchaToken) {
+            console.log('Missing required fields:', {
+                name: !!name,
+                email: !!email,
+                message: !!message,
+                recaptchaToken: !!recaptchaToken
+            });
             return res.status(400).json({
                 error: 'All fields are required, including reCAPTCHA verification.'
             });
@@ -329,9 +342,12 @@ app.post('/api/contact', async (req, res) => {
 
         // Verify reCAPTCHA token
         const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh';
+        console.log('Verifying reCAPTCHA with secret:', recaptchaSecret.substring(0, 10) + '...');
+        
         const verificationURL = 'https://www.google.com/recaptcha/api/siteverify';
         const verificationBody = `secret=${recaptchaSecret}&response=${recaptchaToken}`;
 
+        console.log('Sending reCAPTCHA verification request...');
         const recaptchaResponse = await fetch(verificationURL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -339,13 +355,16 @@ app.post('/api/contact', async (req, res) => {
         });
 
         const recaptchaData = await recaptchaResponse.json();
+        console.log('reCAPTCHA verification response:', recaptchaData);
 
         if (!recaptchaData.success) {
+            console.log('reCAPTCHA verification failed:', recaptchaData['error-codes']);
             return res.status(400).json({
                 error: 'reCAPTCHA verification failed. Please try again.'
             });
         }
 
+        console.log('Setting up email transport...');
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -365,12 +384,21 @@ app.post('/api/contact', async (req, res) => {
                    <p><strong>Message:</strong> ${message}</p>`
         };
 
+        console.log('Sending email...');
         await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully');
+        
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (err) {
         console.error('Error processing contact form:', err);
+        console.error('Error details:', {
+            name: err.name,
+            message: err.message,
+            stack: err.stack
+        });
         res.status(500).json({
-            error: 'Failed to send message. Please try again.'
+            error: 'Failed to send message. Please try again.',
+            details: process.env.NODE_ENV === 'development' ? err.message : undefined
         });
     }
 });

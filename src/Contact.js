@@ -123,6 +123,13 @@ const Contact = () => {
       setSubmitStatus(null);
       
       try {
+        console.log('Submitting form with data:', {
+          name: formData.name,
+          email: formData.email,
+          hasMessage: !!formData.message,
+          hasRecaptcha: !!recaptchaToken
+        });
+
         const response = await fetch(`${API_BASE_URL}/api/contact`, {
           method: 'POST',
           headers: {
@@ -135,6 +142,7 @@ const Contact = () => {
         });
 
         const data = await response.json();
+        console.log('Server response:', data);
 
         if (response.ok) {
           setSubmitStatus({ type: 'success', message: 'Message sent successfully!' });
@@ -143,6 +151,7 @@ const Contact = () => {
             recaptchaRef.current.reset();
           }
         } else {
+          console.error('Server error:', data);
           setSubmitStatus({ 
             type: 'error', 
             message: data.error || 'Failed to send message. Please try again.'
