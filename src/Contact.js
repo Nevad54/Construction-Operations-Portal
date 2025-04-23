@@ -241,6 +241,34 @@ const Contact = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    // Initialize reCAPTCHA only once when component mounts
+    const loadRecaptcha = () => {
+      if (window.grecaptcha && recaptchaRef.current) {
+        recaptchaRef.current.reset();
+      }
+    };
+
+    // Load reCAPTCHA script if not already loaded
+    if (!window.grecaptcha) {
+      const script = document.createElement('script');
+      script.src = 'https://www.google.com/recaptcha/api.js';
+      script.async = true;
+      script.defer = true;
+      script.onload = loadRecaptcha;
+      document.head.appendChild(script);
+    } else {
+      loadRecaptcha();
+    }
+
+    return () => {
+      // Cleanup if needed
+      if (window.grecaptcha && recaptchaRef.current) {
+        recaptchaRef.current.reset();
+      }
+    };
+  }, []); // Empty dependency array means this only runs once on mount
+
   return (
     <div>
       <Sidebar
