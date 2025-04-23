@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -19,9 +20,14 @@ const Contact = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
+<<<<<<< HEAD
   const [captchaImages, setCaptchaImages] = useState([]);
   const [selectedImages, setSelectedImages] = useState([]);
   const [captchaQuestion, setCaptchaQuestion] = useState('');
+=======
+  const [recaptchaToken, setRecaptchaToken] = useState('');
+  const recaptchaRef = useRef(null);
+>>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
   const [attempts, setAttempts] = useState(3);
 
   const location = useLocation();
@@ -78,6 +84,7 @@ const Contact = () => {
     };
   }, [isSidebarActive]);
 
+<<<<<<< HEAD
   useEffect(() => {
     fetchCaptcha();
   }, []);
@@ -101,6 +108,10 @@ const Contact = () => {
       }
       return [...prev, imageId];
     });
+=======
+  const handleRecaptchaChange = (token) => {
+    setRecaptchaToken(token);
+>>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
   };
 
   const handleChange = (e) => {
@@ -149,7 +160,14 @@ const Contact = () => {
           setFormData({ name: '', email: '', message: '' });
           setSelectedImages([]);
           setErrors({});
+<<<<<<< HEAD
           fetchCaptcha();
+=======
+          // Reset reCAPTCHA
+          if (recaptchaRef.current) {
+            recaptchaRef.current.reset();
+          }
+>>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
         } else {
           setAttempts(prev => prev - 1);
           setSubmitStatus({ 
@@ -163,7 +181,14 @@ const Contact = () => {
             });
             setIsSubmitting(true);
           } else {
+<<<<<<< HEAD
             fetchCaptcha();
+=======
+            // Reset reCAPTCHA on error
+            if (recaptchaRef.current) {
+              recaptchaRef.current.reset();
+            }
+>>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
           }
         }
       } catch (error) {
@@ -251,6 +276,7 @@ const Contact = () => {
                 </div>
                 
                 <div className="form-group captcha-group">
+<<<<<<< HEAD
                   <p className="captcha-question">{captchaQuestion}</p>
                   <div className="captcha-images">
                     {captchaImages.map((image, index) => (
@@ -263,6 +289,13 @@ const Contact = () => {
                       />
                     ))}
                   </div>
+=======
+                  <ReCAPTCHA
+                    ref={recaptchaRef}
+                    sitekey="6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02"
+                    onChange={handleRecaptchaChange}
+                  />
+>>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
                   {errors.captcha && <span className="error">{errors.captcha}</span>}
                 </div>
 

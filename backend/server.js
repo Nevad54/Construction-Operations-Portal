@@ -323,13 +323,14 @@ app.post('/api/contact', async (req, res) => {
     try {
         const clientIp = requestIp.getClientIp(req);
         console.log('Raw request body:', req.body);
-        const { name, email, message, captchaAnswer } = req.body;
+        const { name, email, message, recaptchaToken } = req.body;
 
         req.session[clientIp] = req.session[clientIp] || {
             attempts: 0,
             submissions: []
         };
         const userSession = req.session[clientIp];
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -367,6 +368,9 @@ app.post('/api/contact', async (req, res) => {
 =======
         const maxAttempts = 5;
 >>>>>>> parent of 28e1049 (Fix rate limiting and CAPTCHA counter issues)
+=======
+        const maxAttempts = 3;
+>>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
         const maxHourlySubmissions = 3;
         const maxDailySubmissions = 10;
         const now = Date.now();
@@ -413,10 +417,11 @@ app.post('/api/contact', async (req, res) => {
             return res.status(429).json({ error: 'You have no attempts remaining. Please try again later.' });
         }
 
-        if (!name || !email || !message || !captchaAnswer) {
+        if (!name || !email || !message || !recaptchaToken) {
             userSession.attempts += 1;
-            console.log('Missing fields:', { name, email, message, captchaAnswer, attempts: userSession.attempts });
+            console.log('Missing fields:', { name, email, message, recaptchaToken, attempts: userSession.attempts });
             return res.status(400).json({
+<<<<<<< HEAD
                 error: 'All fields are required, including CAPTCHA.'
             });
         }
@@ -452,9 +457,28 @@ app.post('/api/contact', async (req, res) => {
             }
         } catch (error) {
 >>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
+=======
+                error: 'All fields are required, including reCAPTCHA verification.'
+            });
+        }
+
+        // Verify reCAPTCHA token
+        const recaptchaSecret = '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh';
+        const recaptchaResponse = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `secret=${recaptchaSecret}&response=${recaptchaToken}`
+        });
+
+        const recaptchaData = await recaptchaResponse.json();
+        if (!recaptchaData.success) {
+>>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
             userSession.attempts += 1;
-            console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
+            console.log('reCAPTCHA verification failed:', { recaptchaData, attempts: userSession.attempts });
             return res.status(400).json({
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -472,6 +496,9 @@ app.post('/api/contact', async (req, res) => {
 =======
                 error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
 >>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
+=======
+                error: 'reCAPTCHA verification failed. Please try again.'
+>>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
             });
         }
 
@@ -497,7 +524,6 @@ app.post('/api/contact', async (req, res) => {
 
         userSession.submissions.push(now);
         userSession.attempts = 0;
-        req.session.captchaAnswer = null;
 
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (err) {
