@@ -129,75 +129,64 @@ const Contact = () => {
     }
     if (!formData.message.trim()) newErrors.message = 'Message is required';
     if (!recaptchaToken) newErrors.captcha = 'Please complete the reCAPTCHA verification';
-    return newErrors;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formErrors = validateForm();
-    
-    if (Object.keys(formErrors).length === 0) {
-      setIsSubmitting(true);
-      setSubmitStatus(null);
-      
-      try {
-        console.log('Submitting form with data:', {
-          name: formData.name,
-          email: formData.email,
-          hasMessage: !!formData.message,
-          hasRecaptcha: !!recaptchaToken
-        });
+    setErrors({});
+    setSubmitStatus(null);
+
+    if (!validateForm()) {
+        return;
+    }
+
+    try {
+        if (!recaptchaRef.current) {
+            setErrors(prev => ({ ...prev, captcha: 'Please complete the reCAPTCHA verification' }));
+            return;
+        }
+
+        const token = await recaptchaRef.current.executeAsync();
+        if (!token) {
+            setErrors(prev => ({ ...prev, captcha: 'Failed to verify reCAPTCHA. Please try again.' }));
+            return;
+        }
 
         const response = await fetch(`${API_BASE_URL}/api/contact`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...formData,
-            recaptchaToken
-          }),
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                ...formData,
+                recaptchaToken: token
+            }),
         });
 
         const data = await response.json();
-        console.log('Server response:', data);
 
-        if (response.ok) {
-          setSubmitStatus({ 
-            type: 'success', 
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to send message');
+        }
+
+        setSubmitStatus({
+            type: 'success',
             message: data.message || 'Message sent successfully!'
-          });
-          setFormData({ name: '', email: '', message: '' });
-          if (recaptchaRef.current) {
-            recaptchaRef.current.reset();
-          }
-          setRecaptchaToken('');
-        } else {
-          console.error('Server error:', data);
-          setSubmitStatus({ 
-            type: 'error', 
-            message: data.error || 'Failed to send message. Please try again.'
-          });
-          if (recaptchaRef.current) {
-            recaptchaRef.current.reset();
-          }
-          setRecaptchaToken('');
-        }
-      } catch (error) {
-        console.error('Error submitting form:', error);
-        setSubmitStatus({ 
-          type: 'error', 
-          message: 'An error occurred. Please try again later.'
         });
-        if (recaptchaRef.current) {
-          recaptchaRef.current.reset();
-        }
-        setRecaptchaToken('');
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else {
-      setErrors(formErrors);
+        setFormData({
+            name: '',
+            email: '',
+            message: ''
+        });
+        recaptchaRef.current.reset();
+    } catch (err) {
+        setSubmitStatus({
+            type: 'error',
+            message: err.message || 'Failed to send message. Please try again.'
+        });
+        console.error('Contact form error:', err);
     }
   };
 
