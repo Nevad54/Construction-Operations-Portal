@@ -1559,19 +1559,25 @@ footer {
 
 .attempts-info {
     margin: 10px 0;
-    padding: 8px;
+    padding: 12px;
     border-radius: 4px;
-    background-color: #f8f9fa;
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
     text-align: center;
 }
 
 .attempts-info p {
     margin: 0;
     font-size: 14px;
-    color: #666;
+    color: #856404;
+    font-weight: 500;
 }
 
 .attempts-info p.error {
-    color: #dc3545;
-    font-weight: 500;
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 8px;
+    border-radius: 4px;
+    margin-top: 5px;
 }
