@@ -2,8 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useProjects } from '../context/ProjectContext';
 import '../styles/Admin.css';
 
+// Get the base URL for images based on environment
+const IMAGE_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://mastertech-app.onrender.com'  // Your Render backend URL
+  : 'http://localhost:5000';  // Local development URL
+
 const Admin = () => {
-    const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
     const { projects, addProject, updateProject, deleteProject } = useProjects();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -305,7 +309,7 @@ const Admin = () => {
                         onChange={e => editingProject ? handleImageChange(e, true) : handleImageChange(e)}
                       />
                       {(editingProject ? editImagePreview : imagePreview) && (
-                        <img src={editingProject ? editImagePreview : imagePreview} alt="Preview" className="image-preview" />
+                        <img src={editingProject ? `${IMAGE_BASE_URL}${editImagePreview}` : imagePreview} alt="Preview" className="image-preview" />
                       )}
                       <select
                         name="status"
