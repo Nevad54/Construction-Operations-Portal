@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -14,12 +14,13 @@ const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    message: ''
+    message: '',
+    recaptchaToken: ''
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
-
+  const recaptchaRef = React.createRef();
 
   const location = useLocation();
 
@@ -80,48 +81,6 @@ const Contact = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  // reCAPTCHA handling
-  const [recaptchaToken, setRecaptchaToken] = useState('');
-  const recaptchaRef = useRef(null);
-  const captchaContainerRef = useRef(null);
-
-  // Initialize reCAPTCHA when component mounts
-  useEffect(() => {
-    // Create a global callback function for reCAPTCHA
-    window.onRecaptchaSuccess = (token) => {
-      console.log('reCAPTCHA verified:', token);
-      setRecaptchaToken(token);
-    };
-
-    // Render reCAPTCHA explicitly
-    const renderReCaptcha = () => {
-      if (window.grecaptcha && captchaContainerRef.current) {
-        try {
-          window.grecaptcha.render(captchaContainerRef.current, {
-            sitekey: '6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02',
-            callback: 'onRecaptchaSuccess'
-          });
-        } catch (error) {
-          console.error('Error rendering reCAPTCHA:', error);
-        }
-      }
-    };
-
-    // If grecaptcha is already loaded
-    if (window.grecaptcha && window.grecaptcha.render) {
-      renderReCaptcha();
-    } else {
-      // Add a callback for when it loads
-      window.onloadCallback = renderReCaptcha;
-    }
-
-    // Cleanup function
-    return () => {
-      delete window.onRecaptchaSuccess;
-      delete window.onloadCallback;
-    };
-  }, []);
-
   const validateForm = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
@@ -131,11 +90,19 @@ const Contact = () => {
       newErrors.email = 'Email is invalid';
     }
     if (!formData.message.trim()) newErrors.message = 'Message is required';
-    if (!recaptchaToken) newErrors.captcha = 'Please complete the reCAPTCHA verification';
+    if (!formData.recaptchaToken) newErrors.captcha = 'Please complete the reCAPTCHA verification';
     return newErrors;
   };
 
 
+
+  const handleRecaptchaChange = (token) => {
+    setFormData(prev => ({ ...prev, recaptchaToken: token }));
+    // Clear any previous captcha errors
+    if (errors.captcha) {
+      setErrors(prev => ({ ...prev, captcha: null }));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -146,23 +113,19 @@ const Contact = () => {
       setSubmitStatus(null);
       
       try {
-        const response = await fetch(`${API_BASE_URL}/api/contact`, { credentials: 'include',
+        const response = await fetch(`${API_BASE_URL}/api/contact`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            ...formData,
-            recaptchaToken
-          }),
+          body: JSON.stringify(formData),
         });
 
         const data = await response.json();
 
         if (response.ok) {
           setSubmitStatus({ type: 'success', message: 'Thank you for your message! We will get back to you soon.' });
-          setFormData({ name: '', email: '', message: '' });
-          setRecaptchaToken('');
+          setFormData({ name: '', email: '', message: '', recaptchaToken: '' });
           setErrors({});
           // Reset reCAPTCHA
           if (window.grecaptcha) {
@@ -176,6 +139,10 @@ const Contact = () => {
           if (response.status === 429) {
             // Rate limit reached, disable form temporarily
             setIsSubmitting(true);
+            // Reset reCAPTCHA
+            if (window.grecaptcha) {
+              window.grecaptcha.reset();
+            }
           }
         }
       } catch (error) {
@@ -261,12 +228,22 @@ const Contact = () => {
                   ></textarea>
                   {errors.message && <span id="message-error" className="error">{errors.message}</span>}
                 </div>
-                
                 <div className="form-group captcha-group">
-                  <div ref={captchaContainerRef} id="recaptcha-container"></div>
+                  <label>Verification</label>
+                  <div className="g-recaptcha" 
+                    data-sitekey="6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02"
+                    data-callback="onRecaptchaSuccess"
+                    ref={recaptchaRef}>
+                  </div>
                   {errors.captcha && <span id="captcha-error" className="error">{errors.captcha}</span>}
                 </div>
-
+                <script>
+                  {`
+                    window.onRecaptchaSuccess = function(token) {
+                      ${handleRecaptchaChange.toString().replace('handleRecaptchaChange', '')}
+                    }
+                  `}
+                </script>
                 <button 
                   type="submit" 
                   className="btn" 
