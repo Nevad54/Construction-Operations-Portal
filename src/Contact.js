@@ -14,11 +14,8 @@ const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    message: '',
-    captchaAnswer: ''
+    message: ''
   });
-  const [captchaQuestion, setCaptchaQuestion] = useState('');
-  const [correctAnswer, setCorrectAnswer] = useState('');
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
@@ -83,27 +80,22 @@ const Contact = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  // Generate a simple math CAPTCHA
-  const generateCaptcha = () => {
-    const operations = [
-      { op: '+', func: (a, b) => a + b },
-      { op: '-', func: (a, b) => a - b },
-      { op: '*', func: (a, b) => a * b }
-    ];
-    
-    const num1 = Math.floor(Math.random() * 10) + 1;
-    const num2 = Math.floor(Math.random() * 10) + 1;
-    const operation = operations[Math.floor(Math.random() * (num2 > 5 ? 2 : 3))];
-    
-    const question = `What is ${num1} ${operation.op} ${num2}?`;
-    const answer = operation.func(num1, num2).toString();
-    
-    setCaptchaQuestion(question);
-    setCorrectAnswer(answer);
-  };
-  
+  // reCAPTCHA handling
+  const [recaptchaToken, setRecaptchaToken] = useState('');
+  const recaptchaRef = useRef(null);
+
+  // Initialize reCAPTCHA when component mounts
   useEffect(() => {
-    generateCaptcha();
+    // Create a global callback function for reCAPTCHA
+    window.onRecaptchaSuccess = (token) => {
+      console.log('reCAPTCHA verified:', token);
+      setRecaptchaToken(token);
+    };
+
+    // Cleanup function
+    return () => {
+      delete window.onRecaptchaSuccess;
+    };
   }, []);
 
   const validateForm = () => {
@@ -115,11 +107,7 @@ const Contact = () => {
       newErrors.email = 'Email is invalid';
     }
     if (!formData.message.trim()) newErrors.message = 'Message is required';
-    if (!formData.captchaAnswer.trim()) newErrors.captcha = 'Please answer the security question';
-    else if (formData.captchaAnswer.trim() !== correctAnswer) {
-      newErrors.captcha = 'Incorrect answer, please try again';
-      generateCaptcha(); // Generate a new CAPTCHA after incorrect answer
-    }
+    if (!recaptchaToken) newErrors.captcha = 'Please complete the reCAPTCHA verification';
     return newErrors;
   };
 
@@ -139,16 +127,23 @@ const Contact = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            ...formData,
+            recaptchaToken
+          }),
         });
 
         const data = await response.json();
 
         if (response.ok) {
           setSubmitStatus({ type: 'success', message: 'Thank you for your message! We will get back to you soon.' });
-          setFormData({ name: '', email: '', message: '', captchaAnswer: '' });
+          setFormData({ name: '', email: '', message: '' });
+          setRecaptchaToken('');
           setErrors({});
-          generateCaptcha();
+          // Reset reCAPTCHA
+          if (window.grecaptcha) {
+            window.grecaptcha.reset();
+          }
         } else {
           setSubmitStatus({ 
             type: 'error', 
@@ -244,17 +239,11 @@ const Contact = () => {
                 </div>
                 
                 <div className="form-group captcha-group">
-                  <label htmlFor="captchaAnswer">Security Question: {captchaQuestion}</label>
-                  <input
-                    type="text"
-                    id="captchaAnswer"
-                    name="captchaAnswer"
-                    value={formData.captchaAnswer}
-                    onChange={handleChange}
-                    aria-required="true"
-                    aria-describedby="captcha-error"
-                    disabled={isSubmitting}
-                  />
+                  <div 
+                    className="g-recaptcha" 
+                    data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" 
+                    data-callback="onRecaptchaSuccess"
+                  ></div>
                   {errors.captcha && <span id="captcha-error" className="error">{errors.captcha}</span>}
                 </div>
 
