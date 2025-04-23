@@ -68,6 +68,7 @@ app.get('/', (req, res) => {
 
 // CAPTCHA Route
 app.get('/api/captcha', (req, res) => {
+<<<<<<< HEAD
     try {
         // Generate a random question
         const questions = [
@@ -79,6 +80,16 @@ app.get('/api/captcha', (req, res) => {
             "Select all squares with buildings"
         ];
         const question = questions[Math.floor(Math.random() * questions.length)];
+=======
+    console.log('HIT /api/captcha');
+    const imageOptions = [
+        { src: '/uploads/dog.jpg', id: 'dog', label: 'Dog' },
+        { src: '/uploads/cat.jpg', id: 'cat', label: 'Cat' },
+        { src: '/uploads/bird.jpg', id: 'bird', label: 'Bird' }
+    ];
+    const correctIndex = Math.floor(Math.random() * imageOptions.length);
+    const correctAnswer = imageOptions[correctIndex].id;
+>>>>>>> parent of ba26be8 (Disable CAPTCHA check for now)
 
         // Generate 9 random images (3x3 grid)
         const images = Array.from({ length: 9 }, (_, index) => ({
@@ -427,6 +438,7 @@ app.post('/api/contact', async (req, res) => {
         }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         const correctAnswer = req.session.captchaAnswer;
         if (!correctAnswer || !Array.isArray(captchaAnswer) || !Array.isArray(correctAnswer) || 
             captchaAnswer.length !== correctAnswer.length || 
@@ -499,6 +511,14 @@ app.post('/api/contact', async (req, res) => {
 =======
                 error: 'reCAPTCHA verification failed. Please try again.'
 >>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
+=======
+        const correctAnswer = req.session.captchaAnswer;
+        if (!correctAnswer || captchaAnswer !== correctAnswer) {
+            userSession.attempts += 1;
+            console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
+            return res.status(400).json({
+                error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
+>>>>>>> parent of ba26be8 (Disable CAPTCHA check for now)
             });
         }
 
