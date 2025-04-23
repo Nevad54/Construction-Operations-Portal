@@ -237,20 +237,10 @@ app.get('/api/projects', async (req, res) => {
     }
 });
 
-app.get('/api/projects/featured', async (req, res) => {
-    try {
-        const featuredProjects = await Project.find({ featured: true });
-        res.json(featuredProjects);
-    } catch (err) {
-        console.error('Error fetching featured projects:', err);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
 // Project Routes
 app.post('/api/projects', upload.single('image'), async (req, res) => {
     try {
-        const { title, description, location, owner, date, status, featured } = req.body;
+        const { title, description, location, owner, date, status } = req.body;
         const project = new Project({
             title,
             description,
@@ -258,8 +248,7 @@ app.post('/api/projects', upload.single('image'), async (req, res) => {
             owner,
             date: date ? new Date(date) : null,
             image: req.file ? `/uploads/${req.file.filename}` : null,
-            status: status || 'ongoing',
-            featured: featured === 'true' || false
+            status: status || 'ongoing'
         });
         await project.save();
         res.status(201).json(project);
@@ -273,18 +262,15 @@ app.put('/api/projects/:id', upload.single('image'), async (req, res) => {
     try {
         console.log('PUT Received body:', req.body);
         console.log('PUT Received file:', req.file);
-        const { title, description, location, owner, date, status, featured } = req.body;
-        console.log('Raw featured value:', featured, 'Type:', typeof featured);
+        const { title, description, location, owner, date, status } = req.body;
         const updatedData = {
             title,
             description,
             location,
             owner,
             date: date ? new Date(date) : null,
-            status: status || 'ongoing',
-            featured: featured === 'true' || featured === true || featured === 'on'
+            status: status || 'ongoing'
         };
-        console.log('Computed featured value:', updatedData.featured);
         if (req.file) updatedData.image = `/uploads/${req.file.filename}`;
         const updatedProject = await Project.findByIdAndUpdate(
             req.params.id,

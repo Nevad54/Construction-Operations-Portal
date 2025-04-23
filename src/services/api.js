@@ -10,14 +10,6 @@ export const api = {
         return response.json();
     },
 
-    getFeaturedProjects: async () => {
-        const response = await fetch(`${API_BASE_URL}/api/projects/featured`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    },
-
     createProject: async (projectData) => {
         const formData = new FormData();
         Object.keys(projectData).forEach(key => {

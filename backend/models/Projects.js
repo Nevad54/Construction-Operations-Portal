@@ -6,8 +6,7 @@ const projectSchema = new mongoose.Schema({
     location: String,
     date: Date,
     image: String,
-    status: String,
-    featured: Boolean
+    status: String
   });
 
 module.exports = mongoose.model('Project', projectSchema);
