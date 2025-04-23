@@ -81,13 +81,16 @@ const Contact = () => {
   useEffect(() => {
     // Load reCAPTCHA script
     const script = document.createElement('script');
-    script.src = 'https://www.google.com/recaptcha/api.js?render=6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02';
+    script.src = 'https://www.google.com/recaptcha/api.js';
     script.async = true;
     script.defer = true;
     document.head.appendChild(script);
 
     return () => {
-      document.head.removeChild(script);
+      const existingScript = document.querySelector('script[src="https://www.google.com/recaptcha/api.js"]');
+      if (existingScript) {
+        document.head.removeChild(existingScript);
+      }
     };
   }, []);
 
@@ -254,13 +257,15 @@ const Contact = () => {
                       console.log('reCAPTCHA expired');
                       setRecaptchaToken('');
                     }}
-                    onErrored={() => {
-                      console.error('reCAPTCHA error');
+                    onErrored={(err) => {
+                      console.error('reCAPTCHA error:', err);
                       setErrors(prev => ({
                         ...prev,
                         captcha: 'Error loading reCAPTCHA. Please refresh the page.'
                       }));
                     }}
+                    theme="light"
+                    size="normal"
                   />
                   {errors.captcha && <span className="error">{errors.captcha}</span>}
                 </div>
