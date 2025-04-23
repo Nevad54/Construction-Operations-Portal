@@ -11,6 +11,7 @@ const nodemailer = require('nodemailer');
 const requestIp = require('request-ip');
 const https = require('https');
 const querystring = require('querystring');
+const fetch = require('node-fetch');
 
 const Project = require('./models/Projects');
 
@@ -327,7 +328,7 @@ app.post('/api/contact', async (req, res) => {
         }
 
         // Verify reCAPTCHA token
-        const recaptchaSecret = '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh';
+        const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh';
         const verificationURL = 'https://www.google.com/recaptcha/api/siteverify';
         const verificationBody = `secret=${recaptchaSecret}&response=${recaptchaToken}`;
 
