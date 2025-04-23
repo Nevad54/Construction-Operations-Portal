@@ -43,13 +43,23 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../build')));
+app.use('/assets', express.static(path.join(__dirname, '../public/assets')));
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Serve assets with fallback
+const assetsPath = path.join(__dirname, '../assets');
+if (fs.existsSync(assetsPath)) {
+    app.use('/Uploads', express.static(assetsPath));
+} else {
+    console.log('Assets directory not found. Creating it...');
+    fs.mkdirSync(assetsPath, { recursive: true });
+    app.use('/Uploads', express.static(assetsPath));
+}
+
 // Static file paths
 const uploadsPath = path.join(__dirname, 'uploads');
-const assetsPath = path.join(__dirname, '../assets');
 const pagesPath = path.join(__dirname, '../pages');
 console.log('Uploads directory:', uploadsPath);
 console.log('Serving assets from:', assetsPath);
@@ -59,7 +69,7 @@ app.use('/assets', express.static(assetsPath));
 app.use('/pages', express.static(pagesPath));
 
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-random-secret-here',
+    secret: process.env.SESSION_SECRET || '70f1e04a35336b79732f2f034b101d4d',
     resave: false,
     saveUninitialized: false,
     cookie: { 
@@ -325,7 +335,6 @@ app.post('/api/contact', async (req, res) => {
             hasRecaptcha: !!req.body.recaptchaToken
         });
 
-        const clientIp = requestIp.getClientIp(req);
         const { name, email, message, recaptchaToken } = req.body;
 
         if (!name || !email || !message || !recaptchaToken) {
@@ -364,6 +373,15 @@ app.post('/api/contact', async (req, res) => {
             });
         }
 
+        // Check if email configuration is available
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            console.log('Email configuration missing. Skipping email send.');
+            return res.status(200).json({ 
+                message: 'Message received successfully (email sending disabled)',
+                debug: process.env.NODE_ENV === 'development' ? 'Email configuration missing' : undefined
+            });
+        }
+
         console.log('Setting up email transport...');
         const transporter = nodemailer.createTransport({
             host: 'smtp.gmail.com',
@@ -378,7 +396,7 @@ app.post('/api/contact', async (req, res) => {
         const mailOptions = {
             from: process.env.EMAIL_USER,
             replyTo: email,
-            to: process.env.CONTACT_EMAIL || 'carldavenquimoyog@gmail.com',
+            to: process.env.CONTACT_EMAIL || process.env.EMAIL_USER,
             subject: `New Contact Form Submission from ${name}`,
             text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
             html: `<p><strong>Name:</strong> ${name}</p>
