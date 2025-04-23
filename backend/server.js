@@ -439,6 +439,7 @@ app.post('/api/contact', async (req, res) => {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         const correctAnswer = req.session.captchaAnswer;
         if (!correctAnswer || !Array.isArray(captchaAnswer) || !Array.isArray(correctAnswer) || 
             captchaAnswer.length !== correctAnswer.length || 
@@ -512,12 +513,17 @@ app.post('/api/contact', async (req, res) => {
                 error: 'reCAPTCHA verification failed. Please try again.'
 >>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
 =======
+=======
+>>>>>>> parent of ba26be8 (Disable CAPTCHA check for now)
         const correctAnswer = req.session.captchaAnswer;
         if (!correctAnswer || captchaAnswer !== correctAnswer) {
             userSession.attempts += 1;
             console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
             return res.status(400).json({
                 error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
+<<<<<<< HEAD
+>>>>>>> parent of ba26be8 (Disable CAPTCHA check for now)
+=======
 >>>>>>> parent of ba26be8 (Disable CAPTCHA check for now)
             });
         }
