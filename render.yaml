@@ -3,9 +3,7 @@ services:
     name: mastertech-backend
     env: node
     rootDir: backend
-    buildCommand: |
-      npm install axios --save
-      npm install --production
+    buildCommand: npm install --production
     startCommand: node server.js
     envVars:
       - key: MONGO_URI
@@ -26,10 +24,7 @@ services:
   - type: web
     name: mastertech-frontend
     env: static
-    buildCommand: |
-      npm install react-google-recaptcha --save
-      npm install
-      npm run build
+    buildCommand: npm install && npm run build
     staticPublishPath: build
     envVars:
       - key: REACT_APP_API_URL
