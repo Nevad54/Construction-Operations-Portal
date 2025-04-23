@@ -68,19 +68,6 @@ app.get('/', (req, res) => {
 
 // CAPTCHA Route
 app.get('/api/captcha', (req, res) => {
-<<<<<<< HEAD
-    try {
-        // Generate a random question
-        const questions = [
-            "Select all squares with traffic lights",
-            "Select all squares with cars",
-            "Select all squares with bicycles",
-            "Select all squares with pedestrians",
-            "Select all squares with trees",
-            "Select all squares with buildings"
-        ];
-        const question = questions[Math.floor(Math.random() * questions.length)];
-=======
     console.log('HIT /api/captcha');
     const imageOptions = [
         { src: '/uploads/dog.jpg', id: 'dog', label: 'Dog' },
@@ -89,32 +76,27 @@ app.get('/api/captcha', (req, res) => {
     ];
     const correctIndex = Math.floor(Math.random() * imageOptions.length);
     const correctAnswer = imageOptions[correctIndex].id;
->>>>>>> parent of ba26be8 (Disable CAPTCHA check for now)
 
-        // Generate 9 random images (3x3 grid)
-        const images = Array.from({ length: 9 }, (_, index) => ({
-            id: index,
-            url: `/captcha-images/${Math.floor(Math.random() * 20)}.jpg` // Assuming you have 20 different images
-        }));
+    // Generate 9 random images (3x3 grid)
+    const images = Array.from({ length: 9 }, (_, index) => ({
+        id: index,
+        url: `/captcha-images/${Math.floor(Math.random() * 20)}.jpg` // Assuming you have 20 different images
+    }));
 
-        // Randomly select 2-4 correct images
-        const numCorrect = Math.floor(Math.random() * 3) + 2; // 2 to 4 correct images
-        const correctAnswers = images
-            .sort(() => Math.random() - 0.5)
-            .slice(0, numCorrect)
-            .map(img => img.id);
+    // Randomly select 2-4 correct images
+    const numCorrect = Math.floor(Math.random() * 3) + 2; // 2 to 4 correct images
+    const correctAnswers = images
+        .sort(() => Math.random() - 0.5)
+        .slice(0, numCorrect)
+        .map(img => img.id);
 
-        // Store the correct answers in the session
-        req.session.captchaAnswer = correctAnswers;
+    // Store the correct answers in the session
+    req.session.captchaAnswer = correctAnswers;
 
-        res.json({
-            question,
-            images
-        });
-    } catch (error) {
-        console.error('Error generating CAPTCHA:', error);
-        res.status(500).json({ error: 'Failed to generate CAPTCHA' });
-    }
+    res.json({
+        question: imageOptions[correctIndex].label,
+        images
+    });
 });
 
 // Basic Auth for Admin Page
@@ -341,47 +323,7 @@ app.post('/api/contact', async (req, res) => {
             submissions: []
         };
         const userSession = req.session[clientIp];
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
         const maxAttempts = 3;
-=======
-        const maxAttempts = 5;
->>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
-=======
-        const maxAttempts = 5;
->>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
-=======
-        const maxAttempts = 5;
->>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
-=======
-        const maxAttempts = 5;
->>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
-=======
-        const maxAttempts = 5;
->>>>>>> parent of 28e1049 (Fix rate limiting and CAPTCHA counter issues)
-=======
-        const maxAttempts = 5;
->>>>>>> parent of 28e1049 (Fix rate limiting and CAPTCHA counter issues)
-=======
-        const maxAttempts = 5;
->>>>>>> parent of 28e1049 (Fix rate limiting and CAPTCHA counter issues)
-=======
-        const maxAttempts = 5;
->>>>>>> parent of 28e1049 (Fix rate limiting and CAPTCHA counter issues)
-=======
-        const maxAttempts = 5;
->>>>>>> parent of 28e1049 (Fix rate limiting and CAPTCHA counter issues)
-=======
-        const maxAttempts = 3;
->>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
         const maxHourlySubmissions = 3;
         const maxDailySubmissions = 10;
         const now = Date.now();
@@ -393,22 +335,7 @@ app.post('/api/contact', async (req, res) => {
         const hourlySubmissions = userSession.submissions.filter(
             timestamp => now - timestamp < 60 * 60 * 1000
         );
-<<<<<<< HEAD
-=======
-        console.log('Current hourly submissions:', hourlySubmissions.length, 'of', maxHourlySubmissions);
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> parent of 28e1049 (Fix rate limiting and CAPTCHA counter issues)
-=======
->>>>>>> parent of 28e1049 (Fix rate limiting and CAPTCHA counter issues)
-=======
->>>>>>> parent of 28e1049 (Fix rate limiting and CAPTCHA counter issues)
-=======
->>>>>>> parent of 28e1049 (Fix rate limiting and CAPTCHA counter issues)
-=======
->>>>>>> parent of 28e1049 (Fix rate limiting and CAPTCHA counter issues)
+
         if (hourlySubmissions.length >= maxHourlySubmissions) {
             console.log('Hourly submission limit reached:', { ip: clientIp, submissions: hourlySubmissions.length });
             return res.status(429).json({
@@ -432,45 +359,6 @@ app.post('/api/contact', async (req, res) => {
             userSession.attempts += 1;
             console.log('Missing fields:', { name, email, message, recaptchaToken, attempts: userSession.attempts });
             return res.status(400).json({
-<<<<<<< HEAD
-                error: 'All fields are required, including CAPTCHA.'
-            });
-        }
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-        const correctAnswer = req.session.captchaAnswer;
-        if (!correctAnswer || !Array.isArray(captchaAnswer) || !Array.isArray(correctAnswer) || 
-            captchaAnswer.length !== correctAnswer.length || 
-            !captchaAnswer.every(id => correctAnswer.includes(id))) {
-=======
-        // Decode the token from the request
-        let correctAnswer;
-        try {
-            // Get token from request body
-            const { token } = req.body;
-            if (!token) {
-                userSession.attempts += 1;
-                console.log('Missing CAPTCHA token:', { attempts: userSession.attempts });
-                return res.status(400).json({
-                    error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
-                });
-            }
-            
-            // Decode the token to get the correct answer
-            correctAnswer = Buffer.from(token, 'base64').toString('ascii');
-            
-            if (captchaAnswer !== correctAnswer) {
-                userSession.attempts += 1;
-                console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
-                return res.status(400).json({
-                    error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
-                });
-            }
-        } catch (error) {
->>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
-=======
                 error: 'All fields are required, including reCAPTCHA verification.'
             });
         }
@@ -487,44 +375,10 @@ app.post('/api/contact', async (req, res) => {
 
         const recaptchaData = await recaptchaResponse.json();
         if (!recaptchaData.success) {
->>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
             userSession.attempts += 1;
             console.log('reCAPTCHA verification failed:', { recaptchaData, attempts: userSession.attempts });
             return res.status(400).json({
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-                error: 'Incorrect CAPTCHA selection.'
-=======
-                error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
->>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
-=======
-                error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
->>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
-=======
-                error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
->>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
-=======
-                error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
->>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
-=======
                 error: 'reCAPTCHA verification failed. Please try again.'
->>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
-=======
-=======
->>>>>>> parent of ba26be8 (Disable CAPTCHA check for now)
-        const correctAnswer = req.session.captchaAnswer;
-        if (!correctAnswer || captchaAnswer !== correctAnswer) {
-            userSession.attempts += 1;
-            console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
-            return res.status(400).json({
-                error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
-<<<<<<< HEAD
->>>>>>> parent of ba26be8 (Disable CAPTCHA check for now)
-=======
->>>>>>> parent of ba26be8 (Disable CAPTCHA check for now)
             });
         }
 

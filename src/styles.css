@@ -659,6 +659,12 @@ header .container {
     background: #f8f9fa;
     border-radius: 8px;
     border: 1px solid #ddd;
+    display: flex;
+    justify-content: center;
+}
+
+.captcha-group .g-recaptcha {
+    margin: 0 auto;
 }
 
 .captcha-question {
