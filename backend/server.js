@@ -9,6 +9,7 @@ const nodemailer = require('nodemailer');
 const session = require('express-session');
 const requestIp = require('request-ip');
 const Project = require('./models/Projects');
+const axios = require('axios');
 
 dotenv.config();
 
@@ -64,31 +65,21 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../pages/index.html'));
 });
 
-// CAPTCHA Route
-app.get('/api/captcha', (req, res) => {
-    console.log('HIT /api/captcha');
-    console.log('Captcha GET:', { sessionID: req.sessionID, cookie: req.headers.cookie });
-    const imageOptions = [
-        { src: '/uploads/dog.jpg', id: 'dog', label: 'Dog' },
-        { src: '/uploads/cat.jpg', id: 'cat', label: 'Cat' },
-        { src: '/uploads/bird.jpg', id: 'bird', label: 'Bird' }
-    ];
-    const correctIndex = Math.floor(Math.random() * imageOptions.length);
-    const correctAnswer = imageOptions[correctIndex].id;
-
-    req.session.captchaAnswer = correctAnswer;
-    const question = `Please select the image that shows a ${imageOptions[correctIndex].label}`;
-    console.log('Generated CAPTCHA:', { correctAnswer, question });
-
-    const shuffledImages = [...imageOptions].sort(() => Math.random() - 0.5);
-    const response = {
-        images: shuffledImages,
-        correct: correctAnswer,
-        question: question
-    };
-    console.log('Sending response:', response);
-    res.json(response);
-});
+// Helper function to verify reCAPTCHA token
+async function verifyRecaptcha(token) {
+    try {
+        const response = await axios.post('https://www.google.com/recaptcha/api/siteverify', null, {
+            params: {
+                secret: process.env.RECAPTCHA_SECRET_KEY || '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe', // Test secret key
+                response: token
+            }
+        });
+        return response.data.success;
+    } catch (error) {
+        console.error('reCAPTCHA verification error:', error);
+        return false;
+    }
+}
 
 // Basic Auth for Admin Page
 app.get('/pages/admin', basicAuth({
@@ -247,17 +238,54 @@ app.delete('/api/projects/:id', async (req, res) => {
     }
 });
 
-// Simplified Contact Form Route
+// Contact Form Route with reCAPTCHA verification and rate limiting
 app.post('/api/contact', async (req, res) => {
     console.log('Contact POST received');
     try {
-        const { name, email, message } = req.body;
+        const clientIp = requestIp.getClientIp(req);
+        const { name, email, message, recaptchaToken } = req.body;
+        
+        // Initialize session data for this IP if it doesn't exist
+        req.session[clientIp] = req.session[clientIp] || {
+            attempts: 0,
+            submissions: []
+        };
+        const userSession = req.session[clientIp];
+        
+        // Rate limiting configuration
+        const maxAttempts = 5;
+        const maxHourlySubmissions = 3;
+        const now = Date.now();
+        
+        // Clean up old submissions (older than 1 hour)
+        userSession.submissions = userSession.submissions.filter(
+            timestamp => now - timestamp < 60 * 60 * 1000
+        );
+        
+        // Check hourly submission limit
+        if (userSession.submissions.length >= maxHourlySubmissions) {
+            console.log('Hourly submission limit reached:', { ip: clientIp, submissions: userSession.submissions.length });
+            return res.status(429).json({
+                error: `You've reached the hourly limit of ${maxHourlySubmissions} submissions. Please try again later.`
+            });
+        }
         
         // Basic validation
-        if (!name || !email || !message) {
-            console.log('Missing fields:', { name, email, message });
+        if (!name || !email || !message || !recaptchaToken) {
+            userSession.attempts += 1;
+            console.log('Missing fields:', { name, email, message, recaptchaToken, attempts: userSession.attempts });
             return res.status(400).json({
-                error: 'Please fill in all required fields (name, email, message).'
+                error: `All fields are required, including CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+            });
+        }
+        
+        // Verify reCAPTCHA token
+        const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+        if (!isRecaptchaValid) {
+            userSession.attempts += 1;
+            console.log('reCAPTCHA verification failed:', { attempts: userSession.attempts });
+            return res.status(400).json({
+                error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
             });
         }
 
@@ -281,15 +309,15 @@ app.post('/api/contact', async (req, res) => {
         await transporter.sendMail(mailOptions);
         console.log('Email sent:', { name, email, message });
 
+        // Record successful submission
+        userSession.submissions.push(now);
+        userSession.attempts = 0; // Reset attempts after successful submission
+        
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (err) {
         const clientIp = requestIp.getClientIp(req);
-        req.session[clientIp] = req.session[clientIp] || { attempts: 0, submissions: [] };
-        req.session[clientIp].attempts += 1;
-        console.error('Error processing contact form:', err, { attempts: req.session[clientIp].attempts });
-        res.status(500).json({
-            error: `Failed to send message. Attempts remaining: ${5 - req.session[clientIp].attempts}`
-        });
+        console.error('Error sending email:', err);
+        res.status(500).json({ error: 'Failed to send message. Please try again.' });
     }
 });
 
