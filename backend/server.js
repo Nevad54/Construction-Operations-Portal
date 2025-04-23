@@ -330,7 +330,11 @@ app.post('/api/contact', async (req, res) => {
             submissions: []
         };
         const userSession = req.session[clientIp];
+<<<<<<< HEAD
         const maxAttempts = 3;
+=======
+        const maxAttempts = 5;
+>>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
         const maxHourlySubmissions = 3;
         const maxDailySubmissions = 10;
         const now = Date.now();
@@ -369,14 +373,45 @@ app.post('/api/contact', async (req, res) => {
             });
         }
 
+<<<<<<< HEAD
         const correctAnswer = req.session.captchaAnswer;
         if (!correctAnswer || !Array.isArray(captchaAnswer) || !Array.isArray(correctAnswer) || 
             captchaAnswer.length !== correctAnswer.length || 
             !captchaAnswer.every(id => correctAnswer.includes(id))) {
+=======
+        // Decode the token from the request
+        let correctAnswer;
+        try {
+            // Get token from request body
+            const { token } = req.body;
+            if (!token) {
+                userSession.attempts += 1;
+                console.log('Missing CAPTCHA token:', { attempts: userSession.attempts });
+                return res.status(400).json({
+                    error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                });
+            }
+            
+            // Decode the token to get the correct answer
+            correctAnswer = Buffer.from(token, 'base64').toString('ascii');
+            
+            if (captchaAnswer !== correctAnswer) {
+                userSession.attempts += 1;
+                console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
+                return res.status(400).json({
+                    error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                });
+            }
+        } catch (error) {
+>>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
             userSession.attempts += 1;
             console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
             return res.status(400).json({
+<<<<<<< HEAD
                 error: 'Incorrect CAPTCHA selection.'
+=======
+                error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+>>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
             });
         }
 
