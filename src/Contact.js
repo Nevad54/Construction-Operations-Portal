@@ -78,22 +78,6 @@ const Contact = () => {
     };
   }, [isSidebarActive]);
 
-  useEffect(() => {
-    // Load reCAPTCHA script
-    const script = document.createElement('script');
-    script.src = 'https://www.google.com/recaptcha/api.js';
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-
-    return () => {
-      const existingScript = document.querySelector('script[src="https://www.google.com/recaptcha/api.js"]');
-      if (existingScript) {
-        document.head.removeChild(existingScript);
-      }
-    };
-  }, []);
-
   const handleRecaptchaChange = (token) => {
     console.log('reCAPTCHA token received');
     setRecaptchaToken(token);
@@ -143,17 +127,7 @@ const Contact = () => {
     }
 
     try {
-        if (!recaptchaRef.current) {
-            setErrors(prev => ({ ...prev, captcha: 'Please complete the reCAPTCHA verification' }));
-            return;
-        }
-
-        const token = await recaptchaRef.current.executeAsync();
-        if (!token) {
-            setErrors(prev => ({ ...prev, captcha: 'Failed to verify reCAPTCHA. Please try again.' }));
-            return;
-        }
-
+        setIsSubmitting(true);
         const response = await fetch(`${API_BASE_URL}/api/contact`, {
             method: 'POST',
             headers: {
@@ -161,7 +135,7 @@ const Contact = () => {
             },
             body: JSON.stringify({
                 ...formData,
-                recaptchaToken: token
+                recaptchaToken
             }),
         });
 
@@ -180,13 +154,17 @@ const Contact = () => {
             email: '',
             message: ''
         });
-        recaptchaRef.current.reset();
+        if (recaptchaRef.current) {
+            recaptchaRef.current.reset();
+        }
     } catch (err) {
         setSubmitStatus({
             type: 'error',
             message: err.message || 'Failed to send message. Please try again.'
         });
         console.error('Contact form error:', err);
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
