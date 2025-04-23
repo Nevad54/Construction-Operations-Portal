@@ -24,7 +24,20 @@ const Contact = () => {
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const recaptchaRef = useRef(null);
   const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
-  const [attemptsRemaining, setAttemptsRemaining] = useState(3);
+  const [attemptsRemaining, setAttemptsRemaining] = useState(() => {
+    const saved = localStorage.getItem('contactAttempts');
+    const lastReset = localStorage.getItem('lastAttemptReset');
+    const now = Date.now();
+    
+    // Reset attempts if it's been more than an hour
+    if (lastReset && (now - parseInt(lastReset)) > 3600000) {
+      localStorage.setItem('contactAttempts', '3');
+      localStorage.setItem('lastAttemptReset', now.toString());
+      return 3;
+    }
+    
+    return saved ? parseInt(saved) : 3;
+  });
   const [timeUntilReset, setTimeUntilReset] = useState(null);
 
   const location = useLocation();
@@ -202,26 +215,31 @@ const Contact = () => {
     }
   };
 
-  // Add timer effect for attempts reset
+  // Update localStorage when attempts change
   useEffect(() => {
-    let timer;
-    if (timeUntilReset > 0) {
-      timer = setInterval(() => {
-        setTimeUntilReset(prev => {
-          if (prev <= 1) {
-            setAttemptsRemaining(3);
-            return null;
-          }
-          return prev - 1;
-        });
-      }, 60000); // Update every minute
+    localStorage.setItem('contactAttempts', attemptsRemaining.toString());
+    if (attemptsRemaining === 3) {
+      localStorage.setItem('lastAttemptReset', Date.now().toString());
     }
-    return () => {
-      if (timer) {
-        clearInterval(timer);
+  }, [attemptsRemaining]);
+
+  // Check for attempts reset every minute
+  useEffect(() => {
+    const checkReset = () => {
+      const lastReset = localStorage.getItem('lastAttemptReset');
+      if (lastReset) {
+        const timeSinceReset = Date.now() - parseInt(lastReset);
+        if (timeSinceReset > 3600000) { // 1 hour in milliseconds
+          setAttemptsRemaining(3);
+          localStorage.setItem('contactAttempts', '3');
+          localStorage.setItem('lastAttemptReset', Date.now().toString());
+        }
       }
     };
-  }, [timeUntilReset]);
+
+    const interval = setInterval(checkReset, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div>
