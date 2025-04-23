@@ -101,7 +101,7 @@ const Contact = () => {
 
   const getCaptcha = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/captcha`);
+      const response = await fetch(`${API_BASE_URL}/api/captcha`, { credentials: 'include' });
       if (!response.ok) {
         throw new Error('Failed to fetch CAPTCHA');
       }
@@ -134,7 +134,7 @@ const Contact = () => {
       setSubmitStatus(null);
       
       try {
-        const response = await fetch(`${API_BASE_URL}/api/contact`, {
+        const response = await fetch(`${API_BASE_URL}/api/contact`, { credentials: 'include',
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
