@@ -24,7 +24,7 @@ export const api = {
             formData.append(key, projectData[key]);
         });
 
-        const response = await fetch(`${API_BASE_URL}/projects`, {
+        const response = await fetch(`${API_BASE_URL}/api/projects`, {
             method: 'POST',
             body: formData,
         });
@@ -40,7 +40,7 @@ export const api = {
             formData.append(key, projectData[key]);
         });
 
-        const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
             method: 'PUT',
             body: formData,
         });
@@ -51,7 +51,7 @@ export const api = {
     },
 
     deleteProject: async (id) => {
-        const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
             method: 'DELETE',
         });
         if (!response.ok) {
@@ -62,7 +62,7 @@ export const api = {
 
     // Contact Form
     submitContactForm: async (formData) => {
-        const response = await fetch(`${API_BASE_URL}/contact`, {
+        const response = await fetch(`${API_BASE_URL}/api/contact`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ export const api = {
 
     // CAPTCHA
     getCaptcha: async () => {
-        const response = await fetch(`${API_BASE_URL}/captcha`);
+        const response = await fetch(`${API_BASE_URL}/api/captcha`);
         return response.json();
     }
 }; 
