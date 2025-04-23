@@ -99,8 +99,24 @@ const Services = () => {
             </div>
             <div className="footer-item">
               <h2>Certifications</h2>
-              <img src="/Uploads/certification1.jpg" alt="ISO 9001 Certification" className="certification" />
-              <img src="/Uploads/certification2.jpg" alt="Safety Compliance Certification" className="certification" />
+              <img 
+                src="/Uploads/certification1.jpg" 
+                alt="ISO 9001 Certification" 
+                className="certification" 
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = '/assets/placeholder.jpg';
+                }}
+              />
+              <img 
+                src="/Uploads/certification2.jpg" 
+                alt="Safety Compliance Certification" 
+                className="certification" 
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = '/assets/placeholder.jpg';
+                }}
+              />
             </div>
           </div>
         </section>
