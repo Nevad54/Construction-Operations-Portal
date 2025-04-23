@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import ReCAPTCHA from 'react-google-recaptcha';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
@@ -19,14 +20,8 @@ const Contact = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
-<<<<<<< HEAD
-  const [captchaImages, setCaptchaImages] = useState([]);
-  const [selectedImages, setSelectedImages] = useState([]);
-  const [captchaQuestion, setCaptchaQuestion] = useState('');
-=======
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const recaptchaRef = useRef(null);
->>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
   const [attempts, setAttempts] = useState(3);
 
   const location = useLocation();
@@ -83,34 +78,8 @@ const Contact = () => {
     };
   }, [isSidebarActive]);
 
-<<<<<<< HEAD
-  useEffect(() => {
-    fetchCaptcha();
-  }, []);
-
-  const fetchCaptcha = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/captcha`);
-      const data = await response.json();
-      setCaptchaImages(data.images);
-      setCaptchaQuestion(data.question);
-      setSelectedImages([]);
-    } catch (error) {
-      console.error('Error fetching CAPTCHA:', error);
-    }
-  };
-
-  const handleImageSelect = (imageId) => {
-    setSelectedImages(prev => {
-      if (prev.includes(imageId)) {
-        return prev.filter(id => id !== imageId);
-      }
-      return [...prev, imageId];
-    });
-=======
   const handleRecaptchaChange = (token) => {
     setRecaptchaToken(token);
->>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
   };
 
   const handleChange = (e) => {
@@ -118,27 +87,6 @@ const Contact = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-<<<<<<< HEAD
-=======
-  // reCAPTCHA handling
-  const [recaptchaToken, setRecaptchaToken] = useState('');
-  const recaptchaRef = useRef(null);
-
-  // Initialize reCAPTCHA when component mounts
-  useEffect(() => {
-    // Create a global callback function for reCAPTCHA
-    window.onRecaptchaSuccess = (token) => {
-      console.log('reCAPTCHA verified:', token);
-      setRecaptchaToken(token);
-    };
-
-    // Cleanup function
-    return () => {
-      delete window.onRecaptchaSuccess;
-    };
-  }, []);
-
->>>>>>> parent of b29e6c3 (Switch to React reCAPTCHA component and fix HTML lint issues)
   const validateForm = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
@@ -148,7 +96,7 @@ const Contact = () => {
       newErrors.email = 'Email is invalid';
     }
     if (!formData.message.trim()) newErrors.message = 'Message is required';
-    if (selectedImages.length === 0) newErrors.captcha = 'Please select the required images';
+    if (!recaptchaToken) newErrors.captcha = 'Please complete the reCAPTCHA verification';
     return newErrors;
   };
 
@@ -169,7 +117,7 @@ const Contact = () => {
           credentials: 'include',
           body: JSON.stringify({
             ...formData,
-            captchaAnswer: selectedImages
+            recaptchaToken
           }),
         });
 
@@ -178,16 +126,12 @@ const Contact = () => {
         if (response.ok) {
           setSubmitStatus({ type: 'success', message: 'Thank you for your message! We will get back to you soon.' });
           setFormData({ name: '', email: '', message: '' });
-          setSelectedImages([]);
+          setRecaptchaToken('');
           setErrors({});
-<<<<<<< HEAD
-          fetchCaptcha();
-=======
           // Reset reCAPTCHA
           if (recaptchaRef.current) {
             recaptchaRef.current.reset();
           }
->>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
         } else {
           setAttempts(prev => prev - 1);
           setSubmitStatus({ 
@@ -201,14 +145,10 @@ const Contact = () => {
             });
             setIsSubmitting(true);
           } else {
-<<<<<<< HEAD
-            fetchCaptcha();
-=======
             // Reset reCAPTCHA on error
             if (recaptchaRef.current) {
               recaptchaRef.current.reset();
             }
->>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
           }
         }
       } catch (error) {
@@ -296,36 +236,12 @@ const Contact = () => {
                 </div>
                 
                 <div className="form-group captcha-group">
-<<<<<<< HEAD
-<<<<<<< HEAD
-                  <p className="captcha-question">{captchaQuestion}</p>
-                  <div className="captcha-images">
-                    {captchaImages.map((image, index) => (
-                      <img
-                        key={index}
-                        src={image.url}
-                        alt={`CAPTCHA image ${index + 1}`}
-                        className={selectedImages.includes(image.id) ? 'selected' : ''}
-                        onClick={() => handleImageSelect(image.id)}
-                      />
-                    ))}
-                  </div>
-=======
                   <ReCAPTCHA
                     ref={recaptchaRef}
                     sitekey="6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02"
                     onChange={handleRecaptchaChange}
                   />
->>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
                   {errors.captcha && <span className="error">{errors.captcha}</span>}
-=======
-                  <div 
-                    className="g-recaptcha" 
-                    data-sitekey="6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02" 
-                    data-callback="onRecaptchaSuccess"
-                  ></div>
-                  {errors.captcha && <span id="captcha-error" className="error">{errors.captcha}</span>}
->>>>>>> parent of b29e6c3 (Switch to React reCAPTCHA component and fix HTML lint issues)
                 </div>
 
                 <button 
