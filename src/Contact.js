@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -16,6 +17,8 @@ const Contact = () => {
     email: '',
     message: ''
   });
+  const [captchaToken, setCaptchaToken] = useState('');
+  const recaptchaRef = useRef();
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
@@ -89,6 +92,7 @@ const Contact = () => {
       newErrors.email = 'Email is invalid';
     }
     if (!formData.message.trim()) newErrors.message = 'Message is required';
+    if (!captchaToken) newErrors.captcha = 'Please complete the CAPTCHA verification';
     return newErrors;
   };
 
@@ -108,7 +112,10 @@ const Contact = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            ...formData,
+            recaptchaToken: captchaToken
+          }),
         });
 
         const data = await response.json();
@@ -116,7 +123,11 @@ const Contact = () => {
         if (response.ok) {
           setSubmitStatus({ type: 'success', message: 'Thank you for your message! We will get back to you soon.' });
           setFormData({ name: '', email: '', message: '' });
+          setCaptchaToken('');
           setErrors({});
+          if (recaptchaRef.current) {
+            recaptchaRef.current.reset();
+          }
         } else {
           setSubmitStatus({ 
             type: 'error', 
@@ -209,6 +220,15 @@ const Contact = () => {
                     disabled={isSubmitting}
                   ></textarea>
                   {errors.message && <span id="message-error" className="error">{errors.message}</span>}
+                </div>
+                
+                <div className="form-group recaptcha-group">
+                  <ReCAPTCHA
+                    ref={recaptchaRef}
+                    sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // This is Google's test key - replace with your actual key for production
+                    onChange={token => setCaptchaToken(token)}
+                  />
+                  {errors.captcha && <span className="error">{errors.captcha}</span>}
                 </div>
 
                 <button 
