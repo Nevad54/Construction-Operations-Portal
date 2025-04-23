@@ -1,9 +1,9 @@
-const API_BASE_URL = '/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 
 export const api = {
     // Projects
     getProjects: async () => {
-        const response = await fetch(`${API_BASE_URL}/projects`);
+        const response = await fetch(`${API_BASE_URL}/api/projects`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -11,7 +11,7 @@ export const api = {
     },
 
     getFeaturedProjects: async () => {
-        const response = await fetch(`${API_BASE_URL}/projects/featured`);
+        const response = await fetch(`${API_BASE_URL}/api/projects/featured`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }

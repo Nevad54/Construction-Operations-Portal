@@ -32,20 +32,13 @@ const upload = multer({ storage });
 
 // Middleware
 app.use(cors({
-    origin: true, // Allow all origins in development
+    origin: process.env.NODE_ENV === 'production' 
+        ? ['https://mastertech-frontend-yqjb.onrender.com', 'https://mastertech-app.onrender.com']
+        : true,
     credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-random-secret-here',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
-    }
-}));
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../build')));
@@ -63,6 +56,17 @@ console.log('Serving pages from:', pagesPath);
 
 app.use('/assets', express.static(assetsPath));
 app.use('/pages', express.static(pagesPath));
+
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'your-random-secret-here',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
 
 // Root Route
 app.get('/', (req, res) => {
