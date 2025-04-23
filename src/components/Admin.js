@@ -42,8 +42,10 @@ const Admin = () => {
             reader.onload = () => {
                 if (isEdit) {
                     setEditImagePreview(reader.result);
+                    setEditingProject(prev => ({ ...prev, image: file }));
                 } else {
                     setImagePreview(reader.result);
+                    setFormData(prev => ({ ...prev, image: file }));
                 }
             };
             reader.readAsDataURL(file);

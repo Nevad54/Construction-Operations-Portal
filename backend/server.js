@@ -245,6 +245,9 @@ app.post('/api/projects', upload.single('image'), async (req, res) => {
             return res.status(500).json({ error: 'Database connection error' });
         }
 
+        console.log('Received project creation request:', req.body);
+        console.log('Received file:', req.file);
+
         const { title, description, location, owner, date, status } = req.body;
         
         // Validate required fields
