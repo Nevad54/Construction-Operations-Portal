@@ -331,7 +331,11 @@ app.post('/api/contact', async (req, res) => {
         };
         const userSession = req.session[clientIp];
 <<<<<<< HEAD
+<<<<<<< HEAD
         const maxAttempts = 3;
+=======
+        const maxAttempts = 5;
+>>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
 =======
         const maxAttempts = 5;
 >>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
@@ -408,7 +412,11 @@ app.post('/api/contact', async (req, res) => {
             console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
             return res.status(400).json({
 <<<<<<< HEAD
+<<<<<<< HEAD
                 error: 'Incorrect CAPTCHA selection.'
+=======
+                error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+>>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
 =======
                 error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
 >>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
