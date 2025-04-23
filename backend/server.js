@@ -4,12 +4,12 @@ const mongoose = require('mongoose');
 const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+const session = require('express-session');
 const basicAuth = require('express-basic-auth');
 const nodemailer = require('nodemailer');
-const session = require('express-session');
 const requestIp = require('request-ip');
 const Project = require('./models/Projects');
-const axios = require('axios');
 
 dotenv.config();
 
@@ -65,21 +65,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../pages/index.html'));
 });
 
-// Helper function to verify reCAPTCHA token
-async function verifyRecaptcha(token) {
-    try {
-        const response = await axios.post('https://www.google.com/recaptcha/api/siteverify', null, {
-            params: {
-                secret: process.env.RECAPTCHA_SECRET_KEY || '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe', // Test secret key
-                response: token
-            }
-        });
-        return response.data.success;
-    } catch (error) {
-        console.error('reCAPTCHA verification error:', error);
-        return false;
-    }
-}
+
 
 // Basic Auth for Admin Page
 app.get('/pages/admin', basicAuth({
@@ -238,12 +224,12 @@ app.delete('/api/projects/:id', async (req, res) => {
     }
 });
 
-// Contact Form Route with reCAPTCHA verification and rate limiting
+// Contact Form Route with simple rate limiting
 app.post('/api/contact', async (req, res) => {
     console.log('Contact POST received');
     try {
         const clientIp = requestIp.getClientIp(req);
-        const { name, email, message, recaptchaToken } = req.body;
+        const { name, email, message, captchaAnswer } = req.body;
         
         // Initialize session data for this IP if it doesn't exist
         req.session[clientIp] = req.session[clientIp] || {
@@ -253,7 +239,6 @@ app.post('/api/contact', async (req, res) => {
         const userSession = req.session[clientIp];
         
         // Rate limiting configuration
-        const maxAttempts = 5;
         const maxHourlySubmissions = 3;
         const now = Date.now();
         
@@ -271,21 +256,10 @@ app.post('/api/contact', async (req, res) => {
         }
         
         // Basic validation
-        if (!name || !email || !message || !recaptchaToken) {
-            userSession.attempts += 1;
-            console.log('Missing fields:', { name, email, message, recaptchaToken, attempts: userSession.attempts });
+        if (!name || !email || !message) {
+            console.log('Missing fields:', { name, email, message });
             return res.status(400).json({
-                error: `All fields are required, including CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
-            });
-        }
-        
-        // Verify reCAPTCHA token
-        const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
-        if (!isRecaptchaValid) {
-            userSession.attempts += 1;
-            console.log('reCAPTCHA verification failed:', { attempts: userSession.attempts });
-            return res.status(400).json({
-                error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                error: `Please fill in all required fields.`
             });
         }
 

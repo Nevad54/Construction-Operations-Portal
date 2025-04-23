@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
-import ReCAPTCHA from 'react-google-recaptcha';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -15,10 +14,11 @@ const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    message: ''
+    message: '',
+    captchaAnswer: ''
   });
-  const [captchaToken, setCaptchaToken] = useState('');
-  const recaptchaRef = useRef();
+  const [captchaQuestion, setCaptchaQuestion] = useState('');
+  const [correctAnswer, setCorrectAnswer] = useState('');
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
@@ -83,6 +83,29 @@ const Contact = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  // Generate a simple math CAPTCHA
+  const generateCaptcha = () => {
+    const operations = [
+      { op: '+', func: (a, b) => a + b },
+      { op: '-', func: (a, b) => a - b },
+      { op: '*', func: (a, b) => a * b }
+    ];
+    
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    const operation = operations[Math.floor(Math.random() * (num2 > 5 ? 2 : 3))];
+    
+    const question = `What is ${num1} ${operation.op} ${num2}?`;
+    const answer = operation.func(num1, num2).toString();
+    
+    setCaptchaQuestion(question);
+    setCorrectAnswer(answer);
+  };
+  
+  useEffect(() => {
+    generateCaptcha();
+  }, []);
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
@@ -92,7 +115,11 @@ const Contact = () => {
       newErrors.email = 'Email is invalid';
     }
     if (!formData.message.trim()) newErrors.message = 'Message is required';
-    if (!captchaToken) newErrors.captcha = 'Please complete the CAPTCHA verification';
+    if (!formData.captchaAnswer.trim()) newErrors.captcha = 'Please answer the security question';
+    else if (formData.captchaAnswer.trim() !== correctAnswer) {
+      newErrors.captcha = 'Incorrect answer, please try again';
+      generateCaptcha(); // Generate a new CAPTCHA after incorrect answer
+    }
     return newErrors;
   };
 
@@ -112,22 +139,16 @@ const Contact = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            ...formData,
-            recaptchaToken: captchaToken
-          }),
+          body: JSON.stringify(formData),
         });
 
         const data = await response.json();
 
         if (response.ok) {
           setSubmitStatus({ type: 'success', message: 'Thank you for your message! We will get back to you soon.' });
-          setFormData({ name: '', email: '', message: '' });
-          setCaptchaToken('');
+          setFormData({ name: '', email: '', message: '', captchaAnswer: '' });
           setErrors({});
-          if (recaptchaRef.current) {
-            recaptchaRef.current.reset();
-          }
+          generateCaptcha();
         } else {
           setSubmitStatus({ 
             type: 'error', 
@@ -222,13 +243,19 @@ const Contact = () => {
                   {errors.message && <span id="message-error" className="error">{errors.message}</span>}
                 </div>
                 
-                <div className="form-group recaptcha-group">
-                  <ReCAPTCHA
-                    ref={recaptchaRef}
-                    sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // This is Google's test key - replace with your actual key for production
-                    onChange={token => setCaptchaToken(token)}
+                <div className="form-group captcha-group">
+                  <label htmlFor="captchaAnswer">Security Question: {captchaQuestion}</label>
+                  <input
+                    type="text"
+                    id="captchaAnswer"
+                    name="captchaAnswer"
+                    value={formData.captchaAnswer}
+                    onChange={handleChange}
+                    aria-required="true"
+                    aria-describedby="captcha-error"
+                    disabled={isSubmitting}
                   />
-                  {errors.captcha && <span className="error">{errors.captcha}</span>}
+                  {errors.captcha && <span id="captcha-error" className="error">{errors.captcha}</span>}
                 </div>
 
                 <button 
