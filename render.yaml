@@ -3,7 +3,7 @@ services:
     name: mastertech-backend
     env: node
     rootDir: backend
-    buildCommand: npm install node-fetch@2 --save && npm install --production
+    buildCommand: npm install --production
     startCommand: node server.js
     envVars:
       - key: MONGO_URI

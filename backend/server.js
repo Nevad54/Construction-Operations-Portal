@@ -1,15 +1,17 @@
 const dotenv = require('dotenv');
 const express = require('express');
+const cors = require('cors');
 const mongoose = require('mongoose');
 const multer = require('multer');
-const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const session = require('express-session');
 const basicAuth = require('express-basic-auth');
 const nodemailer = require('nodemailer');
 const requestIp = require('request-ip');
-const fetch = require('node-fetch');
+const https = require('https');
+const querystring = require('querystring');
+
 const Project = require('./models/Projects');
 
 dotenv.config();
@@ -29,20 +31,14 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Middleware
-app.use(cors({
-  origin: ['https://mastertech-frontend-yqjb.onrender.com', 'http://localhost:3000', 'http://localhost:3003'],
-  credentials: true
-}));
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Enable trust proxy for secure cookies behind proxy
-app.set('trust proxy', 1);
 app.use(session({
-    secret: process.env.SESSION_SECRET || '',
+    secret: process.env.SESSION_SECRET || 'your-random-secret-here',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production', sameSite: 'none' }
+    cookie: { secure: false }
 }));
 
 // Static file paths
@@ -59,6 +55,7 @@ app.use('/uploads', express.static(uploadsPath, {
     }
 }));
 app.use('/assets', express.static(assetsPath));
+app.use('/pages', express.static(pagesPath));
 
 // Root Route
 app.get('/', (req, res) => {
@@ -66,7 +63,30 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../pages/index.html'));
 });
 
+// CAPTCHA Route
+app.get('/api/captcha', (req, res) => {
+    console.log('HIT /api/captcha');
+    const imageOptions = [
+        { src: '/uploads/dog.jpg', id: 'dog', label: 'Dog' },
+        { src: '/uploads/cat.jpg', id: 'cat', label: 'Cat' },
+        { src: '/uploads/bird.jpg', id: 'bird', label: 'Bird' }
+    ];
+    const correctIndex = Math.floor(Math.random() * imageOptions.length);
+    const correctAnswer = imageOptions[correctIndex].id;
 
+    req.session.captchaAnswer = correctAnswer;
+    const question = `Please select the image that shows a ${imageOptions[correctIndex].label}`;
+    console.log('Generated CAPTCHA:', { correctAnswer, question });
+
+    const shuffledImages = [...imageOptions].sort(() => Math.random() - 0.5);
+    const response = {
+        images: shuffledImages,
+        correct: correctAnswer,
+        question: question
+    };
+    console.log('Sending response:', response);
+    res.json(response);
+});
 
 // Basic Auth for Admin Page
 app.get('/pages/admin', basicAuth({
@@ -105,6 +125,61 @@ const connectDB = async () => {
         process.exit(1);
     }
 };
+
+// Helper function to verify reCAPTCHA token using https module
+async function verifyRecaptcha(token) {
+    return new Promise((resolve) => {
+        try {
+            const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe'; // Test secret key
+            
+            const data = querystring.stringify({
+                secret: recaptchaSecret,
+                response: token
+            });
+            
+            const options = {
+                hostname: 'www.google.com',
+                port: 443,
+                path: '/recaptcha/api/siteverify',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Length': data.length
+                }
+            };
+            
+            const req = https.request(options, (res) => {
+                let responseData = '';
+                
+                res.on('data', (chunk) => {
+                    responseData += chunk;
+                });
+                
+                res.on('end', () => {
+                    try {
+                        const jsonResponse = JSON.parse(responseData);
+                        console.log('reCAPTCHA verification response:', jsonResponse);
+                        resolve(jsonResponse.success);
+                    } catch (e) {
+                        console.error('Error parsing reCAPTCHA response:', e);
+                        resolve(false);
+                    }
+                });
+            });
+            
+            req.on('error', (e) => {
+                console.error('Error verifying reCAPTCHA:', e);
+                resolve(false);
+            });
+            
+            req.write(data);
+            req.end();
+        } catch (error) {
+            console.error('reCAPTCHA verification error:', error);
+            resolve(false);
+        }
+    });
+}
 
 connectDB();
 mongoose.connection.on('connected', () => console.log('Mongoose connected to DB'));
@@ -225,73 +300,63 @@ app.delete('/api/projects/:id', async (req, res) => {
     }
 });
 
-// Helper function to verify reCAPTCHA token
-async function verifyRecaptcha(token) {
-    try {
-        const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe'; // Test secret key
-        const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: `secret=${recaptchaSecret}&response=${token}`
-        });
-        const data = await response.json();
-        return data.success;
-    } catch (error) {
-        console.error('reCAPTCHA verification error:', error);
-        return false;
-    }
-}
-
-// Contact Form Route with reCAPTCHA verification and rate limiting
+// Contact Form Route (unchanged from last version)
 app.post('/api/contact', async (req, res) => {
-    console.log('Contact POST received');
     try {
         const clientIp = requestIp.getClientIp(req);
-        const { name, email, message, recaptchaToken } = req.body;
-        
-        // Initialize session data for this IP if it doesn't exist
+        console.log('Raw request body:', req.body);
+        const { name, email, message, captchaAnswer } = req.body;
+
         req.session[clientIp] = req.session[clientIp] || {
             attempts: 0,
             submissions: []
         };
         const userSession = req.session[clientIp];
-        
-        // Rate limiting configuration
         const maxAttempts = 5;
         const maxHourlySubmissions = 3;
+        const maxDailySubmissions = 10;
         const now = Date.now();
-        
-        // Clean up old submissions (older than 1 hour)
+
         userSession.submissions = userSession.submissions.filter(
+            timestamp => now - timestamp < 24 * 60 * 60 * 1000
+        );
+
+        const hourlySubmissions = userSession.submissions.filter(
             timestamp => now - timestamp < 60 * 60 * 1000
         );
-        
-        // Check hourly submission limit
-        if (userSession.submissions.length >= maxHourlySubmissions) {
-            console.log('Hourly submission limit reached:', { ip: clientIp, submissions: userSession.submissions.length });
+        if (hourlySubmissions.length >= maxHourlySubmissions) {
+            console.log('Hourly submission limit reached:', { ip: clientIp, submissions: hourlySubmissions.length });
             return res.status(429).json({
                 error: `You've reached the hourly limit of ${maxHourlySubmissions} submissions. Please try again later.`
             });
         }
-        
-        // Basic validation
-        if (!name || !email || !message || !recaptchaToken) {
+
+        if (userSession.submissions.length >= maxDailySubmissions) {
+            console.log('Daily submission limit reached:', { ip: clientIp, submissions: userSession.submissions.length });
+            return res.status(429).json({
+                error: `You've reached the daily limit of ${maxDailySubmissions} submissions. Please try again tomorrow.`
+            });
+        }
+
+        if (userSession.attempts >= maxAttempts) {
+            console.log('Attempt limit reached:', { ip: clientIp, attempts: userSession.attempts });
+            return res.status(429).json({ error: 'Too many attempts. Please try again later.' });
+        }
+
+        if (!name || !email || !message || !captchaAnswer) {
             userSession.attempts += 1;
-            console.log('Missing fields:', { name, email, message, recaptchaToken, attempts: userSession.attempts });
+            console.log('Missing fields:', { name, email, message, captchaAnswer, attempts: userSession.attempts });
             return res.status(400).json({
                 error: `All fields are required, including CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
             });
         }
-        
-        // Verify reCAPTCHA token
-        const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
-        if (!isRecaptchaValid) {
+
+        const correctAnswer = req.session.captchaAnswer;
+        if (!correctAnswer || captchaAnswer !== correctAnswer) {
             userSession.attempts += 1;
-            console.log('reCAPTCHA verification failed:', { attempts: userSession.attempts });
+            console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
             return res.status(400).json({
-                error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
             });
         }
 
@@ -315,15 +380,19 @@ app.post('/api/contact', async (req, res) => {
         await transporter.sendMail(mailOptions);
         console.log('Email sent:', { name, email, message });
 
-        // Record successful submission
         userSession.submissions.push(now);
-        userSession.attempts = 0; // Reset attempts after successful submission
-        
+        userSession.attempts = 0;
+        req.session.captchaAnswer = null;
+
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (err) {
         const clientIp = requestIp.getClientIp(req);
-        console.error('Error sending email:', err);
-        res.status(500).json({ error: 'Failed to send message. Please try again.' });
+        req.session[clientIp] = req.session[clientIp] || { attempts: 0, submissions: [] };
+        req.session[clientIp].attempts += 1;
+        console.error('Error processing contact form:', err, { attempts: req.session[clientIp].attempts });
+        res.status(500).json({
+            error: `Failed to send message. Attempts remaining: ${5 - req.session[clientIp].attempts}`
+        });
     }
 });
 
