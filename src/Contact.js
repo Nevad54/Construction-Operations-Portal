@@ -149,6 +149,8 @@ const Contact = () => {
             type: 'success',
             message: data.message || 'Message sent successfully!'
         });
+        
+        // Reset form and reCAPTCHA only on success
         setFormData({
             name: '',
             email: '',
@@ -157,6 +159,7 @@ const Contact = () => {
         if (recaptchaRef.current) {
             recaptchaRef.current.reset();
         }
+        setRecaptchaToken('');
     } catch (err) {
         setSubmitStatus({
             type: 'error',
