@@ -36,11 +36,15 @@ app.use(express.urlencoded({ extended: true }));
 
 // Enable trust proxy for secure cookies behind proxy
 app.set('trust proxy', 1);
+// Session configuration: secure cookies and SameSite=None for cross-site usage
 app.use(session({
     secret: process.env.SESSION_SECRET || '',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production', sameSite: 'none' }
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production', 
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' 
+    }
 }));
 
 // Static file paths
