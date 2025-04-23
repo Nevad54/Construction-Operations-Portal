@@ -23,6 +23,7 @@ const Contact = () => {
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const recaptchaRef = useRef(null);
   const [attempts, setAttempts] = useState(3);
+  const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
 
   const location = useLocation();
 
@@ -81,17 +82,20 @@ const Contact = () => {
   const handleRecaptchaChange = (token) => {
     console.log('reCAPTCHA token received');
     setRecaptchaToken(token);
+    setIsRecaptchaVerified(true);
     setErrors(prev => ({ ...prev, captcha: undefined }));
   };
 
   const handleRecaptchaExpired = () => {
     console.log('reCAPTCHA expired');
     setRecaptchaToken('');
+    setIsRecaptchaVerified(false);
     setErrors(prev => ({ ...prev, captcha: 'reCAPTCHA verification expired. Please verify again.' }));
   };
 
   const handleRecaptchaError = (err) => {
     console.error('reCAPTCHA error:', err);
+    setIsRecaptchaVerified(false);
     setErrors(prev => ({
       ...prev,
       captcha: 'Error loading reCAPTCHA. Please refresh the page.'
@@ -112,7 +116,9 @@ const Contact = () => {
       newErrors.email = 'Email is invalid';
     }
     if (!formData.message.trim()) newErrors.message = 'Message is required';
-    if (!recaptchaToken) newErrors.captcha = 'Please complete the reCAPTCHA verification';
+    if (!isRecaptchaVerified || !recaptchaToken) {
+      newErrors.captcha = 'Please complete the reCAPTCHA verification';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -160,6 +166,7 @@ const Contact = () => {
             recaptchaRef.current.reset();
         }
         setRecaptchaToken('');
+        setIsRecaptchaVerified(false);
     } catch (err) {
         setSubmitStatus({
             type: 'error',
