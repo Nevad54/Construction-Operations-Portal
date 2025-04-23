@@ -100,6 +100,20 @@ const Contact = () => {
     setErrors(prev => ({ ...prev, captcha: undefined }));
   };
 
+  const handleRecaptchaExpired = () => {
+    console.log('reCAPTCHA expired');
+    setRecaptchaToken('');
+    setErrors(prev => ({ ...prev, captcha: 'reCAPTCHA verification expired. Please verify again.' }));
+  };
+
+  const handleRecaptchaError = (err) => {
+    console.error('reCAPTCHA error:', err);
+    setErrors(prev => ({
+      ...prev,
+      captcha: 'Error loading reCAPTCHA. Please refresh the page.'
+    }));
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -149,11 +163,15 @@ const Contact = () => {
         console.log('Server response:', data);
 
         if (response.ok) {
-          setSubmitStatus({ type: 'success', message: 'Message sent successfully!' });
+          setSubmitStatus({ 
+            type: 'success', 
+            message: data.message || 'Message sent successfully!'
+          });
           setFormData({ name: '', email: '', message: '' });
           if (recaptchaRef.current) {
             recaptchaRef.current.reset();
           }
+          setRecaptchaToken('');
         } else {
           console.error('Server error:', data);
           setSubmitStatus({ 
@@ -163,6 +181,7 @@ const Contact = () => {
           if (recaptchaRef.current) {
             recaptchaRef.current.reset();
           }
+          setRecaptchaToken('');
         }
       } catch (error) {
         console.error('Error submitting form:', error);
@@ -170,6 +189,10 @@ const Contact = () => {
           type: 'error', 
           message: 'An error occurred. Please try again later.'
         });
+        if (recaptchaRef.current) {
+          recaptchaRef.current.reset();
+        }
+        setRecaptchaToken('');
       } finally {
         setIsSubmitting(false);
       }
@@ -253,19 +276,11 @@ const Contact = () => {
                     ref={recaptchaRef}
                     sitekey="6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02"
                     onChange={handleRecaptchaChange}
-                    onExpired={() => {
-                      console.log('reCAPTCHA expired');
-                      setRecaptchaToken('');
-                    }}
-                    onErrored={(err) => {
-                      console.error('reCAPTCHA error:', err);
-                      setErrors(prev => ({
-                        ...prev,
-                        captcha: 'Error loading reCAPTCHA. Please refresh the page.'
-                      }));
-                    }}
+                    onExpired={handleRecaptchaExpired}
+                    onErrored={handleRecaptchaError}
                     theme="light"
                     size="normal"
+                    tabIndex={0}
                   />
                   {errors.captcha && <span className="error">{errors.captcha}</span>}
                 </div>

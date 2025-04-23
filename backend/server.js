@@ -353,24 +353,31 @@ app.post('/api/contact', async (req, res) => {
         const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh';
         console.log('Verifying reCAPTCHA with secret:', recaptchaSecret.substring(0, 10) + '...');
         
-        const verificationURL = 'https://www.google.com/recaptcha/api/siteverify';
-        const verificationBody = `secret=${recaptchaSecret}&response=${recaptchaToken}`;
+        try {
+            const verificationURL = 'https://www.google.com/recaptcha/api/siteverify';
+            const verificationBody = `secret=${recaptchaSecret}&response=${recaptchaToken}`;
 
-        console.log('Sending reCAPTCHA verification request...');
-        const recaptchaResponse = await fetch(verificationURL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: verificationBody
-        });
-
-        const recaptchaData = await recaptchaResponse.json();
-        console.log('reCAPTCHA verification response:', recaptchaData);
-
-        if (!recaptchaData.success) {
-            console.log('reCAPTCHA verification failed:', recaptchaData['error-codes']);
-            return res.status(400).json({
-                error: 'reCAPTCHA verification failed. Please try again.'
+            console.log('Sending reCAPTCHA verification request...');
+            const recaptchaResponse = await fetch(verificationURL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: verificationBody
             });
+
+            const recaptchaData = await recaptchaResponse.json();
+            console.log('reCAPTCHA verification response:', recaptchaData);
+
+            if (!recaptchaData.success) {
+                console.log('reCAPTCHA verification failed:', recaptchaData['error-codes']);
+                return res.status(400).json({
+                    error: 'reCAPTCHA verification failed. Please try again.'
+                });
+            }
+        } catch (recaptchaError) {
+            console.error('Error verifying reCAPTCHA:', recaptchaError);
+            // Continue with form submission even if reCAPTCHA verification fails
+            // This is a fallback for development or when reCAPTCHA service is down
+            console.log('Proceeding with form submission despite reCAPTCHA verification error');
         }
 
         // Check if email configuration is available
