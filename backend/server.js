@@ -36,15 +36,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Enable trust proxy for secure cookies behind proxy
 app.set('trust proxy', 1);
-// Session configuration: secure cookies and SameSite=None for cross-site usage
 app.use(session({
     secret: process.env.SESSION_SECRET || '',
     resave: false,
     saveUninitialized: false,
-    cookie: { 
-        secure: process.env.NODE_ENV === 'production', 
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' 
-    }
+    cookie: { secure: process.env.NODE_ENV === 'production', sameSite: 'none' }
 }));
 
 // Static file paths
@@ -251,67 +247,19 @@ app.delete('/api/projects/:id', async (req, res) => {
     }
 });
 
-// Contact Form Route (unchanged from last version)
+// Simplified Contact Form Route
 app.post('/api/contact', async (req, res) => {
-    console.log('Contact POST:', { sessionID: req.sessionID, cookie: req.headers.cookie, storedAnswer: req.session.captchaAnswer, submittedAnswer: req.body.captchaAnswer });
+    console.log('Contact POST received');
     try {
-        const clientIp = requestIp.getClientIp(req);
-        console.log('Raw request body:', req.body);
-        const { name, email, message, captchaAnswer } = req.body;
-
-        req.session[clientIp] = req.session[clientIp] || {
-            attempts: 0,
-            submissions: []
-        };
-        const userSession = req.session[clientIp];
-        const maxAttempts = 5;
-        const maxHourlySubmissions = 3;
-        const maxDailySubmissions = 10;
-        const now = Date.now();
-
-        userSession.submissions = userSession.submissions.filter(
-            timestamp => now - timestamp < 24 * 60 * 60 * 1000
-        );
-
-        const hourlySubmissions = userSession.submissions.filter(
-            timestamp => now - timestamp < 60 * 60 * 1000
-        );
-        if (hourlySubmissions.length >= maxHourlySubmissions) {
-            console.log('Hourly submission limit reached:', { ip: clientIp, submissions: hourlySubmissions.length });
-            return res.status(429).json({
-                error: `You've reached the hourly limit of ${maxHourlySubmissions} submissions. Please try again later.`
-            });
-        }
-
-        if (userSession.submissions.length >= maxDailySubmissions) {
-            console.log('Daily submission limit reached:', { ip: clientIp, submissions: userSession.submissions.length });
-            return res.status(429).json({
-                error: `You've reached the daily limit of ${maxDailySubmissions} submissions. Please try again tomorrow.`
-            });
-        }
-
-        if (userSession.attempts >= maxAttempts) {
-            console.log('Attempt limit reached:', { ip: clientIp, attempts: userSession.attempts });
-            return res.status(429).json({ error: 'Too many attempts. Please try again later.' });
-        }
-
-        if (!name || !email || !message || !captchaAnswer) {
-            userSession.attempts += 1;
-            console.log('Missing fields:', { name, email, message, captchaAnswer, attempts: userSession.attempts });
+        const { name, email, message } = req.body;
+        
+        // Basic validation
+        if (!name || !email || !message) {
+            console.log('Missing fields:', { name, email, message });
             return res.status(400).json({
-                error: `All fields are required, including CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                error: 'Please fill in all required fields (name, email, message).'
             });
         }
-
-        // Temporarily disabled CAPTCHA validation
-        // const correctAnswer = req.session.captchaAnswer;
-        // if (!correctAnswer || captchaAnswer !== correctAnswer) {
-        //     userSession.attempts += 1;
-        //     console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
-        //     return res.status(400).json({
-        //         error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
-        //     });
-        // }
 
         const transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -332,10 +280,6 @@ app.post('/api/contact', async (req, res) => {
         };
         await transporter.sendMail(mailOptions);
         console.log('Email sent:', { name, email, message });
-
-        userSession.submissions.push(now);
-        userSession.attempts = 0;
-        req.session.captchaAnswer = null;
 
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (err) {
