@@ -333,7 +333,11 @@ app.post('/api/contact', async (req, res) => {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         const maxAttempts = 3;
+=======
+        const maxAttempts = 5;
+>>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
 =======
         const maxAttempts = 5;
 >>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
@@ -418,7 +422,11 @@ app.post('/api/contact', async (req, res) => {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                 error: 'Incorrect CAPTCHA selection.'
+=======
+                error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+>>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
 =======
                 error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
 >>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
