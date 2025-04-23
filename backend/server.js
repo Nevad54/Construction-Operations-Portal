@@ -240,7 +240,18 @@ app.get('/api/projects', async (req, res) => {
 // Project Routes
 app.post('/api/projects', upload.single('image'), async (req, res) => {
     try {
+        if (!mongoose.connection.readyState) {
+            console.error('MongoDB not connected');
+            return res.status(500).json({ error: 'Database connection error' });
+        }
+
         const { title, description, location, owner, date, status } = req.body;
+        
+        // Validate required fields
+        if (!title || !description) {
+            return res.status(400).json({ error: 'Title and description are required' });
+        }
+
         const project = new Project({
             title,
             description,
@@ -250,11 +261,14 @@ app.post('/api/projects', upload.single('image'), async (req, res) => {
             image: req.file ? `/uploads/${req.file.filename}` : null,
             status: status || 'ongoing'
         });
+
+        console.log('Creating new project:', project);
         await project.save();
+        console.log('Project created successfully:', project);
         res.status(201).json(project);
     } catch (err) {
         console.error('Error creating project:', err);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({ error: 'Server error', details: err.message });
     }
 });
 
