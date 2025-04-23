@@ -33,11 +33,14 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Enable trust proxy for secure cookies behind proxy
+app.set('trust proxy', 1);
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-random-secret-here',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }
+    cookie: { secure: process.env.NODE_ENV === 'production', sameSite: 'none' }
 }));
 
 // Static file paths
