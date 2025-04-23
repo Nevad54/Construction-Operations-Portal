@@ -14,18 +14,12 @@ const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    message: '',
-    captchaAnswer: ''
+    message: ''
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
-  const [captchaData, setCaptchaData] = useState({
-    question: 'Loading CAPTCHA...',
-    images: [],
-    correct: ''
-  });
-  const [selectedCaptcha, setSelectedCaptcha] = useState(null);
+
 
   const location = useLocation();
 
@@ -95,35 +89,10 @@ const Contact = () => {
       newErrors.email = 'Email is invalid';
     }
     if (!formData.message.trim()) newErrors.message = 'Message is required';
-    if (!formData.captchaAnswer) newErrors.captcha = 'Please complete the CAPTCHA';
     return newErrors;
   };
 
-  const getCaptcha = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/captcha`, { credentials: 'include' });
-      if (!response.ok) {
-        throw new Error('Failed to fetch CAPTCHA');
-      }
-      const data = await response.json();
-      console.log('Received CAPTCHA data:', data);
-      setCaptchaData(data);
-      setSelectedCaptcha(null);
-      setFormData(prev => ({ ...prev, captchaAnswer: '' }));
-    } catch (error) {
-      console.error('Error fetching CAPTCHA:', error);
-      setErrors(prev => ({ ...prev, captcha: 'Error loading CAPTCHA' }));
-    }
-  };
 
-  useEffect(() => {
-    getCaptcha();
-  }, []);
-
-  const handleCaptchaSelect = (id) => {
-    setSelectedCaptcha(id);
-    setFormData(prev => ({ ...prev, captchaAnswer: id }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -146,9 +115,8 @@ const Contact = () => {
 
         if (response.ok) {
           setSubmitStatus({ type: 'success', message: 'Thank you for your message! We will get back to you soon.' });
-          setFormData({ name: '', email: '', message: '', captchaAnswer: '' });
+          setFormData({ name: '', email: '', message: '' });
           setErrors({});
-          getCaptcha(); // Get new CAPTCHA for next submission
         } else {
           setSubmitStatus({ 
             type: 'error', 
@@ -158,7 +126,6 @@ const Contact = () => {
             // Rate limit reached, disable form temporarily
             setIsSubmitting(true);
           }
-          getCaptcha(); // Get new CAPTCHA after failed attempt
         }
       } catch (error) {
         console.error('Error submitting form:', error);
@@ -243,24 +210,7 @@ const Contact = () => {
                   ></textarea>
                   {errors.message && <span id="message-error" className="error">{errors.message}</span>}
                 </div>
-                <div className="form-group captcha-group">
-                  <label>CAPTCHA Verification</label>
-                  <div className="captcha-question">
-                    Select the image that shows a {captchaData.correct}
-                  </div>
-                  <div className="captcha-images">
-                    {captchaData.images.map((image, index) => (
-                      <img
-                        key={index}
-                        src={`${IMAGE_BASE_URL}${image.src}`}
-                        alt={`CAPTCHA option ${index + 1}`}
-                        className={selectedCaptcha === image.id ? 'selected' : ''}
-                        onClick={() => handleCaptchaSelect(image.id)}
-                      />
-                    ))}
-                  </div>
-                  {errors.captcha && <span id="captcha-error" className="error">{errors.captcha}</span>}
-                </div>
+
                 <button 
                   type="submit" 
                   className="btn" 
