@@ -128,7 +128,6 @@ const Contact = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          credentials: 'include',
           body: JSON.stringify({
             ...formData,
             recaptchaToken
@@ -138,38 +137,25 @@ const Contact = () => {
         const data = await response.json();
 
         if (response.ok) {
-          setSubmitStatus({ type: 'success', message: 'Thank you for your message! We will get back to you soon.' });
+          setSubmitStatus({ type: 'success', message: 'Message sent successfully!' });
           setFormData({ name: '', email: '', message: '' });
-          setRecaptchaToken('');
-          setErrors({});
-          // Reset reCAPTCHA
           if (recaptchaRef.current) {
             recaptchaRef.current.reset();
           }
         } else {
-          setAttempts(prev => prev - 1);
           setSubmitStatus({ 
             type: 'error', 
             message: data.error || 'Failed to send message. Please try again.'
           });
-          if (attempts <= 1) {
-            setSubmitStatus({ 
-              type: 'error', 
-              message: 'You have no attempts remaining. Please try again later.'
-            });
-            setIsSubmitting(true);
-          } else {
-            // Reset reCAPTCHA on error
-            if (recaptchaRef.current) {
-              recaptchaRef.current.reset();
-            }
+          if (recaptchaRef.current) {
+            recaptchaRef.current.reset();
           }
         }
       } catch (error) {
         console.error('Error submitting form:', error);
         setSubmitStatus({ 
           type: 'error', 
-          message: 'Network error. Please check your connection and try again.'
+          message: 'An error occurred. Please try again later.'
         });
       } finally {
         setIsSubmitting(false);
