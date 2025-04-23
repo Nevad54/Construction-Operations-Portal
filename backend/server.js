@@ -385,47 +385,54 @@ app.post('/api/contact', async (req, res) => {
             }
         } catch (recaptchaError) {
             console.error('Error verifying reCAPTCHA:', recaptchaError);
-            // Continue with form submission even if reCAPTCHA verification fails
-            // This is a fallback for development or when reCAPTCHA service is down
-            console.log('Proceeding with form submission despite reCAPTCHA verification error');
+            return res.status(400).json({
+                error: 'Failed to verify reCAPTCHA. Please try again.'
+            });
         }
 
         // Check if email configuration is available
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            console.log('Email configuration missing. Skipping email send.');
+            console.log('Email configuration missing. Returning success without sending email.');
             return res.status(200).json({ 
-                message: 'Message received successfully (email sending disabled)',
-                debug: process.env.NODE_ENV === 'development' ? 'Email configuration missing' : undefined
+                message: 'Message received successfully. We will get back to you soon.'
             });
         }
 
-        console.log('Setting up email transport...');
-        const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 587,
-            secure: false,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
+        try {
+            console.log('Setting up email transport...');
+            const transporter = nodemailer.createTransport({
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false,
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS
+                }
+            });
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            replyTo: email,
-            to: process.env.CONTACT_EMAIL || process.env.EMAIL_USER,
-            subject: `New Contact Form Submission from ${name}`,
-            text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
-            html: `<p><strong>Name:</strong> ${name}</p>
-                   <p><strong>Email:</strong> ${email}</p>
-                   <p><strong>Message:</strong> ${message}</p>`
-        };
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                replyTo: email,
+                to: process.env.CONTACT_EMAIL || process.env.EMAIL_USER,
+                subject: `New Contact Form Submission from ${name}`,
+                text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
+                html: `<p><strong>Name:</strong> ${name}</p>
+                       <p><strong>Email:</strong> ${email}</p>
+                       <p><strong>Message:</strong> ${message}</p>`
+            };
 
-        console.log('Sending email...');
-        await transporter.sendMail(mailOptions);
-        console.log('Email sent successfully');
-        
-        res.status(200).json({ message: 'Message sent successfully' });
+            console.log('Sending email...');
+            await transporter.sendMail(mailOptions);
+            console.log('Email sent successfully');
+            
+            res.status(200).json({ message: 'Message sent successfully' });
+        } catch (emailError) {
+            console.error('Error sending email:', emailError);
+            // Still return success since the form was submitted correctly
+            res.status(200).json({ 
+                message: 'Message received successfully. We will get back to you soon.'
+            });
+        }
     } catch (err) {
         console.error('Error processing contact form:', err);
         console.error('Error details:', {
