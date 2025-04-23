@@ -9,6 +9,7 @@ const session = require('express-session');
 const basicAuth = require('express-basic-auth');
 const nodemailer = require('nodemailer');
 const requestIp = require('request-ip');
+const fetch = require('node-fetch');
 const Project = require('./models/Projects');
 
 dotenv.config();
@@ -224,12 +225,31 @@ app.delete('/api/projects/:id', async (req, res) => {
     }
 });
 
-// Contact Form Route with simple rate limiting
+// Helper function to verify reCAPTCHA token
+async function verifyRecaptcha(token) {
+    try {
+        const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe'; // Test secret key
+        const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `secret=${recaptchaSecret}&response=${token}`
+        });
+        const data = await response.json();
+        return data.success;
+    } catch (error) {
+        console.error('reCAPTCHA verification error:', error);
+        return false;
+    }
+}
+
+// Contact Form Route with reCAPTCHA verification and rate limiting
 app.post('/api/contact', async (req, res) => {
     console.log('Contact POST received');
     try {
         const clientIp = requestIp.getClientIp(req);
-        const { name, email, message, captchaAnswer } = req.body;
+        const { name, email, message, recaptchaToken } = req.body;
         
         // Initialize session data for this IP if it doesn't exist
         req.session[clientIp] = req.session[clientIp] || {
@@ -239,6 +259,7 @@ app.post('/api/contact', async (req, res) => {
         const userSession = req.session[clientIp];
         
         // Rate limiting configuration
+        const maxAttempts = 5;
         const maxHourlySubmissions = 3;
         const now = Date.now();
         
@@ -256,10 +277,21 @@ app.post('/api/contact', async (req, res) => {
         }
         
         // Basic validation
-        if (!name || !email || !message) {
-            console.log('Missing fields:', { name, email, message });
+        if (!name || !email || !message || !recaptchaToken) {
+            userSession.attempts += 1;
+            console.log('Missing fields:', { name, email, message, recaptchaToken, attempts: userSession.attempts });
             return res.status(400).json({
-                error: `Please fill in all required fields.`
+                error: `All fields are required, including CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+            });
+        }
+        
+        // Verify reCAPTCHA token
+        const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+        if (!isRecaptchaValid) {
+            userSession.attempts += 1;
+            console.log('reCAPTCHA verification failed:', { attempts: userSession.attempts });
+            return res.status(400).json({
+                error: `Invalid CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
             });
         }
 
