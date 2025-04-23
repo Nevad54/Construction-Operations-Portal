@@ -323,7 +323,7 @@ app.post('/api/contact', async (req, res) => {
     try {
         const clientIp = requestIp.getClientIp(req);
         console.log('Raw request body:', req.body);
-        const { name, email, message, captchaAnswer } = req.body;
+        const { name, email, message, recaptchaToken } = req.body;
 
         req.session[clientIp] = req.session[clientIp] || {
             attempts: 0,
@@ -361,22 +361,30 @@ app.post('/api/contact', async (req, res) => {
             return res.status(429).json({ error: 'You have no attempts remaining. Please try again later.' });
         }
 
-        if (!name || !email || !message || !captchaAnswer) {
+        if (!name || !email || !message || !recaptchaToken) {
             userSession.attempts += 1;
-            console.log('Missing fields:', { name, email, message, captchaAnswer, attempts: userSession.attempts });
+            console.log('Missing fields:', { name, email, message, recaptchaToken, attempts: userSession.attempts });
             return res.status(400).json({
-                error: 'All fields are required, including CAPTCHA.'
+                error: 'All fields are required, including reCAPTCHA verification.'
             });
         }
 
-        const correctAnswer = req.session.captchaAnswer;
-        if (!correctAnswer || !Array.isArray(captchaAnswer) || !Array.isArray(correctAnswer) || 
-            captchaAnswer.length !== correctAnswer.length || 
-            !captchaAnswer.every(id => correctAnswer.includes(id))) {
+        // Verify reCAPTCHA token
+        const recaptchaSecret = '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh';
+        const recaptchaResponse = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `secret=${recaptchaSecret}&response=${recaptchaToken}`
+        });
+
+        const recaptchaData = await recaptchaResponse.json();
+        if (!recaptchaData.success) {
             userSession.attempts += 1;
-            console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
+            console.log('reCAPTCHA verification failed:', { recaptchaData, attempts: userSession.attempts });
             return res.status(400).json({
-                error: 'Incorrect CAPTCHA selection.'
+                error: 'reCAPTCHA verification failed. Please try again.'
             });
         }
 
@@ -402,7 +410,6 @@ app.post('/api/contact', async (req, res) => {
 
         userSession.submissions.push(now);
         userSession.attempts = 0;
-        req.session.captchaAnswer = null;
 
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (err) {
