@@ -98,7 +98,7 @@ const Contact = () => {
       if (window.grecaptcha && captchaContainerRef.current) {
         try {
           window.grecaptcha.render(captchaContainerRef.current, {
-            sitekey: '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI',
+            sitekey: '6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02',
             callback: 'onRecaptchaSuccess'
           });
         } catch (error) {

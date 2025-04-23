@@ -130,7 +130,7 @@ const connectDB = async () => {
 async function verifyRecaptcha(token) {
     return new Promise((resolve) => {
         try {
-            const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe'; // Test secret key
+            const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh'; // Production secret key
             
             const data = querystring.stringify({
                 secret: recaptchaSecret,
