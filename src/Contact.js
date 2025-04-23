@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -14,13 +14,15 @@ const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    message: '',
-    recaptchaToken: ''
+    message: ''
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
-  const recaptchaRef = React.createRef();
+  const [captchaImages, setCaptchaImages] = useState([]);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [captchaQuestion, setCaptchaQuestion] = useState('');
+  const [attempts, setAttempts] = useState(3);
 
   const location = useLocation();
 
@@ -76,6 +78,31 @@ const Contact = () => {
     };
   }, [isSidebarActive]);
 
+  useEffect(() => {
+    fetchCaptcha();
+  }, []);
+
+  const fetchCaptcha = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/captcha`);
+      const data = await response.json();
+      setCaptchaImages(data.images);
+      setCaptchaQuestion(data.question);
+      setSelectedImages([]);
+    } catch (error) {
+      console.error('Error fetching CAPTCHA:', error);
+    }
+  };
+
+  const handleImageSelect = (imageId) => {
+    setSelectedImages(prev => {
+      if (prev.includes(imageId)) {
+        return prev.filter(id => id !== imageId);
+      }
+      return [...prev, imageId];
+    });
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -90,18 +117,8 @@ const Contact = () => {
       newErrors.email = 'Email is invalid';
     }
     if (!formData.message.trim()) newErrors.message = 'Message is required';
-    if (!formData.recaptchaToken) newErrors.captcha = 'Please complete the reCAPTCHA verification';
+    if (selectedImages.length === 0) newErrors.captcha = 'Please select the required images';
     return newErrors;
-  };
-
-
-
-  const handleRecaptchaChange = (token) => {
-    setFormData(prev => ({ ...prev, recaptchaToken: token }));
-    // Clear any previous captcha errors
-    if (errors.captcha) {
-      setErrors(prev => ({ ...prev, captcha: null }));
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -118,31 +135,35 @@ const Contact = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(formData),
+          credentials: 'include',
+          body: JSON.stringify({
+            ...formData,
+            captchaAnswer: selectedImages
+          }),
         });
 
         const data = await response.json();
 
         if (response.ok) {
           setSubmitStatus({ type: 'success', message: 'Thank you for your message! We will get back to you soon.' });
-          setFormData({ name: '', email: '', message: '', recaptchaToken: '' });
+          setFormData({ name: '', email: '', message: '' });
+          setSelectedImages([]);
           setErrors({});
-          // Reset reCAPTCHA
-          if (window.grecaptcha) {
-            window.grecaptcha.reset();
-          }
+          fetchCaptcha();
         } else {
+          setAttempts(prev => prev - 1);
           setSubmitStatus({ 
             type: 'error', 
             message: data.error || 'Failed to send message. Please try again.'
           });
-          if (response.status === 429) {
-            // Rate limit reached, disable form temporarily
+          if (attempts <= 1) {
+            setSubmitStatus({ 
+              type: 'error', 
+              message: 'You have no attempts remaining. Please try again later.'
+            });
             setIsSubmitting(true);
-            // Reset reCAPTCHA
-            if (window.grecaptcha) {
-              window.grecaptcha.reset();
-            }
+          } else {
+            fetchCaptcha();
           }
         }
       } catch (error) {
@@ -228,26 +249,27 @@ const Contact = () => {
                   ></textarea>
                   {errors.message && <span id="message-error" className="error">{errors.message}</span>}
                 </div>
+                
                 <div className="form-group captcha-group">
-                  <label>Verification</label>
-                  <div className="g-recaptcha" 
-                    data-sitekey="6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02"
-                    data-callback="onRecaptchaSuccess"
-                    ref={recaptchaRef}>
+                  <p className="captcha-question">{captchaQuestion}</p>
+                  <div className="captcha-images">
+                    {captchaImages.map((image, index) => (
+                      <img
+                        key={index}
+                        src={image.url}
+                        alt={`CAPTCHA image ${index + 1}`}
+                        className={selectedImages.includes(image.id) ? 'selected' : ''}
+                        onClick={() => handleImageSelect(image.id)}
+                      />
+                    ))}
                   </div>
-                  {errors.captcha && <span id="captcha-error" className="error">{errors.captcha}</span>}
+                  {errors.captcha && <span className="error">{errors.captcha}</span>}
                 </div>
-                <script>
-                  {`
-                    window.onRecaptchaSuccess = function(token) {
-                      ${handleRecaptchaChange.toString().replace('handleRecaptchaChange', '')}
-                    }
-                  `}
-                </script>
+
                 <button 
                   type="submit" 
                   className="btn" 
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || attempts <= 0}
                 >
                   {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
@@ -305,8 +327,6 @@ const Contact = () => {
         </div>
       </footer>
     </div>
-
-    
   );
 };
 
