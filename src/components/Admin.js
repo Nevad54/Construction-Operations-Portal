@@ -2,10 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useProjects } from '../context/ProjectContext';
 import '../styles/Admin.css';
 
-// Get the base URL for images based on environment
-const IMAGE_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://mastertech-app.onrender.com'  // Your Render backend URL
-  : 'http://localhost:5000';  // Local development URL
+const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
 
 const Admin = () => {
     const { projects, addProject, updateProject, deleteProject } = useProjects();
