@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -20,7 +19,10 @@ const Contact = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
-
+  const [captchaImages, setCaptchaImages] = useState([]);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [captchaQuestion, setCaptchaQuestion] = useState('');
+  const [attempts, setAttempts] = useState(3);
 
   const location = useLocation();
 
@@ -76,18 +78,34 @@ const Contact = () => {
     };
   }, [isSidebarActive]);
 
+  useEffect(() => {
+    fetchCaptcha();
+  }, []);
+
+  const fetchCaptcha = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/captcha`);
+      const data = await response.json();
+      setCaptchaImages(data.images);
+      setCaptchaQuestion(data.question);
+      setSelectedImages([]);
+    } catch (error) {
+      console.error('Error fetching CAPTCHA:', error);
+    }
+  };
+
+  const handleImageSelect = (imageId) => {
+    setSelectedImages(prev => {
+      if (prev.includes(imageId)) {
+        return prev.filter(id => id !== imageId);
+      }
+      return [...prev, imageId];
+    });
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-  };
-
-  // reCAPTCHA handling
-  const [recaptchaToken, setRecaptchaToken] = useState('');
-  const recaptchaRef = useRef(null);
-
-  const handleRecaptchaChange = (token) => {
-    console.log('reCAPTCHA verified:', token);
-    setRecaptchaToken(token);
   };
 
   const validateForm = () => {
@@ -99,11 +117,9 @@ const Contact = () => {
       newErrors.email = 'Email is invalid';
     }
     if (!formData.message.trim()) newErrors.message = 'Message is required';
-    if (!recaptchaToken) newErrors.captcha = 'Please complete the reCAPTCHA verification';
+    if (selectedImages.length === 0) newErrors.captcha = 'Please select the required images';
     return newErrors;
   };
-
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -122,7 +138,7 @@ const Contact = () => {
           credentials: 'include',
           body: JSON.stringify({
             ...formData,
-            recaptchaToken
+            captchaAnswer: selectedImages
           }),
         });
 
@@ -131,20 +147,23 @@ const Contact = () => {
         if (response.ok) {
           setSubmitStatus({ type: 'success', message: 'Thank you for your message! We will get back to you soon.' });
           setFormData({ name: '', email: '', message: '' });
-          setRecaptchaToken('');
+          setSelectedImages([]);
           setErrors({});
-          // Reset reCAPTCHA
-          if (window.grecaptcha) {
-            window.grecaptcha.reset();
-          }
+          fetchCaptcha();
         } else {
+          setAttempts(prev => prev - 1);
           setSubmitStatus({ 
             type: 'error', 
             message: data.error || 'Failed to send message. Please try again.'
           });
-          if (response.status === 429) {
-            // Rate limit reached, disable form temporarily
+          if (attempts <= 1) {
+            setSubmitStatus({ 
+              type: 'error', 
+              message: 'You have no attempts remaining. Please try again later.'
+            });
             setIsSubmitting(true);
+          } else {
+            fetchCaptcha();
           }
         }
       } catch (error) {
@@ -231,20 +250,26 @@ const Contact = () => {
                   {errors.message && <span id="message-error" className="error">{errors.message}</span>}
                 </div>
                 
-                <div className="form-group captcha-group" style={{ margin: '20px 0', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
-                  <p style={{ marginBottom: '10px', fontWeight: 'bold' }}>Please verify you're not a robot:</p>
-                  <ReCAPTCHA
-                    ref={recaptchaRef}
-                    sitekey="6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02"
-                    onChange={handleRecaptchaChange}
-                  />
-                  {errors.captcha && <span id="captcha-error" className="error" style={{ color: 'red', display: 'block', marginTop: '10px' }}>{errors.captcha}</span>}
+                <div className="form-group captcha-group">
+                  <p className="captcha-question">{captchaQuestion}</p>
+                  <div className="captcha-images">
+                    {captchaImages.map((image, index) => (
+                      <img
+                        key={index}
+                        src={image.url}
+                        alt={`CAPTCHA image ${index + 1}`}
+                        className={selectedImages.includes(image.id) ? 'selected' : ''}
+                        onClick={() => handleImageSelect(image.id)}
+                      />
+                    ))}
+                  </div>
+                  {errors.captcha && <span className="error">{errors.captcha}</span>}
                 </div>
 
                 <button 
                   type="submit" 
                   className="btn" 
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || attempts <= 0}
                 >
                   {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
@@ -302,8 +327,6 @@ const Contact = () => {
         </div>
       </footer>
     </div>
-
-    
   );
 };
 
