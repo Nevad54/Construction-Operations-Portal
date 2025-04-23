@@ -38,6 +38,16 @@ app.use(cors({
         : true,
     credentials: true
 }));
+
+// Add CSP headers
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'self' https://www.google.com https://recaptcha.google.com https://www.gstatic.com;"
+  );
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
