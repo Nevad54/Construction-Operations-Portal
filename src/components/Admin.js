@@ -28,8 +28,7 @@ const Admin = () => {
         location: '',
         date: '',
         image: null,
-        status: 'ongoing',
-        featured: false
+        status: 'ongoing'
     });
 
     const [imagePreview, setImagePreview] = useState(null);
@@ -67,7 +66,9 @@ const Admin = () => {
             setLoading(true);
             const formDataToSend = new FormData();
             Object.keys(formData).forEach(key => {
-                formDataToSend.append(key, formData[key]);
+                if (formData[key] !== null) {
+                    formDataToSend.append(key, formData[key]);
+                }
             });
 
             await addProject(formDataToSend);
@@ -77,10 +78,10 @@ const Admin = () => {
                 location: '',
                 date: '',
                 image: null,
-                status: 'ongoing',
-                featured: false
+                status: 'ongoing'
             });
             setImagePreview(null);
+            setShowModal(false);
         } catch (error) {
             setError('Error adding project: ' + error.message);
         } finally {
@@ -102,7 +103,9 @@ const Admin = () => {
             setLoading(true);
             const formDataToSend = new FormData();
             Object.keys(editingProject).forEach(key => {
-                formDataToSend.append(key, editingProject[key]);
+                if (editingProject[key] !== null) {
+                    formDataToSend.append(key, editingProject[key]);
+                }
             });
 
             await updateProject(editingProject._id, formDataToSend);
@@ -316,15 +319,6 @@ const Admin = () => {
                         <option value="ongoing">Ongoing</option>
                         <option value="completed">Completed</option>
                       </select>
-                      <label className="checkbox-label">
-                        <input
-                          type="checkbox"
-                          name="featured"
-                          checked={editingProject ? editingProject.featured : formData.featured}
-                          onChange={editingProject ? e => setEditingProject({ ...editingProject, featured: e.target.checked }) : handleInputChange}
-                        />
-                        Featured Project
-                      </label>
                       <div className="modal-actions">
                         <button type="button" className="cancel-btn" onClick={() => { setShowModal(false); setEditingProject(null); setImagePreview(null); setEditImagePreview(null); }}>Cancel</button>
                         <button type="submit" className="submit-btn">{editingProject ? 'Save Changes' : 'Add Project'}</button>
@@ -351,14 +345,10 @@ const Admin = () => {
                         <div key={project._id} ref={el => cardRefs.current.ongoing[project._id] = el} className={`project${selectedProjects.ongoing.includes(project._id) ? ' selected' : ''}`} tabIndex={0} onClick={e => handleCardSelect('ongoing', project._id, idx, e)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleCardSelect('ongoing', project._id, idx, e); }}>
                             {project.image && <img src={`${IMAGE_BASE_URL}${project.image}`} alt={project.title} />}
                             <div className="project-content">
-                                <h3>
-                                    {project.title}
-                                    {project.featured && <span className="featured-star">★</span>}
-                                </h3>
+                                <h3>{project.title}</h3>
                                 <p>{project.description}</p>
                                 <p><strong>Location:</strong> {project.location || 'N/A'}</p>
                                 <p><strong>Date Completed:</strong> {project.date ? new Date(project.date).toLocaleDateString() : 'N/A'}</p>
-                                <p><strong>Featured:</strong> {project.featured ? 'Yes' : 'No'}</p>
                             </div>
                             <div className="project-actions">
                                 <button onClick={() => handleEdit(project)}>
@@ -391,14 +381,10 @@ const Admin = () => {
                         <div key={project._id} ref={el => cardRefs.current.completed[project._id] = el} className={`project${selectedProjects.completed.includes(project._id) ? ' selected' : ''}`} tabIndex={0} onClick={e => handleCardSelect('completed', project._id, idx, e)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleCardSelect('completed', project._id, idx, e); }}>
                             {project.image && <img src={`${IMAGE_BASE_URL}${project.image}`} alt={project.title} />}
                             <div className="project-content">
-                                <h3>
-                                    {project.title}
-                                    {project.featured && <span className="featured-star">★</span>}
-                                </h3>
+                                <h3>{project.title}</h3>
                                 <p>{project.description}</p>
                                 <p><strong>Location:</strong> {project.location || 'N/A'}</p>
                                 <p><strong>Date Completed:</strong> {project.date ? new Date(project.date).toLocaleDateString() : 'N/A'}</p>
-                                <p><strong>Featured:</strong> {project.featured ? 'Yes' : 'No'}</p>
                             </div>
                             <div className="project-actions">
                                 <button onClick={() => handleEdit(project)}>
