@@ -137,6 +137,14 @@ const Contact = () => {
         return;
     }
 
+    if (attemptsRemaining <= 0) {
+        setSubmitStatus({
+            type: 'error',
+            message: 'Maximum attempts reached. Please try again later.'
+        });
+        return;
+    }
+
     try {
         setIsSubmitting(true);
         const response = await fetch(`${API_BASE_URL}/api/contact`, {
