@@ -24,7 +24,7 @@ export const api = {
             formData.append(key, projectData[key]);
         });
 
-        const response = await fetch(`${API_BASE_URL}/projects`, {
+        const response = await fetch(`${API_BASE_URL}/api/projects`, {
             method: 'POST',
             body: formData,
         });
@@ -40,7 +40,7 @@ export const api = {
             formData.append(key, projectData[key]);
         });
 
-        const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
             method: 'PUT',
             body: formData,
         });
@@ -51,7 +51,7 @@ export const api = {
     },
 
     deleteProject: async (id) => {
-        const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
             method: 'DELETE',
         });
         if (!response.ok) {
