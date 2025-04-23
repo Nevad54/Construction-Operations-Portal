@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -84,19 +85,10 @@ const Contact = () => {
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const recaptchaRef = useRef(null);
 
-  // Initialize reCAPTCHA when component mounts
-  useEffect(() => {
-    // Create a global callback function for reCAPTCHA
-    window.onRecaptchaSuccess = (token) => {
-      console.log('reCAPTCHA verified:', token);
-      setRecaptchaToken(token);
-    };
-
-    // Cleanup function
-    return () => {
-      delete window.onRecaptchaSuccess;
-    };
-  }, []);
+  const handleRecaptchaChange = (token) => {
+    console.log('reCAPTCHA verified:', token);
+    setRecaptchaToken(token);
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -239,13 +231,14 @@ const Contact = () => {
                   {errors.message && <span id="message-error" className="error">{errors.message}</span>}
                 </div>
                 
-                <div className="form-group captcha-group">
-                  <div 
-                    className="g-recaptcha" 
-                    data-sitekey="6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02" 
-                    data-callback="onRecaptchaSuccess"
-                  ></div>
-                  {errors.captcha && <span id="captcha-error" className="error">{errors.captcha}</span>}
+                <div className="form-group captcha-group" style={{ margin: '20px 0', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
+                  <p style={{ marginBottom: '10px', fontWeight: 'bold' }}>Please verify you're not a robot:</p>
+                  <ReCAPTCHA
+                    ref={recaptchaRef}
+                    sitekey="6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02"
+                    onChange={handleRecaptchaChange}
+                  />
+                  {errors.captcha && <span id="captcha-error" className="error" style={{ color: 'red', display: 'block', marginTop: '10px' }}>{errors.captcha}</span>}
                 </div>
 
                 <button 
