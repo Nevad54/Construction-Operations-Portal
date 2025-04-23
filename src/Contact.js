@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -119,6 +118,27 @@ const Contact = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+<<<<<<< HEAD
+=======
+  // reCAPTCHA handling
+  const [recaptchaToken, setRecaptchaToken] = useState('');
+  const recaptchaRef = useRef(null);
+
+  // Initialize reCAPTCHA when component mounts
+  useEffect(() => {
+    // Create a global callback function for reCAPTCHA
+    window.onRecaptchaSuccess = (token) => {
+      console.log('reCAPTCHA verified:', token);
+      setRecaptchaToken(token);
+    };
+
+    // Cleanup function
+    return () => {
+      delete window.onRecaptchaSuccess;
+    };
+  }, []);
+
+>>>>>>> parent of b29e6c3 (Switch to React reCAPTCHA component and fix HTML lint issues)
   const validateForm = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
@@ -277,6 +297,7 @@ const Contact = () => {
                 
                 <div className="form-group captcha-group">
 <<<<<<< HEAD
+<<<<<<< HEAD
                   <p className="captcha-question">{captchaQuestion}</p>
                   <div className="captcha-images">
                     {captchaImages.map((image, index) => (
@@ -297,6 +318,14 @@ const Contact = () => {
                   />
 >>>>>>> parent of 8e04a58 (Update reCAPTCHA with production keys)
                   {errors.captcha && <span className="error">{errors.captcha}</span>}
+=======
+                  <div 
+                    className="g-recaptcha" 
+                    data-sitekey="6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02" 
+                    data-callback="onRecaptchaSuccess"
+                  ></div>
+                  {errors.captcha && <span id="captcha-error" className="error">{errors.captcha}</span>}
+>>>>>>> parent of b29e6c3 (Switch to React reCAPTCHA component and fix HTML lint issues)
                 </div>
 
                 <button 
