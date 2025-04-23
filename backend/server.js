@@ -343,11 +343,6 @@ app.post('/api/contact', async (req, res) => {
         const oneHourAgo = now - (60 * 60 * 1000);
 
         // Initialize session if it doesn't exist
-        if (!req.session) {
-            req.session = {};
-        }
-
-        // Get or initialize attempts for this IP
         if (!req.session.contactAttempts) {
             req.session.contactAttempts = [];
         }
@@ -357,9 +352,11 @@ app.post('/api/contact', async (req, res) => {
 
         // Check if user has exceeded attempts
         if (req.session.contactAttempts.length >= 3) {
-            console.log('Too many attempts from IP:', clientIp, 'Attempts:', req.session.contactAttempts.length);
+            const oldestAttempt = req.session.contactAttempts[0];
+            const timeLeft = Math.ceil((oldestAttempt + (60 * 60 * 1000) - now) / 1000 / 60);
+            console.log('Too many attempts from IP:', clientIp);
             return res.status(429).json({
-                error: 'Too many attempts. Please try again in an hour.'
+                error: `Too many attempts. Please try again in ${timeLeft} minutes.`
             });
         }
 
@@ -377,7 +374,7 @@ app.post('/api/contact', async (req, res) => {
             phone: req.body.phone,
             hasMessage: !!req.body.message,
             hasRecaptcha: !!req.body.recaptchaToken,
-            attempts: req.session.contactAttempts.length
+            attemptsRemaining: 3 - req.session.contactAttempts.length
         });
 
         const { name, email, phone, message, recaptchaToken } = req.body;

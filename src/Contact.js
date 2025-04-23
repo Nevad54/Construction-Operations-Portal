@@ -24,8 +24,8 @@ const Contact = () => {
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const recaptchaRef = useRef(null);
   const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
-  const [remainingAttempts, setRemainingAttempts] = useState(3);
-  const [lastAttemptTime, setLastAttemptTime] = useState(null);
+  const [attemptsRemaining, setAttemptsRemaining] = useState(3);
+  const [timeUntilReset, setTimeUntilReset] = useState(null);
 
   const location = useLocation();
 
@@ -154,12 +154,11 @@ const Contact = () => {
 
         if (!response.ok) {
             if (response.status === 429) {
-                const retryAfter = 60 * 60 * 1000; // 1 hour in milliseconds
-                setLastAttemptTime(Date.now());
-                setRemainingAttempts(0);
+                const timeLeft = parseInt(data.error.match(/\d+/)[0]);
+                setTimeUntilReset(timeLeft);
                 setSubmitStatus({
                     type: 'error',
-                    message: 'Too many attempts. Please try again in an hour.'
+                    message: data.error
                 });
                 return;
             }
@@ -170,10 +169,6 @@ const Contact = () => {
             type: 'success',
             message: data.message || 'Message sent successfully!'
         });
-        
-        // Update remaining attempts
-        setRemainingAttempts(prev => Math.max(0, prev - 1));
-        setLastAttemptTime(Date.now());
         
         // Reset form and reCAPTCHA only on success
         setFormData({
@@ -187,6 +182,7 @@ const Contact = () => {
         }
         setRecaptchaToken('');
         setIsRecaptchaVerified(false);
+        setAttemptsRemaining(prev => Math.max(0, prev - 1));
     } catch (err) {
         setSubmitStatus({
             type: 'error',
@@ -198,16 +194,26 @@ const Contact = () => {
     }
   };
 
-  // Check if attempts should be reset
+  // Add timer effect for attempts reset
   useEffect(() => {
-    if (lastAttemptTime) {
-            const oneHourAgo = Date.now() - (60 * 60 * 1000);
-            if (lastAttemptTime < oneHourAgo) {
-                setRemainingAttempts(3);
-                setLastAttemptTime(null);
-            }
-        }
-    }, [lastAttemptTime]);
+    let timer;
+    if (timeUntilReset > 0) {
+      timer = setInterval(() => {
+        setTimeUntilReset(prev => {
+          if (prev <= 1) {
+            setAttemptsRemaining(3);
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 60000); // Update every minute
+    }
+    return () => {
+      if (timer) {
+        clearInterval(timer);
+      }
+    };
+  }, [timeUntilReset]);
 
   return (
     <div>
@@ -307,18 +313,20 @@ const Contact = () => {
                   {errors.captcha && <span className="error">{errors.captcha}</span>}
                 </div>
 
-                <div className="form-group">
-                  <p className="attempts-info">
-                    {remainingAttempts > 0 
-                      ? `Attempts remaining: ${remainingAttempts}`
-                      : 'No attempts remaining. Please try again in an hour.'}
-                  </p>
-                </div>
+                {timeUntilReset ? (
+                  <div className="attempts-info">
+                    <p className="error">Please wait {timeUntilReset} minutes before trying again.</p>
+                  </div>
+                ) : (
+                  <div className="attempts-info">
+                    <p>Attempts remaining: {attemptsRemaining}</p>
+                  </div>
+                )}
 
                 <button 
                   type="submit" 
                   className="btn" 
-                  disabled={isSubmitting || remainingAttempts <= 0}
+                  disabled={isSubmitting || timeUntilReset !== null}
                 >
                   {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
