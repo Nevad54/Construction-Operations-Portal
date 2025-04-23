@@ -31,10 +31,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Middleware
-app.use(cors({
-    origin: ['https://mastertech-frontend-yqjb.onrender.com', 'http://localhost:3000'],
-    credentials: true
-}));
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
@@ -68,42 +65,27 @@ app.get('/', (req, res) => {
 
 // CAPTCHA Route
 app.get('/api/captcha', (req, res) => {
-    try {
-        // Generate a random question
-        const questions = [
-            "Select all squares with traffic lights",
-            "Select all squares with cars",
-            "Select all squares with bicycles",
-            "Select all squares with pedestrians",
-            "Select all squares with trees",
-            "Select all squares with buildings"
-        ];
-        const question = questions[Math.floor(Math.random() * questions.length)];
+    console.log('HIT /api/captcha');
+    const imageOptions = [
+        { src: '/uploads/dog.jpg', id: 'dog', label: 'Dog' },
+        { src: '/uploads/cat.jpg', id: 'cat', label: 'Cat' },
+        { src: '/uploads/bird.jpg', id: 'bird', label: 'Bird' }
+    ];
+    const correctIndex = Math.floor(Math.random() * imageOptions.length);
+    const correctAnswer = imageOptions[correctIndex].id;
 
-        // Generate 9 random images (3x3 grid)
-        const images = Array.from({ length: 9 }, (_, index) => ({
-            id: index,
-            url: `/captcha-images/${Math.floor(Math.random() * 20)}.jpg` // Assuming you have 20 different images
-        }));
+    req.session.captchaAnswer = correctAnswer;
+    const question = `Please select the image that shows a ${imageOptions[correctIndex].label}`;
+    console.log('Generated CAPTCHA:', { correctAnswer, question });
 
-        // Randomly select 2-4 correct images
-        const numCorrect = Math.floor(Math.random() * 3) + 2; // 2 to 4 correct images
-        const correctAnswers = images
-            .sort(() => Math.random() - 0.5)
-            .slice(0, numCorrect)
-            .map(img => img.id);
-
-        // Store the correct answers in the session
-        req.session.captchaAnswer = correctAnswers;
-
-        res.json({
-            question,
-            images
-        });
-    } catch (error) {
-        console.error('Error generating CAPTCHA:', error);
-        res.status(500).json({ error: 'Failed to generate CAPTCHA' });
-    }
+    const shuffledImages = [...imageOptions].sort(() => Math.random() - 0.5);
+    const response = {
+        images: shuffledImages,
+        correct: correctAnswer,
+        question: question
+    };
+    console.log('Sending response:', response);
+    res.json(response);
 });
 
 // Basic Auth for Admin Page
@@ -318,19 +300,19 @@ app.delete('/api/projects/:id', async (req, res) => {
     }
 });
 
-// Contact Form Route
+// Contact Form Route (unchanged from last version)
 app.post('/api/contact', async (req, res) => {
     try {
         const clientIp = requestIp.getClientIp(req);
         console.log('Raw request body:', req.body);
-        const { name, email, message, recaptchaToken } = req.body;
+        const { name, email, message, captchaAnswer } = req.body;
 
         req.session[clientIp] = req.session[clientIp] || {
             attempts: 0,
             submissions: []
         };
         const userSession = req.session[clientIp];
-        const maxAttempts = 3;
+        const maxAttempts = 5;
         const maxHourlySubmissions = 3;
         const maxDailySubmissions = 10;
         const now = Date.now();
@@ -358,33 +340,23 @@ app.post('/api/contact', async (req, res) => {
 
         if (userSession.attempts >= maxAttempts) {
             console.log('Attempt limit reached:', { ip: clientIp, attempts: userSession.attempts });
-            return res.status(429).json({ error: 'You have no attempts remaining. Please try again later.' });
+            return res.status(429).json({ error: 'Too many attempts. Please try again later.' });
         }
 
-        if (!name || !email || !message || !recaptchaToken) {
+        if (!name || !email || !message || !captchaAnswer) {
             userSession.attempts += 1;
-            console.log('Missing fields:', { name, email, message, recaptchaToken, attempts: userSession.attempts });
+            console.log('Missing fields:', { name, email, message, captchaAnswer, attempts: userSession.attempts });
             return res.status(400).json({
-                error: 'All fields are required, including reCAPTCHA verification.'
+                error: `All fields are required, including CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
             });
         }
 
-        // Verify reCAPTCHA token
-        const recaptchaSecret = '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh';
-        const recaptchaResponse = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `secret=${recaptchaSecret}&response=${recaptchaToken}`
-        });
-
-        const recaptchaData = await recaptchaResponse.json();
-        if (!recaptchaData.success) {
+        const correctAnswer = req.session.captchaAnswer;
+        if (!correctAnswer || captchaAnswer !== correctAnswer) {
             userSession.attempts += 1;
-            console.log('reCAPTCHA verification failed:', { recaptchaData, attempts: userSession.attempts });
+            console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
             return res.status(400).json({
-                error: 'reCAPTCHA verification failed. Please try again.'
+                error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
             });
         }
 
@@ -410,6 +382,7 @@ app.post('/api/contact', async (req, res) => {
 
         userSession.submissions.push(now);
         userSession.attempts = 0;
+        req.session.captchaAnswer = null;
 
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (err) {
@@ -418,7 +391,7 @@ app.post('/api/contact', async (req, res) => {
         req.session[clientIp].attempts += 1;
         console.error('Error processing contact form:', err, { attempts: req.session[clientIp].attempts });
         res.status(500).json({
-            error: 'Failed to send message. Please try again.'
+            error: `Failed to send message. Attempts remaining: ${5 - req.session[clientIp].attempts}`
         });
     }
 });

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import ReCAPTCHA from 'react-google-recaptcha';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -20,9 +19,7 @@ const Contact = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
-  const [recaptchaToken, setRecaptchaToken] = useState('');
-  const recaptchaRef = useRef(null);
-  const [attempts, setAttempts] = useState(3);
+
 
   const location = useLocation();
 
@@ -78,14 +75,52 @@ const Contact = () => {
     };
   }, [isSidebarActive]);
 
-  const handleRecaptchaChange = (token) => {
-    setRecaptchaToken(token);
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+
+  // reCAPTCHA handling
+  const [recaptchaToken, setRecaptchaToken] = useState('');
+  const recaptchaRef = useRef(null);
+  const captchaContainerRef = useRef(null);
+
+  // Initialize reCAPTCHA when component mounts
+  useEffect(() => {
+    // Create a global callback function for reCAPTCHA
+    window.onRecaptchaSuccess = (token) => {
+      console.log('reCAPTCHA verified:', token);
+      setRecaptchaToken(token);
+    };
+
+    // Render reCAPTCHA explicitly
+    const renderReCaptcha = () => {
+      if (window.grecaptcha && captchaContainerRef.current) {
+        try {
+          window.grecaptcha.render(captchaContainerRef.current, {
+            sitekey: '6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02',
+            callback: 'onRecaptchaSuccess'
+          });
+        } catch (error) {
+          console.error('Error rendering reCAPTCHA:', error);
+        }
+      }
+    };
+
+    // If grecaptcha is already loaded
+    if (window.grecaptcha && window.grecaptcha.render) {
+      renderReCaptcha();
+    } else {
+      // Add a callback for when it loads
+      window.onloadCallback = renderReCaptcha;
+    }
+
+    // Cleanup function
+    return () => {
+      delete window.onRecaptchaSuccess;
+      delete window.onloadCallback;
+    };
+  }, []);
 
   const validateForm = () => {
     const newErrors = {};
@@ -100,6 +135,8 @@ const Contact = () => {
     return newErrors;
   };
 
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formErrors = validateForm();
@@ -109,12 +146,11 @@ const Contact = () => {
       setSubmitStatus(null);
       
       try {
-        const response = await fetch(`${API_BASE_URL}/api/contact`, {
+        const response = await fetch(`${API_BASE_URL}/api/contact`, { credentials: 'include',
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          credentials: 'include',
           body: JSON.stringify({
             ...formData,
             recaptchaToken
@@ -129,26 +165,17 @@ const Contact = () => {
           setRecaptchaToken('');
           setErrors({});
           // Reset reCAPTCHA
-          if (recaptchaRef.current) {
-            recaptchaRef.current.reset();
+          if (window.grecaptcha) {
+            window.grecaptcha.reset();
           }
         } else {
-          setAttempts(prev => prev - 1);
           setSubmitStatus({ 
             type: 'error', 
             message: data.error || 'Failed to send message. Please try again.'
           });
-          if (attempts <= 1) {
-            setSubmitStatus({ 
-              type: 'error', 
-              message: 'You have no attempts remaining. Please try again later.'
-            });
+          if (response.status === 429) {
+            // Rate limit reached, disable form temporarily
             setIsSubmitting(true);
-          } else {
-            // Reset reCAPTCHA on error
-            if (recaptchaRef.current) {
-              recaptchaRef.current.reset();
-            }
           }
         }
       } catch (error) {
@@ -236,18 +263,14 @@ const Contact = () => {
                 </div>
                 
                 <div className="form-group captcha-group">
-                  <ReCAPTCHA
-                    ref={recaptchaRef}
-                    sitekey="6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02"
-                    onChange={handleRecaptchaChange}
-                  />
-                  {errors.captcha && <span className="error">{errors.captcha}</span>}
+                  <div ref={captchaContainerRef} id="recaptcha-container"></div>
+                  {errors.captcha && <span id="captcha-error" className="error">{errors.captcha}</span>}
                 </div>
 
                 <button 
                   type="submit" 
                   className="btn" 
-                  disabled={isSubmitting || attempts <= 0}
+                  disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
@@ -305,6 +328,8 @@ const Contact = () => {
         </div>
       </footer>
     </div>
+
+    
   );
 };
 
