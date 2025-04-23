@@ -338,22 +338,46 @@ app.delete('/api/projects/:id', async (req, res) => {
 // Contact Form Route
 app.post('/api/contact', async (req, res) => {
     try {
+        const clientIp = requestIp.getClientIp(req);
+        const now = Date.now();
+        const oneHourAgo = now - (60 * 60 * 1000);
+
+        // Get or initialize attempts for this IP
+        if (!req.session.contactAttempts) {
+            req.session.contactAttempts = [];
+        }
+
+        // Clean up old attempts
+        req.session.contactAttempts = req.session.contactAttempts.filter(time => time > oneHourAgo);
+
+        // Check if user has exceeded attempts
+        if (req.session.contactAttempts.length >= 3) {
+            console.log('Too many attempts from IP:', clientIp);
+            return res.status(429).json({
+                error: 'Too many attempts. Please try again in an hour.'
+            });
+        }
+
         console.log('Received contact form submission:', {
             name: req.body.name,
             email: req.body.email,
+            phone: req.body.phone,
             hasMessage: !!req.body.message,
             hasRecaptcha: !!req.body.recaptchaToken
         });
 
-        const { name, email, message, recaptchaToken } = req.body;
+        const { name, email, phone, message, recaptchaToken } = req.body;
 
         if (!name || !email || !message || !recaptchaToken) {
             console.log('Missing required fields:', {
                 name: !!name,
                 email: !!email,
+                phone: !!phone,
                 message: !!message,
                 recaptchaToken: !!recaptchaToken
             });
+            // Add attempt for missing fields
+            req.session.contactAttempts.push(now);
             return res.status(400).json({
                 error: 'All fields are required, including reCAPTCHA verification.'
             });
@@ -379,12 +403,16 @@ app.post('/api/contact', async (req, res) => {
 
             if (!recaptchaData.success) {
                 console.log('reCAPTCHA verification failed:', recaptchaData['error-codes']);
+                // Add attempt for failed reCAPTCHA
+                req.session.contactAttempts.push(now);
                 return res.status(400).json({
                     error: 'reCAPTCHA verification failed. Please try again.'
                 });
             }
         } catch (recaptchaError) {
             console.error('Error verifying reCAPTCHA:', recaptchaError);
+            // Add attempt for reCAPTCHA error
+            req.session.contactAttempts.push(now);
             return res.status(400).json({
                 error: 'Failed to verify reCAPTCHA. Please try again.'
             });
@@ -393,6 +421,8 @@ app.post('/api/contact', async (req, res) => {
         // Check if email configuration is available
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
             console.log('Email configuration missing. Returning success without sending email.');
+            // Add attempt for successful submission
+            req.session.contactAttempts.push(now);
             return res.status(200).json({ 
                 message: 'Message received successfully. We will get back to you soon.'
             });
@@ -415,9 +445,10 @@ app.post('/api/contact', async (req, res) => {
                 replyTo: email,
                 to: process.env.CONTACT_EMAIL || process.env.EMAIL_USER,
                 subject: `New Contact Form Submission from ${name}`,
-                text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
+                text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\nMessage: ${message}`,
                 html: `<p><strong>Name:</strong> ${name}</p>
                        <p><strong>Email:</strong> ${email}</p>
+                       <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
                        <p><strong>Message:</strong> ${message}</p>`
             };
 
@@ -425,9 +456,13 @@ app.post('/api/contact', async (req, res) => {
             await transporter.sendMail(mailOptions);
             console.log('Email sent successfully');
             
+            // Add attempt for successful submission
+            req.session.contactAttempts.push(now);
             res.status(200).json({ message: 'Message sent successfully' });
         } catch (emailError) {
             console.error('Error sending email:', emailError);
+            // Add attempt for email error
+            req.session.contactAttempts.push(now);
             // Still return success since the form was submitted correctly
             res.status(200).json({ 
                 message: 'Message received successfully. We will get back to you soon.'

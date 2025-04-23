@@ -15,6 +15,7 @@ const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     message: ''
   });
   const [errors, setErrors] = useState({});
@@ -115,6 +116,9 @@ const Contact = () => {
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
     }
+    if (formData.phone && !/^\+?[\d\s-()]+$/.test(formData.phone)) {
+      newErrors.phone = 'Phone number is invalid';
+    }
     if (!formData.message.trim()) newErrors.message = 'Message is required';
     if (!isRecaptchaVerified || !recaptchaToken) {
       newErrors.captcha = 'Please complete the reCAPTCHA verification';
@@ -148,6 +152,13 @@ const Contact = () => {
         const data = await response.json();
 
         if (!response.ok) {
+            if (response.status === 429) {
+                setSubmitStatus({
+                    type: 'error',
+                    message: 'Too many attempts. Please try again in an hour.'
+                });
+                return;
+            }
             throw new Error(data.error || 'Failed to send message');
         }
 
@@ -160,6 +171,7 @@ const Contact = () => {
         setFormData({
             name: '',
             email: '',
+            phone: '',
             message: ''
         });
         if (recaptchaRef.current) {
@@ -234,6 +246,20 @@ const Contact = () => {
                   {errors.email && <span id="email-error" className="error">{errors.email}</span>}
                 </div>
                 <div className="form-group">
+                  <label htmlFor="phone">Phone Number (Optional)</label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="+1 (123) 456-7890"
+                    aria-describedby="phone-error"
+                    disabled={isSubmitting}
+                  />
+                  {errors.phone && <span id="phone-error" className="error">{errors.phone}</span>}
+                </div>
+                <div className="form-group">
                   <label htmlFor="message">Message</label>
                   <textarea
                     id="message"
@@ -265,7 +291,7 @@ const Contact = () => {
                 <button 
                   type="submit" 
                   className="btn" 
-                  disabled={isSubmitting || attempts <= 0}
+                  disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
