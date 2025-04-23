@@ -83,6 +83,7 @@ const Contact = () => {
   // reCAPTCHA handling
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const recaptchaRef = useRef(null);
+  const captchaContainerRef = useRef(null);
 
   // Initialize reCAPTCHA when component mounts
   useEffect(() => {
@@ -92,9 +93,32 @@ const Contact = () => {
       setRecaptchaToken(token);
     };
 
+    // Render reCAPTCHA explicitly
+    const renderReCaptcha = () => {
+      if (window.grecaptcha && captchaContainerRef.current) {
+        try {
+          window.grecaptcha.render(captchaContainerRef.current, {
+            sitekey: '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI',
+            callback: 'onRecaptchaSuccess'
+          });
+        } catch (error) {
+          console.error('Error rendering reCAPTCHA:', error);
+        }
+      }
+    };
+
+    // If grecaptcha is already loaded
+    if (window.grecaptcha && window.grecaptcha.render) {
+      renderReCaptcha();
+    } else {
+      // Add a callback for when it loads
+      window.onloadCallback = renderReCaptcha;
+    }
+
     // Cleanup function
     return () => {
       delete window.onRecaptchaSuccess;
+      delete window.onloadCallback;
     };
   }, []);
 
@@ -239,11 +263,7 @@ const Contact = () => {
                 </div>
                 
                 <div className="form-group captcha-group">
-                  <div 
-                    className="g-recaptcha" 
-                    data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" 
-                    data-callback="onRecaptchaSuccess"
-                  ></div>
+                  <div ref={captchaContainerRef} id="recaptcha-container"></div>
                   {errors.captcha && <span id="captcha-error" className="error">{errors.captcha}</span>}
                 </div>
 
