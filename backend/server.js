@@ -80,12 +80,12 @@ app.use('/pages', express.static(pagesPath));
 
 app.use(session({
     secret: process.env.SESSION_SECRET || '70f1e04a35336b79732f2f034b101d4d',
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     cookie: { 
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        maxAge: 60 * 60 * 1000 // 1 hour
     }
 }));
 
@@ -338,147 +338,80 @@ app.delete('/api/projects/:id', async (req, res) => {
 // Contact Form Route
 app.post('/api/contact', async (req, res) => {
     try {
-        const clientIp = requestIp.getClientIp(req);
+        const { name, email, phone, message, recaptchaToken } = req.body;
+        const ip = req.ip;
         const now = Date.now();
-        const oneHourAgo = now - (60 * 60 * 1000);
+        const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
 
-        // Get or initialize attempts for this IP
-        if (!req.session.contactAttempts) {
-            req.session.contactAttempts = [];
+        // Initialize session if it doesn't exist
+        if (!req.session.attempts) {
+            req.session.attempts = [];
         }
 
         // Clean up old attempts
-        req.session.contactAttempts = req.session.contactAttempts.filter(time => time > oneHourAgo);
+        req.session.attempts = req.session.attempts.filter(attempt => 
+            now - attempt.timestamp < oneHour
+        );
 
         // Check if user has exceeded attempts
-        if (req.session.contactAttempts.length >= 3) {
-            console.log('Too many attempts from IP:', clientIp);
-            return res.status(429).json({
-                error: 'Too many attempts. Please try again in an hour.'
+        if (req.session.attempts.length >= 3) {
+            const oldestAttempt = req.session.attempts[0];
+            const timeLeft = Math.ceil((oneHour - (now - oldestAttempt.timestamp)) / (60 * 1000));
+            console.log(`Attempt blocked for IP ${ip}. ${timeLeft} minutes remaining.`);
+            return res.status(429).json({ 
+                error: `Too many attempts. Please try again in ${timeLeft} minutes.` 
             });
         }
 
-        console.log('Received contact form submission:', {
-            name: req.body.name,
-            email: req.body.email,
-            phone: req.body.phone,
-            hasMessage: !!req.body.message,
-            hasRecaptcha: !!req.body.recaptchaToken
+        // Log attempt
+        req.session.attempts.push({ timestamp: now });
+        console.log(`Attempt ${req.session.attempts.length}/3 for IP ${ip}`);
+
+        // Validate required fields
+        if (!name || !email || !message) {
+            return res.status(400).json({ error: 'Please fill in all required fields.' });
+        }
+
+        // Validate reCAPTCHA
+        if (!recaptchaToken) {
+            return res.status(400).json({ error: 'Please complete the reCAPTCHA verification.' });
+        }
+
+        // Verify reCAPTCHA
+        const recaptchaResponse = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`
         });
 
-        const { name, email, phone, message, recaptchaToken } = req.body;
-
-        if (!name || !email || !message || !recaptchaToken) {
-            console.log('Missing required fields:', {
-                name: !!name,
-                email: !!email,
-                phone: !!phone,
-                message: !!message,
-                recaptchaToken: !!recaptchaToken
-            });
-            // Add attempt for missing fields
-            req.session.contactAttempts.push(now);
-            return res.status(400).json({
-                error: 'All fields are required, including reCAPTCHA verification.'
-            });
+        const recaptchaData = await recaptchaResponse.json();
+        if (!recaptchaData.success) {
+            return res.status(400).json({ error: 'reCAPTCHA verification failed. Please try again.' });
         }
 
-        // Verify reCAPTCHA token
-        const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh';
-        console.log('Verifying reCAPTCHA with secret:', recaptchaSecret.substring(0, 10) + '...');
+        // Send email
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: process.env.EMAIL_USER,
+            subject: 'New Contact Form Submission',
+            text: `
+                Name: ${name}
+                Email: ${email}
+                Phone: ${phone || 'Not provided'}
+                Message: ${message}
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`Email sent successfully for IP ${ip}`);
         
-        try {
-            const verificationURL = 'https://www.google.com/recaptcha/api/siteverify';
-            const verificationBody = `secret=${recaptchaSecret}&response=${recaptchaToken}`;
-
-            console.log('Sending reCAPTCHA verification request...');
-            const recaptchaResponse = await fetch(verificationURL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: verificationBody
-            });
-
-            const recaptchaData = await recaptchaResponse.json();
-            console.log('reCAPTCHA verification response:', recaptchaData);
-
-            if (!recaptchaData.success) {
-                console.log('reCAPTCHA verification failed:', recaptchaData['error-codes']);
-                // Add attempt for failed reCAPTCHA
-                req.session.contactAttempts.push(now);
-                return res.status(400).json({
-                    error: 'reCAPTCHA verification failed. Please try again.'
-                });
-            }
-        } catch (recaptchaError) {
-            console.error('Error verifying reCAPTCHA:', recaptchaError);
-            // Add attempt for reCAPTCHA error
-            req.session.contactAttempts.push(now);
-            return res.status(400).json({
-                error: 'Failed to verify reCAPTCHA. Please try again.'
-            });
-        }
-
-        // Check if email configuration is available
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            console.log('Email configuration missing. Returning success without sending email.');
-            // Add attempt for successful submission
-            req.session.contactAttempts.push(now);
-            return res.status(200).json({ 
-                message: 'Message received successfully. We will get back to you soon.'
-            });
-        }
-
-        try {
-            console.log('Setting up email transport...');
-            const transporter = nodemailer.createTransport({
-                host: 'smtp.gmail.com',
-                port: 587,
-                secure: false,
-                auth: {
-                    user: process.env.EMAIL_USER,
-                    pass: process.env.EMAIL_PASS
-                }
-            });
-
-            const mailOptions = {
-                from: process.env.EMAIL_USER,
-                replyTo: email,
-                to: process.env.CONTACT_EMAIL || process.env.EMAIL_USER,
-                subject: `New Contact Form Submission from ${name}`,
-                text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\nMessage: ${message}`,
-                html: `<p><strong>Name:</strong> ${name}</p>
-                       <p><strong>Email:</strong> ${email}</p>
-                       <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-                       <p><strong>Message:</strong> ${message}</p>`
-            };
-
-            console.log('Sending email...');
-            await transporter.sendMail(mailOptions);
-            console.log('Email sent successfully');
-            
-            // Add attempt for successful submission
-            req.session.contactAttempts.push(now);
-            res.status(200).json({ message: 'Message sent successfully' });
-        } catch (emailError) {
-            console.error('Error sending email:', emailError);
-            // Add attempt for email error
-            req.session.contactAttempts.push(now);
-            // Still return success since the form was submitted correctly
-            res.status(200).json({ 
-                message: 'Message received successfully. We will get back to you soon.'
-            });
-        }
-    } catch (err) {
-        console.error('Error processing contact form:', err);
-        console.error('Error details:', {
-            name: err.name,
-            message: err.message,
-            stack: err.stack
-        });
-        res.status(500).json({
-            error: 'Failed to send message. Please try again.',
-            details: process.env.NODE_ENV === 'development' ? err.message : undefined
-        });
+        // Clear attempts on successful submission
+        req.session.attempts = [];
+        
+        res.json({ message: 'Message sent successfully!' });
+    } catch (error) {
+        console.error('Contact form error:', error);
+        res.status(500).json({ error: 'Failed to send message. Please try again later.' });
     }
 });
 
