@@ -1,17 +1,13 @@
 const dotenv = require('dotenv');
 const express = require('express');
-const cors = require('cors');
 const mongoose = require('mongoose');
 const multer = require('multer');
+const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
-const session = require('express-session');
 const basicAuth = require('express-basic-auth');
 const nodemailer = require('nodemailer');
+const session = require('express-session');
 const requestIp = require('request-ip');
-const https = require('https');
-const querystring = require('querystring');
-
 const Project = require('./models/Projects');
 
 dotenv.config();
@@ -31,7 +27,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['https://mastertech-frontend-yqjb.onrender.com', 'http://localhost:3000', 'http://localhost:3003'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
@@ -55,7 +54,6 @@ app.use('/uploads', express.static(uploadsPath, {
     }
 }));
 app.use('/assets', express.static(assetsPath));
-app.use('/pages', express.static(pagesPath));
 
 // Root Route
 app.get('/', (req, res) => {
@@ -63,30 +61,24 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../pages/index.html'));
 });
 
-// CAPTCHA Route
-app.get('/api/captcha', (req, res) => {
-    console.log('HIT /api/captcha');
-    const imageOptions = [
-        { src: '/uploads/dog.jpg', id: 'dog', label: 'Dog' },
-        { src: '/uploads/cat.jpg', id: 'cat', label: 'Cat' },
-        { src: '/uploads/bird.jpg', id: 'bird', label: 'Bird' }
-    ];
-    const correctIndex = Math.floor(Math.random() * imageOptions.length);
-    const correctAnswer = imageOptions[correctIndex].id;
-
-    req.session.captchaAnswer = correctAnswer;
-    const question = `Please select the image that shows a ${imageOptions[correctIndex].label}`;
-    console.log('Generated CAPTCHA:', { correctAnswer, question });
-
-    const shuffledImages = [...imageOptions].sort(() => Math.random() - 0.5);
-    const response = {
-        images: shuffledImages,
-        correct: correctAnswer,
-        question: question
-    };
-    console.log('Sending response:', response);
-    res.json(response);
-});
+// Verify reCAPTCHA token
+async function verifyRecaptcha(token) {
+    try {
+        const secretKey = '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh';
+        const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `secret=${secretKey}&response=${token}`
+        });
+        
+        const data = await response.json();
+        console.log('reCAPTCHA verification response:', data);
+        return data.success;
+    } catch (error) {
+        console.error('Error verifying reCAPTCHA:', error);
+        return false;
+    }
+}
 
 // Basic Auth for Admin Page
 app.get('/pages/admin', basicAuth({
@@ -125,61 +117,6 @@ const connectDB = async () => {
         process.exit(1);
     }
 };
-
-// Helper function to verify reCAPTCHA token using https module
-async function verifyRecaptcha(token) {
-    return new Promise((resolve) => {
-        try {
-            const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh'; // Production secret key
-            
-            const data = querystring.stringify({
-                secret: recaptchaSecret,
-                response: token
-            });
-            
-            const options = {
-                hostname: 'www.google.com',
-                port: 443,
-                path: '/recaptcha/api/siteverify',
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Content-Length': data.length
-                }
-            };
-            
-            const req = https.request(options, (res) => {
-                let responseData = '';
-                
-                res.on('data', (chunk) => {
-                    responseData += chunk;
-                });
-                
-                res.on('end', () => {
-                    try {
-                        const jsonResponse = JSON.parse(responseData);
-                        console.log('reCAPTCHA verification response:', jsonResponse);
-                        resolve(jsonResponse.success);
-                    } catch (e) {
-                        console.error('Error parsing reCAPTCHA response:', e);
-                        resolve(false);
-                    }
-                });
-            });
-            
-            req.on('error', (e) => {
-                console.error('Error verifying reCAPTCHA:', e);
-                resolve(false);
-            });
-            
-            req.write(data);
-            req.end();
-        } catch (error) {
-            console.error('reCAPTCHA verification error:', error);
-            resolve(false);
-        }
-    });
-}
 
 connectDB();
 mongoose.connection.on('connected', () => console.log('Mongoose connected to DB'));
@@ -305,7 +242,7 @@ app.post('/api/contact', async (req, res) => {
     try {
         const clientIp = requestIp.getClientIp(req);
         console.log('Raw request body:', req.body);
-        const { name, email, message, captchaAnswer } = req.body;
+        const { name, email, message, recaptchaToken } = req.body;
 
         req.session[clientIp] = req.session[clientIp] || {
             attempts: 0,
@@ -343,20 +280,21 @@ app.post('/api/contact', async (req, res) => {
             return res.status(429).json({ error: 'Too many attempts. Please try again later.' });
         }
 
-        if (!name || !email || !message || !captchaAnswer) {
+        if (!name || !email || !message || !recaptchaToken) {
             userSession.attempts += 1;
-            console.log('Missing fields:', { name, email, message, captchaAnswer, attempts: userSession.attempts });
+            console.log('Missing fields:', { name, email, message, recaptchaToken: !!recaptchaToken, attempts: userSession.attempts });
             return res.status(400).json({
-                error: `All fields are required, including CAPTCHA. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                error: 'All fields are required, including reCAPTCHA verification.'
             });
         }
 
-        const correctAnswer = req.session.captchaAnswer;
-        if (!correctAnswer || captchaAnswer !== correctAnswer) {
+        // Verify reCAPTCHA token
+        const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
+        if (!isValidRecaptcha) {
             userSession.attempts += 1;
-            console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
+            console.log('reCAPTCHA verification failed, attempts:', userSession.attempts);
             return res.status(400).json({
-                error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
+                error: 'reCAPTCHA verification failed. Please try again.'
             });
         }
 
@@ -382,7 +320,7 @@ app.post('/api/contact', async (req, res) => {
 
         userSession.submissions.push(now);
         userSession.attempts = 0;
-        req.session.captchaAnswer = null;
+        // No need to reset captcha token as it's one-time use
 
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (err) {
