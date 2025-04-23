@@ -82,6 +82,7 @@ const Contact = () => {
 
   // reCAPTCHA handling
   const [recaptchaToken, setRecaptchaToken] = useState('');
+  const recaptchaRef = useRef(null);
 
   // Initialize reCAPTCHA when component mounts
   useEffect(() => {
