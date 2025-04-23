@@ -366,7 +366,9 @@ app.post('/api/contact', async (req, res) => {
 
         console.log('Setting up email transport...');
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
@@ -374,7 +376,7 @@ app.post('/api/contact', async (req, res) => {
         });
 
         const mailOptions = {
-            from: `"${name}" <${email}>`,
+            from: process.env.EMAIL_USER,
             replyTo: email,
             to: process.env.CONTACT_EMAIL || 'carldavenquimoyog@gmail.com',
             subject: `New Contact Form Submission from ${name}`,
