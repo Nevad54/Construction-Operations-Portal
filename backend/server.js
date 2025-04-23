@@ -334,6 +334,7 @@ app.post('/api/contact', async (req, res) => {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         const maxAttempts = 3;
 =======
         const maxAttempts = 5;
@@ -347,6 +348,9 @@ app.post('/api/contact', async (req, res) => {
 =======
         const maxAttempts = 5;
 >>>>>>> parent of 8dbe8e2 (Fix contact form rate limiting and CAPTCHA attempts counter)
+=======
+        const maxAttempts = 5;
+>>>>>>> parent of 28e1049 (Fix rate limiting and CAPTCHA counter issues)
         const maxHourlySubmissions = 3;
         const maxDailySubmissions = 10;
         const now = Date.now();
@@ -358,6 +362,10 @@ app.post('/api/contact', async (req, res) => {
         const hourlySubmissions = userSession.submissions.filter(
             timestamp => now - timestamp < 60 * 60 * 1000
         );
+<<<<<<< HEAD
+=======
+        console.log('Current hourly submissions:', hourlySubmissions.length, 'of', maxHourlySubmissions);
+>>>>>>> parent of 28e1049 (Fix rate limiting and CAPTCHA counter issues)
         if (hourlySubmissions.length >= maxHourlySubmissions) {
             console.log('Hourly submission limit reached:', { ip: clientIp, submissions: hourlySubmissions.length });
             return res.status(429).json({
