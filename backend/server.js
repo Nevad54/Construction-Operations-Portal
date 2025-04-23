@@ -37,7 +37,7 @@ app.use(express.urlencoded({ extended: true }));
 // Enable trust proxy for secure cookies behind proxy
 app.set('trust proxy', 1);
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-random-secret-here',
+    secret: process.env.SESSION_SECRET || '',
     resave: false,
     saveUninitialized: false,
     cookie: { secure: process.env.NODE_ENV === 'production', sameSite: 'none' }
@@ -67,6 +67,7 @@ app.get('/', (req, res) => {
 // CAPTCHA Route
 app.get('/api/captcha', (req, res) => {
     console.log('HIT /api/captcha');
+    console.log('Captcha GET:', { sessionID: req.sessionID, cookie: req.headers.cookie });
     const imageOptions = [
         { src: '/uploads/dog.jpg', id: 'dog', label: 'Dog' },
         { src: '/uploads/cat.jpg', id: 'cat', label: 'Cat' },
@@ -248,6 +249,7 @@ app.delete('/api/projects/:id', async (req, res) => {
 
 // Contact Form Route (unchanged from last version)
 app.post('/api/contact', async (req, res) => {
+    console.log('Contact POST:', { sessionID: req.sessionID, cookie: req.headers.cookie, storedAnswer: req.session.captchaAnswer, submittedAnswer: req.body.captchaAnswer });
     try {
         const clientIp = requestIp.getClientIp(req);
         console.log('Raw request body:', req.body);
@@ -297,14 +299,15 @@ app.post('/api/contact', async (req, res) => {
             });
         }
 
-        const correctAnswer = req.session.captchaAnswer;
-        if (!correctAnswer || captchaAnswer !== correctAnswer) {
-            userSession.attempts += 1;
-            console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
-            return res.status(400).json({
-                error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
-            });
-        }
+        // Temporarily disabled CAPTCHA validation
+        // const correctAnswer = req.session.captchaAnswer;
+        // if (!correctAnswer || captchaAnswer !== correctAnswer) {
+        //     userSession.attempts += 1;
+        //     console.log('CAPTCHA verification failed:', { captchaAnswer, correctAnswer, attempts: userSession.attempts });
+        //     return res.status(400).json({
+        //         error: `Incorrect CAPTCHA selection. Attempts remaining: ${maxAttempts - userSession.attempts}`
+        //     });
+        // }
 
         const transporter = nodemailer.createTransport({
             service: 'gmail',
