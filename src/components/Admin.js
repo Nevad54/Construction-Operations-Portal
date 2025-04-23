@@ -3,6 +3,7 @@ import { useProjects } from '../context/ProjectContext';
 import '../styles/Admin.css';
 
 const Admin = () => {
+    const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
     const { projects, addProject, updateProject, deleteProject } = useProjects();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -347,7 +348,7 @@ const Admin = () => {
                 <div className="projects-list" onMouseDown={e => handleLassoStart('ongoing', e)} onMouseMove={e => handleLassoMove('ongoing', e)} onMouseUp={e => handleLassoEnd('ongoing', e)} style={{ position: 'relative' }}>
                     {ongoingProjects.map((project, idx) => (
                         <div key={project._id} ref={el => cardRefs.current.ongoing[project._id] = el} className={`project${selectedProjects.ongoing.includes(project._id) ? ' selected' : ''}`} tabIndex={0} onClick={e => handleCardSelect('ongoing', project._id, idx, e)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleCardSelect('ongoing', project._id, idx, e); }}>
-                            {project.image && <img src={project.image} alt={project.title} />}
+                            {project.image && <img src={`${IMAGE_BASE_URL}${project.image}`} alt={project.title} />}
                             <div className="project-content">
                                 <h3>
                                     {project.title}
@@ -387,7 +388,7 @@ const Admin = () => {
                 <div className="projects-list" onMouseDown={e => handleLassoStart('completed', e)} onMouseMove={e => handleLassoMove('completed', e)} onMouseUp={e => handleLassoEnd('completed', e)} style={{ position: 'relative' }}>
                     {completedProjects.map((project, idx) => (
                         <div key={project._id} ref={el => cardRefs.current.completed[project._id] = el} className={`project${selectedProjects.completed.includes(project._id) ? ' selected' : ''}`} tabIndex={0} onClick={e => handleCardSelect('completed', project._id, idx, e)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleCardSelect('completed', project._id, idx, e); }}>
-                            {project.image && <img src={project.image} alt={project.title} />}
+                            {project.image && <img src={`${IMAGE_BASE_URL}${project.image}`} alt={project.title} />}
                             <div className="project-content">
                                 <h3>
                                     {project.title}
@@ -411,8 +412,6 @@ const Admin = () => {
                     {selectionBox && <div className="lasso-box" style={{ left: selectionBox.x, top: selectionBox.y, width: selectionBox.width, height: selectionBox.height }} />}
                 </div>
             </div>
-
-
 
             <button className="back-to-top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
                 ↑
