@@ -24,8 +24,8 @@ const Contact = () => {
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const recaptchaRef = useRef(null);
   const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(null);
-  const [isBlocked, setIsBlocked] = useState(false);
+  const [remainingAttempts, setRemainingAttempts] = useState(3);
+  const [lastAttemptTime, setLastAttemptTime] = useState(null);
 
   const location = useLocation();
 
@@ -74,28 +74,12 @@ const Contact = () => {
     window.addEventListener('resize', handleResize);
     window.addEventListener('scroll', handleScroll);
 
-    let timer;
-    if (timeLeft > 0) {
-      timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            setIsBlocked(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
     return () => {
       document.removeEventListener('click', handleOutsideClick);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll);
-      if (timer) {
-        clearInterval(timer);
-      }
     };
-  }, [isSidebarActive, timeLeft]);
+  }, [isSidebarActive]);
 
   const handleRecaptchaChange = (token) => {
     console.log('reCAPTCHA token received');
@@ -170,12 +154,12 @@ const Contact = () => {
 
         if (!response.ok) {
             if (response.status === 429) {
-                const minutes = parseInt(data.error.match(/\d+/)[0]);
-                setTimeLeft(minutes * 60);
-                setIsBlocked(true);
+                const retryAfter = 60 * 60 * 1000; // 1 hour in milliseconds
+                setLastAttemptTime(Date.now());
+                setRemainingAttempts(0);
                 setSubmitStatus({
                     type: 'error',
-                    message: data.error
+                    message: 'Too many attempts. Please try again in an hour.'
                 });
                 return;
             }
@@ -186,6 +170,10 @@ const Contact = () => {
             type: 'success',
             message: data.message || 'Message sent successfully!'
         });
+        
+        // Update remaining attempts
+        setRemainingAttempts(prev => Math.max(0, prev - 1));
+        setLastAttemptTime(Date.now());
         
         // Reset form and reCAPTCHA only on success
         setFormData({
@@ -209,6 +197,17 @@ const Contact = () => {
         setIsSubmitting(false);
     }
   };
+
+  // Check if attempts should be reset
+  useEffect(() => {
+    if (lastAttemptTime) {
+            const oneHourAgo = Date.now() - (60 * 60 * 1000);
+            if (lastAttemptTime < oneHourAgo) {
+                setRemainingAttempts(3);
+                setLastAttemptTime(null);
+            }
+        }
+    }, [lastAttemptTime]);
 
   return (
     <div>
@@ -237,11 +236,6 @@ const Contact = () => {
                 </div>
               )}
               <form onSubmit={handleSubmit} noValidate>
-                {isBlocked && timeLeft > 0 && (
-                  <div className="alert alert-error">
-                    Too many attempts. Please try again in {Math.ceil(timeLeft / 60)} minutes.
-                  </div>
-                )}
                 <div className="form-group">
                   <label htmlFor="name">Name</label>
                   <input
@@ -252,7 +246,7 @@ const Contact = () => {
                     onChange={handleChange}
                     aria-required="true"
                     aria-describedby="name-error"
-                    disabled={isSubmitting || isBlocked}
+                    disabled={isSubmitting}
                   />
                   {errors.name && <span id="name-error" className="error">{errors.name}</span>}
                 </div>
@@ -266,7 +260,7 @@ const Contact = () => {
                     onChange={handleChange}
                     aria-required="true"
                     aria-describedby="email-error"
-                    disabled={isSubmitting || isBlocked}
+                    disabled={isSubmitting}
                   />
                   {errors.email && <span id="email-error" className="error">{errors.email}</span>}
                 </div>
@@ -280,7 +274,7 @@ const Contact = () => {
                     onChange={handleChange}
                     placeholder="+1 (123) 456-7890"
                     aria-describedby="phone-error"
-                    disabled={isSubmitting || isBlocked}
+                    disabled={isSubmitting}
                   />
                   {errors.phone && <span id="phone-error" className="error">{errors.phone}</span>}
                 </div>
@@ -294,7 +288,7 @@ const Contact = () => {
                     rows="5"
                     aria-required="true"
                     aria-describedby="message-error"
-                    disabled={isSubmitting || isBlocked}
+                    disabled={isSubmitting}
                   ></textarea>
                   {errors.message && <span id="message-error" className="error">{errors.message}</span>}
                 </div>
@@ -313,10 +307,18 @@ const Contact = () => {
                   {errors.captcha && <span className="error">{errors.captcha}</span>}
                 </div>
 
+                <div className="form-group">
+                  <p className="attempts-info">
+                    {remainingAttempts > 0 
+                      ? `Attempts remaining: ${remainingAttempts}`
+                      : 'No attempts remaining. Please try again in an hour.'}
+                  </p>
+                </div>
+
                 <button 
                   type="submit" 
                   className="btn" 
-                  disabled={isSubmitting || isBlocked}
+                  disabled={isSubmitting || remainingAttempts <= 0}
                 >
                   {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
