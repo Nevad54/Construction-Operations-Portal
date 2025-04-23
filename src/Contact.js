@@ -78,8 +78,22 @@ const Contact = () => {
     };
   }, [isSidebarActive]);
 
+  useEffect(() => {
+    // Load reCAPTCHA script
+    const script = document.createElement('script');
+    script.src = 'https://www.google.com/recaptcha/api.js';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
+
   const handleRecaptchaChange = (token) => {
     setRecaptchaToken(token);
+    setErrors(prev => ({ ...prev, captcha: undefined }));
   };
 
   const handleChange = (e) => {
@@ -240,6 +254,13 @@ const Contact = () => {
                     ref={recaptchaRef}
                     sitekey="6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02"
                     onChange={handleRecaptchaChange}
+                    onExpired={() => setRecaptchaToken('')}
+                    onErrored={() => {
+                      setErrors(prev => ({
+                        ...prev,
+                        captcha: 'Error loading reCAPTCHA. Please refresh the page.'
+                      }));
+                    }}
                   />
                   {errors.captcha && <span className="error">{errors.captcha}</span>}
                 </div>

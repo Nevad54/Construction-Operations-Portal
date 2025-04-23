@@ -32,7 +32,7 @@ const upload = multer({ storage });
 
 // Middleware
 app.use(cors({
-    origin: ['https://mastertech-frontend-yqjb.onrender.com', 'http://localhost:3000'],
+    origin: true, // Allow all origins in development
     credentials: true
 }));
 app.use(express.json());
@@ -41,8 +41,17 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'your-random-secret-here',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    }
 }));
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../build')));
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Static file paths
 const uploadsPath = path.join(__dirname, 'uploads');
@@ -52,11 +61,6 @@ console.log('Uploads directory:', uploadsPath);
 console.log('Serving assets from:', assetsPath);
 console.log('Serving pages from:', pagesPath);
 
-app.use('/uploads', express.static(uploadsPath, {
-    setHeaders: (res, path) => {
-        console.log(`Serving file: ${path}`);
-    }
-}));
 app.use('/assets', express.static(assetsPath));
 app.use('/pages', express.static(pagesPath));
 
@@ -197,11 +201,10 @@ mongoose.connection.on('connected', () => console.log('Mongoose connected to DB'
 mongoose.connection.on('error', (err) => console.log('Mongoose connection error:', err));
 mongoose.connection.on('disconnected', () => console.log('Mongoose disconnected'));
 
-// Project Routes
+// API Routes
 app.get('/api/projects', async (req, res) => {
     try {
         const projects = await Project.find();
-        console.log('Projects fetched from DB:', projects);
         res.json(projects);
     } catch (err) {
         console.error('Error fetching projects:', err);
@@ -209,11 +212,9 @@ app.get('/api/projects', async (req, res) => {
     }
 });
 
-// New Route for Featured Projects
 app.get('/api/projects/featured', async (req, res) => {
     try {
         const featuredProjects = await Project.find({ featured: true });
-        console.log('Featured projects fetched from DB:', featuredProjects);
         res.json(featuredProjects);
     } catch (err) {
         console.error('Error fetching featured projects:', err);
@@ -221,10 +222,9 @@ app.get('/api/projects/featured', async (req, res) => {
     }
 });
 
+// Project Routes
 app.post('/api/projects', upload.single('image'), async (req, res) => {
     try {
-        console.log('POST Received body:', req.body);
-        console.log('POST Received file:', req.file);
         const { title, description, location, owner, date, status, featured } = req.body;
         const project = new Project({
             title,
@@ -234,10 +234,9 @@ app.post('/api/projects', upload.single('image'), async (req, res) => {
             date: date ? new Date(date) : null,
             image: req.file ? `/uploads/${req.file.filename}` : null,
             status: status || 'ongoing',
-            featured: featured === 'true' || false // Convert string 'true' to boolean
+            featured: featured === 'true' || false
         });
         await project.save();
-        console.log('Saved Project:', project);
         res.status(201).json(project);
     } catch (err) {
         console.error('Error creating project:', err);
@@ -315,49 +314,9 @@ app.delete('/api/projects/:id', async (req, res) => {
 app.post('/api/contact', async (req, res) => {
     try {
         const clientIp = requestIp.getClientIp(req);
-        console.log('Raw request body:', req.body);
         const { name, email, message, recaptchaToken } = req.body;
 
-        req.session[clientIp] = req.session[clientIp] || {
-            attempts: 0,
-            submissions: []
-        };
-        const userSession = req.session[clientIp];
-        const maxAttempts = 3;
-        const maxHourlySubmissions = 3;
-        const maxDailySubmissions = 10;
-        const now = Date.now();
-
-        userSession.submissions = userSession.submissions.filter(
-            timestamp => now - timestamp < 24 * 60 * 60 * 1000
-        );
-
-        const hourlySubmissions = userSession.submissions.filter(
-            timestamp => now - timestamp < 60 * 60 * 1000
-        );
-
-        if (hourlySubmissions.length >= maxHourlySubmissions) {
-            console.log('Hourly submission limit reached:', { ip: clientIp, submissions: hourlySubmissions.length });
-            return res.status(429).json({
-                error: `You've reached the hourly limit of ${maxHourlySubmissions} submissions. Please try again later.`
-            });
-        }
-
-        if (userSession.submissions.length >= maxDailySubmissions) {
-            console.log('Daily submission limit reached:', { ip: clientIp, submissions: userSession.submissions.length });
-            return res.status(429).json({
-                error: `You've reached the daily limit of ${maxDailySubmissions} submissions. Please try again tomorrow.`
-            });
-        }
-
-        if (userSession.attempts >= maxAttempts) {
-            console.log('Attempt limit reached:', { ip: clientIp, attempts: userSession.attempts });
-            return res.status(429).json({ error: 'You have no attempts remaining. Please try again later.' });
-        }
-
         if (!name || !email || !message || !recaptchaToken) {
-            userSession.attempts += 1;
-            console.log('Missing fields:', { name, email, message, recaptchaToken, attempts: userSession.attempts });
             return res.status(400).json({
                 error: 'All fields are required, including reCAPTCHA verification.'
             });
@@ -365,18 +324,18 @@ app.post('/api/contact', async (req, res) => {
 
         // Verify reCAPTCHA token
         const recaptchaSecret = '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh';
-        const recaptchaResponse = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+        const verificationURL = 'https://www.google.com/recaptcha/api/siteverify';
+        const verificationBody = `secret=${recaptchaSecret}&response=${recaptchaToken}`;
+
+        const recaptchaResponse = await fetch(verificationURL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `secret=${recaptchaSecret}&response=${recaptchaToken}`
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: verificationBody
         });
 
         const recaptchaData = await recaptchaResponse.json();
+
         if (!recaptchaData.success) {
-            userSession.attempts += 1;
-            console.log('reCAPTCHA verification failed:', { recaptchaData, attempts: userSession.attempts });
             return res.status(400).json({
                 error: 'reCAPTCHA verification failed. Please try again.'
             });
@@ -389,6 +348,7 @@ app.post('/api/contact', async (req, res) => {
                 pass: process.env.EMAIL_PASS
             }
         });
+
         const mailOptions = {
             from: `"${name}" <${email}>`,
             replyTo: email,
@@ -399,22 +359,20 @@ app.post('/api/contact', async (req, res) => {
                    <p><strong>Email:</strong> ${email}</p>
                    <p><strong>Message:</strong> ${message}</p>`
         };
+
         await transporter.sendMail(mailOptions);
-        console.log('Email sent:', { name, email, message });
-
-        userSession.submissions.push(now);
-        userSession.attempts = 0;
-
         res.status(200).json({ message: 'Message sent successfully' });
     } catch (err) {
-        const clientIp = requestIp.getClientIp(req);
-        req.session[clientIp] = req.session[clientIp] || { attempts: 0, submissions: [] };
-        req.session[clientIp].attempts += 1;
-        console.error('Error processing contact form:', err, { attempts: req.session[clientIp].attempts });
+        console.error('Error processing contact form:', err);
         res.status(500).json({
             error: 'Failed to send message. Please try again.'
         });
     }
+});
+
+// Serve React app for all other routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../build/index.html'));
 });
 
 // Start Server
