@@ -1248,6 +1248,8 @@ footer {
 .fade-in {
     opacity: 0;
     animation: fadeIn 1s ease-in forwards;
+    animation-fill-mode: forwards;
+    will-change: opacity, transform;
 }
 
 /* Add padding to main sections to account for fixed header */
@@ -1693,4 +1695,40 @@ footer {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Image Optimization */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Lazy Loading */
+img[loading="lazy"] {
+  opacity: 0;
+  transition: opacity 0.3s ease-in;
+}
+
+img[loading="lazy"].loaded {
+  opacity: 1;
+}
+
+/* Placeholder Image */
+.placeholder-image {
+  background-color: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.placeholder-image::before {
+  content: "Image Loading...";
+  color: #666;
+  font-size: 0.9rem;
 }
