@@ -11,51 +11,12 @@ import {
   faProjectDiagram, 
   faEnvelope,
   faBars,
-  faMapMarkerAlt,
-  faTools,
-  faBuilding,
-  faIndustry,
-  faWrench,
-  faTruck,
-  faClipboardCheck
+  faMapMarkerAlt
 } from '@fortawesome/free-solid-svg-icons';
 import './Services.css';
 
 const Services = () => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
-
-  const services = [
-    {
-      icon: faTools,
-      title: "Equipment Installation",
-      description: "Professional installation of industrial equipment and machinery with precision and expertise."
-    },
-    {
-      icon: faBuilding,
-      title: "Construction Services",
-      description: "Complete construction solutions for industrial and commercial facilities."
-    },
-    {
-      icon: faIndustry,
-      title: "Industrial Maintenance",
-      description: "Regular maintenance and repair services to keep your industrial equipment running smoothly."
-    },
-    {
-      icon: faWrench,
-      title: "Technical Support",
-      description: "24/7 technical support and troubleshooting for all your industrial needs."
-    },
-    {
-      icon: faTruck,
-      title: "Logistics Services",
-      description: "Efficient transportation and logistics solutions for your equipment and materials."
-    },
-    {
-      icon: faClipboardCheck,
-      title: "Quality Assurance",
-      description: "Comprehensive quality control and assurance services for all projects."
-    }
-  ];
 
   return (
     <div className="services-container">
@@ -109,26 +70,11 @@ const Services = () => {
         <section className="services">
           <div className="container">
             <h1>Our Services</h1>
-            <div className="services-grid">
-              {services.map((service, index) => (
-                <div 
-                  key={index} 
-                  className="service-card"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className="service-icon">
-                    <FontAwesomeIcon icon={service.icon} />
-                  </div>
-                  <h3>{service.title}</h3>
-                  <p>{service.description}</p>
-                  <a href="/contact" className="btn">Learn More</a>
-                </div>
-              ))}
-            </div>
+            {/* Add your services content here */}
           </div>
         </section>
 
-        {/* Footer Info Section */}
+        {/* Footer */}
         <section className="footer-info">
           <div className="container">
             <div className="footer-item">
