@@ -11,16 +11,29 @@ export const api = {
     },
 
     createProject: async (projectData) => {
-        const formData = new FormData();
-        Object.keys(projectData).forEach(key => {
-            formData.append(key, projectData[key]);
-        });
+        let response;
+        
+        // Check if projectData is FormData or a regular object
+        if (projectData instanceof FormData) {
+            // If it's FormData, send it directly
+            response = await fetch(`${API_BASE_URL}/api/projects`, {
+                method: 'POST',
+                body: projectData,
+            });
+        } else {
+            // If it's a regular object, send as JSON
+            response = await fetch(`${API_BASE_URL}/api/projects`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(projectData),
+            });
+        }
 
-        const response = await fetch(`${API_BASE_URL}/api/projects`, {
-            method: 'POST',
-            body: formData,
-        });
         if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Error response:', errorData);
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
@@ -48,6 +61,8 @@ export const api = {
         }
 
         if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Error response:', errorData);
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
