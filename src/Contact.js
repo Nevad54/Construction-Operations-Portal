@@ -109,7 +109,7 @@ const Contact = () => {
   }, [isSidebarActive]);
 
   const handleRecaptchaChange = (token) => {
-    console.log('reCAPTCHA token received');
+    console.log('reCAPTCHA token received:', token ? token.substring(0, 10) + '...' : 'No token');
     setRecaptchaToken(token);
     setIsRecaptchaVerified(true);
     setErrors(prev => ({ ...prev, captcha: undefined }));
@@ -176,7 +176,7 @@ const Contact = () => {
         setIsSubmitting(true);
         console.log('Submitting form with data:', {
             ...formData,
-            recaptchaToken: recaptchaToken ? 'Token present' : 'No token'
+            recaptchaToken: recaptchaToken ? recaptchaToken.substring(0, 10) + '...' : 'No token'
         });
         
         const response = await fetch(`${API_BASE_URL}/api/contact`, {
