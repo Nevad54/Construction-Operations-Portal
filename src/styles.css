@@ -1228,48 +1228,8 @@ footer {
 /* Fade-in Animation */
 .fade-in {
     opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    animation: fadeIn 1s ease-in forwards;
 }
-
-.fade-in.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Stagger children animations */
-.services-list li {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-
-.services-list li.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.services-list li:nth-child(1) { transition-delay: 0.1s; }
-.services-list li:nth-child(2) { transition-delay: 0.2s; }
-.services-list li:nth-child(3) { transition-delay: 0.3s; }
-.services-list li:nth-child(4) { transition-delay: 0.4s; }
-.services-list li:nth-child(5) { transition-delay: 0.5s; }
-
-.categories-grid .category-card {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-
-.categories-grid .category-card.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.categories-grid .category-card:nth-child(1) { transition-delay: 0.1s; }
-.categories-grid .category-card:nth-child(2) { transition-delay: 0.2s; }
-.categories-grid .category-card:nth-child(3) { transition-delay: 0.3s; }
-.categories-grid .category-card:nth-child(4) { transition-delay: 0.4s; }
 
 /* Add padding to main sections to account for fixed header */
 .vision-mission,
