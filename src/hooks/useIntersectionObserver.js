@@ -1,28 +1,35 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
-export const useIntersectionObserver = (options = {}) => {
-  const [isVisible, setIsVisible] = useState(false);
+const useIntersectionObserver = (options = {}) => {
   const elementRef = useRef(null);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      setIsVisible(entry.isIntersecting);
+    const element = elementRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          // Unobserve after animation
+          observer.unobserve(entry.target);
+        }
+      });
     }, {
       threshold: 0.1,
       ...options
     });
 
-    const currentElement = elementRef.current;
-    if (currentElement) {
-      observer.observe(currentElement);
-    }
+    observer.observe(element);
 
     return () => {
-      if (currentElement) {
-        observer.unobserve(currentElement);
+      if (element) {
+        observer.unobserve(element);
       }
     };
   }, [options]);
 
-  return [elementRef, isVisible];
-}; 
+  return elementRef;
+};
+
+export default useIntersectionObserver; 
