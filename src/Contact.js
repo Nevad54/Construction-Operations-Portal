@@ -9,7 +9,7 @@ import './styles.css';
 const Contact = () => {
   console.log('Contact component rendering');
   // Update API URL to point to the backend service
-  const API_BASE_URL = 'https://mastertech-backend.onrender.com';
+  const API_BASE_URL = 'https://mastertech-app.onrender.com';
   const IMAGE_BASE_URL = API_BASE_URL;
   // Hardcode the reCAPTCHA site key for now
   const RECAPTCHA_SITE_KEY = '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa';
