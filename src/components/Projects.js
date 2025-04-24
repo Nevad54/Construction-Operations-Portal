@@ -108,7 +108,7 @@ const Projects = () => {
         activePage="projects"
       />
       <div className="projects-container">
-        <div className="controls-container fade-in-section">
+        <div className="controls-container">
           <div className="search-box">
             <FontAwesomeIcon icon={faSearch} />
             <input
@@ -140,7 +140,7 @@ const Projects = () => {
         </div>
 
         <div className="projects-sections">
-          <div className="projects-section fade-in-section">
+          <div className="projects-section">
             <div className="section-header">
               <h2 className="section-title">Ongoing Projects</h2>
               <span className="section-count">{ongoingProjects.length}</span>
@@ -149,7 +149,7 @@ const Projects = () => {
               {ongoingProjects.map(project => (
                 <div
                   key={project._id}
-                  className={`project-card ${exitingProject === project ? 'exit' : ''} fade-in-section`}
+                  className={`project-card ${exitingProject === project ? 'exit' : ''}`}
                   onClick={() => handleProjectClick(project)}
                 >
                   {project.image && (
@@ -169,7 +169,7 @@ const Projects = () => {
             </div>
           </div>
 
-          <div className="projects-section fade-in-section">
+          <div className="projects-section">
             <div className="section-header">
               <h2 className="section-title">Completed Projects</h2>
               <span className="section-count">{completedProjects.length}</span>
@@ -178,7 +178,7 @@ const Projects = () => {
               {completedProjects.map(project => (
                 <div
                   key={project._id}
-                  className={`project-card ${exitingProject === project ? 'exit' : ''} fade-in-section`}
+                  className={`project-card ${exitingProject === project ? 'exit' : ''}`}
                   onClick={() => handleProjectClick(project)}
                 >
                   {project.image && (
@@ -200,7 +200,7 @@ const Projects = () => {
         </div>
 
         {selectedProject && (
-          <div className="project-modal fade-in-section" onClick={handleCloseModal}>
+          <div className="project-modal" onClick={handleCloseModal}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>{selectedProject.title}</h2>
