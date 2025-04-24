@@ -66,14 +66,33 @@ const Admin = () => {
         e.preventDefault();
         try {
             setLoading(true);
+            setError(null);
+            
+            // Validate required fields
+            if (!formData.title || !formData.description || !formData.date) {
+                throw new Error('Please fill in all required fields');
+            }
+
             const formDataToSend = new FormData();
             Object.keys(formData).forEach(key => {
                 if (formData[key] !== null) {
-                    formDataToSend.append(key, formData[key]);
+                    // Format date if it's the date field
+                    if (key === 'date' && formData[key]) {
+                        const date = new Date(formData[key]);
+                        if (isNaN(date.getTime())) {
+                            throw new Error('Invalid date format');
+                        }
+                        formDataToSend.append(key, date.toISOString());
+                    } else {
+                        formDataToSend.append(key, formData[key]);
+                    }
                 }
             });
 
-            await addProject(formDataToSend);
+            console.log('Submitting project data:', Object.fromEntries(formDataToSend));
+            const response = await addProject(formDataToSend);
+            console.log('Project added successfully:', response);
+
             setFormData({
                 title: '',
                 description: '',
@@ -85,6 +104,7 @@ const Admin = () => {
             setImagePreview(null);
             setShowModal(false);
         } catch (error) {
+            console.error('Error adding project:', error);
             setError('Error adding project: ' + error.message);
         } finally {
             setLoading(false);
@@ -103,18 +123,38 @@ const Admin = () => {
         e.preventDefault();
         try {
             setLoading(true);
+            setError(null);
+
+            // Validate required fields
+            if (!editingProject.title || !editingProject.description || !editingProject.date) {
+                throw new Error('Please fill in all required fields');
+            }
+
             const formDataToSend = new FormData();
             Object.keys(editingProject).forEach(key => {
                 if (editingProject[key] !== null) {
-                    formDataToSend.append(key, editingProject[key]);
+                    // Format date if it's the date field
+                    if (key === 'date' && editingProject[key]) {
+                        const date = new Date(editingProject[key]);
+                        if (isNaN(date.getTime())) {
+                            throw new Error('Invalid date format');
+                        }
+                        formDataToSend.append(key, date.toISOString());
+                    } else {
+                        formDataToSend.append(key, editingProject[key]);
+                    }
                 }
             });
 
-            await updateProject(editingProject._id, formDataToSend);
+            console.log('Updating project data:', Object.fromEntries(formDataToSend));
+            const response = await updateProject(editingProject._id, formDataToSend);
+            console.log('Project updated successfully:', response);
+
             setShowModal(false);
             setEditingProject(null);
             setEditImagePreview(null);
         } catch (error) {
+            console.error('Error updating project:', error);
             setError('Error updating project: ' + error.message);
         } finally {
             setLoading(false);
