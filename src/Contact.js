@@ -38,7 +38,6 @@ const Contact = () => {
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const recaptchaRef = useRef(null);
   const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
-  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
   const [attemptsRemaining, setAttemptsRemaining] = useState(() => {
     const saved = localStorage.getItem('contactAttempts');
     const lastReset = localStorage.getItem('lastAttemptReset');
@@ -303,7 +302,6 @@ const Contact = () => {
         try {
           console.log('Resetting reCAPTCHA');
           recaptchaRef.current.reset();
-          setRecaptchaLoaded(true);
         } catch (error) {
           console.error('Error resetting reCAPTCHA:', error);
         }
@@ -314,12 +312,11 @@ const Contact = () => {
     if (!window.grecaptcha) {
       console.log('Loading reCAPTCHA script');
       const script = document.createElement('script');
-      script.src = 'https://www.google.com/recaptcha/api.js?render=explicit';
+      script.src = 'https://www.google.com/recaptcha/api.js';
       script.async = true;
       script.defer = true;
       script.onload = () => {
         console.log('reCAPTCHA script loaded successfully');
-        setRecaptchaLoaded(true);
         loadRecaptcha();
       };
       script.onerror = (error) => {
@@ -332,7 +329,6 @@ const Contact = () => {
       document.head.appendChild(script);
     } else {
       console.log('reCAPTCHA already loaded, initializing');
-      setRecaptchaLoaded(true);
       loadRecaptcha();
     }
 
@@ -433,7 +429,7 @@ const Contact = () => {
                 </div>
                 
                 <div className="form-group captcha-group">
-                  {recaptchaLoaded && RECAPTCHA_SITE_KEY ? (
+                  {RECAPTCHA_SITE_KEY ? (
                     <ReCAPTCHA
                       ref={recaptchaRef}
                       sitekey={RECAPTCHA_SITE_KEY}
@@ -448,7 +444,7 @@ const Contact = () => {
                     />
                   ) : (
                     <div className="error">
-                      reCAPTCHA is loading. Please wait...
+                      reCAPTCHA configuration is missing. Please contact the administrator.
                       <br />
                       <small>Debug info: {process.env.NODE_ENV} environment</small>
                     </div>
