@@ -1,3 +1,5 @@
+import FadeInSection from './components/FadeInSection';
+
   return (
     <div>
       {loading && (
@@ -21,71 +23,79 @@
       />
       <section className="projects" role="main">
         <div className="container">
-          <h1>Our Projects</h1>
-          <div className={`filter-buttons ${loading ? 'loading' : ''}`}>
-            {loading ? (
-              <>
-                <div className="filter-skeleton"></div>
-                <div className="filter-skeleton"></div>
-                <div className="filter-skeleton"></div>
-              </>
-            ) : (
-              <>
-                <button
-                  className={`filter-btn ${activeFilter === 'all' ? 'active' : ''}`}
-                  onClick={() => handleFilterChange('all')}
-                >
-                  All
-                </button>
-                <button
-                  className={`filter-btn ${activeFilter === 'ongoing' ? 'active' : ''}`}
-                  onClick={() => handleFilterChange('ongoing')}
-                >
-                  Ongoing
-                </button>
-                <button
-                  className={`filter-btn ${activeFilter === 'completed' ? 'active' : ''}`}
-                  onClick={() => handleFilterChange('completed')}
-                >
-                  Completed
-                </button>
-              </>
-            )}
-          </div>
-          <div className={`project-gallery ${loading ? 'loading' : ''}`}>
-            {loading ? (
-              <>
-                {[1, 2, 3, 4, 5, 6].map((index) => (
-                  <div key={index} className="project-skeleton">
-                    <div className="project-skeleton-image"></div>
-                    <div className="project-skeleton-content">
-                      <div className="project-skeleton-title"></div>
-                      <div className="project-skeleton-text"></div>
-                      <div className="project-skeleton-text"></div>
+          <FadeInSection>
+            <h1>Our Projects</h1>
+          </FadeInSection>
+          
+          <FadeInSection delay={0.2}>
+            <div className={`filter-buttons ${loading ? 'loading' : ''}`}>
+              {loading ? (
+                <>
+                  <div className="filter-skeleton"></div>
+                  <div className="filter-skeleton"></div>
+                  <div className="filter-skeleton"></div>
+                </>
+              ) : (
+                <>
+                  <button
+                    className={`filter-btn ${activeFilter === 'all' ? 'active' : ''}`}
+                    onClick={() => handleFilterChange('all')}
+                  >
+                    All
+                  </button>
+                  <button
+                    className={`filter-btn ${activeFilter === 'ongoing' ? 'active' : ''}`}
+                    onClick={() => handleFilterChange('ongoing')}
+                  >
+                    Ongoing
+                  </button>
+                  <button
+                    className={`filter-btn ${activeFilter === 'completed' ? 'active' : ''}`}
+                    onClick={() => handleFilterChange('completed')}
+                  >
+                    Completed
+                  </button>
+                </>
+              )}
+            </div>
+          </FadeInSection>
+          
+          <FadeInSection delay={0.4} stagger={true}>
+            <div className={`project-gallery ${loading ? 'loading' : ''}`}>
+              {loading ? (
+                <>
+                  {[1, 2, 3, 4, 5, 6].map((index) => (
+                    <div key={index} className="project-skeleton">
+                      <div className="project-skeleton-image"></div>
+                      <div className="project-skeleton-content">
+                        <div className="project-skeleton-title"></div>
+                        <div className="project-skeleton-text"></div>
+                        <div className="project-skeleton-text"></div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                filteredProjects.map((project) => (
+                  <div key={project._id} className="project-item">
+                    <img
+                      src={project.image ? `${API_BASE_URL}${project.image}` : '/placeholder.jpg'}
+                      alt={project.title}
+                      loading="lazy"
+                    />
+                    <div className="project-info">
+                      <h3>{project.title}</h3>
+                      <p>{project.description}</p>
+                      <p><strong>Location:</strong> {project.location}</p>
+                      <p><strong>Owner:</strong> {project.owner}</p>
+                      <p><strong>Date:</strong> {new Date(project.date).toLocaleDateString()}</p>
+                      <p><strong>Status:</strong> {project.status}</p>
                     </div>
                   </div>
-                ))}
-              </>
-            ) : (
-              filteredProjects.map((project) => (
-                <div key={project._id} className="project-item">
-                  <img
-                    src={project.image ? `${API_BASE_URL}${project.image}` : '/placeholder.jpg'}
-                    alt={project.title}
-                    loading="lazy"
-                  />
-                  <div className="project-info">
-                    <h3>{project.title}</h3>
-                    <p>{project.description}</p>
-                    <p><strong>Location:</strong> {project.location}</p>
-                    <p><strong>Owner:</strong> {project.owner}</p>
-                    <p><strong>Date:</strong> {new Date(project.date).toLocaleDateString()}</p>
-                    <p><strong>Status:</strong> {project.status}</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                ))
+              )}
+            </div>
+          </FadeInSection>
         </div>
       </section>
       <button
