@@ -5,7 +5,6 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
 import './styles.css';
-import FadeInSection from './components/FadeInSection';
 
 const Contact = () => {
   console.log('Contact component rendering');
@@ -374,170 +373,164 @@ const Contact = () => {
       />
       <section className="contact" role="main">
         <div className="container">
-          <FadeInSection>
-            <h1>Contact Us</h1>
-          </FadeInSection>
-          
+          <h1>Contact Us</h1>
           <div className="contact-content">
-            <FadeInSection delay={0.2} direction="left">
-              <div className="contact-info">
-                <h2>Get in Touch</h2>
-                <p>We'd love to hear from you. Please fill out the form or use our contact information below.</p>
-                
-                <div className="info-group">
-                  <h3><i className="fas fa-map-marker-alt"></i> Address</h3>
-                  <p>123 Construction Ave, Building District, City, Country</p>
+            <div className="contact-form">
+              <h2>Send Us a Message</h2>
+              {submitStatus && (
+                <div className={`alert ${submitStatus.type === 'success' ? 'alert-success' : 'alert-error'}`}>
+                  {submitStatus.message}
+                </div>
+              )}
+              <form onSubmit={handleSubmit} noValidate>
+                <div className="form-group">
+                  <label htmlFor="name">Name</label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    aria-required="true"
+                    aria-describedby="name-error"
+                    disabled={isSubmitting}
+                  />
+                  {errors.name && <span id="name-error" className="error">{errors.name}</span>}
+                </div>
+                <div className="form-group">
+                  <label htmlFor="email">Email</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    aria-required="true"
+                    aria-describedby="email-error"
+                    disabled={isSubmitting}
+                  />
+                  {errors.email && <span id="email-error" className="error">{errors.email}</span>}
+                </div>
+                <div className="form-group">
+                  <label htmlFor="phone">Phone Number (Optional)</label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="+1 (123) 456-7890"
+                    aria-describedby="phone-error"
+                    disabled={isSubmitting}
+                  />
+                  {errors.phone && <span id="phone-error" className="error">{errors.phone}</span>}
+                </div>
+                <div className="form-group">
+                  <label htmlFor="message">Message</label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    rows="5"
+                    aria-required="true"
+                    aria-describedby="message-error"
+                    disabled={isSubmitting}
+                  ></textarea>
+                  {errors.message && <span id="message-error" className="error">{errors.message}</span>}
                 </div>
                 
-                <div className="info-group">
-                  <h3><i className="fas fa-phone"></i> Phone</h3>
-                  <p>+1 (555) 123-4567</p>
-                </div>
-                
-                <div className="info-group">
-                  <h3><i className="fas fa-envelope"></i> Email</h3>
-                  <p>info@mastertech.com</p>
-                </div>
-                
-                <div className="map-container">
-                  <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.2155730270587!2d-73.98731968482413!3d40.75789497932681!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25855c6480299%3A0x55194ec5a1ae072e!2sTimes+Square!5e0!3m2!1sen!2sus!4v1516134652475" 
-                    width="100%" 
-                    height="300" 
-                    frameBorder="0" 
-                    style={{border: 0}} 
-                    allowFullScreen
-                    title="Our location"
-                  ></iframe>
-                </div>
-              </div>
-            </FadeInSection>
-            
-            <FadeInSection delay={0.4} direction="right">
-              <div className="contact-form">
-                <h2>Send us a Message</h2>
-                {submitStatus && (
-                  <div className={`alert ${submitStatus.type === 'success' ? 'alert-success' : 'alert-error'}`}>
-                    {submitStatus.message}
-                  </div>
-                )}
-                <form onSubmit={handleSubmit} noValidate>
-                  <div className="form-group">
-                    <label htmlFor="name">Name</label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      aria-required="true"
-                      aria-describedby="name-error"
-                      disabled={isSubmitting}
-                    />
-                    {errors.name && <span id="name-error" className="error">{errors.name}</span>}
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="email">Email</label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      aria-required="true"
-                      aria-describedby="email-error"
-                      disabled={isSubmitting}
-                    />
-                    {errors.email && <span id="email-error" className="error">{errors.email}</span>}
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="phone">Phone Number (Optional)</label>
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      placeholder="+1 (123) 456-7890"
-                      aria-describedby="phone-error"
-                      disabled={isSubmitting}
-                    />
-                    {errors.phone && <span id="phone-error" className="error">{errors.phone}</span>}
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="message">Message</label>
-                    <textarea
-                      id="message"
-                      name="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      rows="5"
-                      aria-required="true"
-                      aria-describedby="message-error"
-                      disabled={isSubmitting}
-                    ></textarea>
-                    {errors.message && <span id="message-error" className="error">{errors.message}</span>}
-                  </div>
-                  
-                  <div className="form-group captcha-group">
-                    {RECAPTCHA_SITE_KEY ? (
-                      <div 
-                        role="region" 
-                        aria-label="reCAPTCHA verification" 
-                        tabIndex={-1}
-                        className="recaptcha-container"
-                      >
-                        <ReCAPTCHA
-                          ref={recaptchaRef}
-                          sitekey={RECAPTCHA_SITE_KEY}
-                          onChange={handleRecaptchaChange}
-                          onExpired={handleRecaptchaExpired}
-                          onErrored={handleRecaptchaError}
-                          theme="light"
-                          size="normal"
-                          tabIndex={0}
-                          hl="en"
-                          badge="bottomright"
-                          aria-label="reCAPTCHA verification"
-                        />
-                      </div>
-                    ) : (
-                      <div className="error" role="alert">
-                        reCAPTCHA configuration is missing. Please contact the administrator.
-                        <br />
-                        <small>Debug info: {process.env.NODE_ENV} environment</small>
-                      </div>
-                    )}
-                    {errors.captcha && (
-                      <div className="error" role="alert">
-                        {errors.captcha}
-                        {errors.captchaDetails && (
-                          <small>Error details: {errors.captchaDetails.join(', ')}</small>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {timeUntilReset ? (
-                    <div className="attempts-info">
-                      <p className="error">Please wait {timeUntilReset} minutes before trying again.</p>
+                <div className="form-group captcha-group">
+                  {RECAPTCHA_SITE_KEY ? (
+                    <div 
+                      role="region" 
+                      aria-label="reCAPTCHA verification" 
+                      tabIndex={-1}
+                      className="recaptcha-container"
+                    >
+                      <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={RECAPTCHA_SITE_KEY}
+                        onChange={handleRecaptchaChange}
+                        onExpired={handleRecaptchaExpired}
+                        onErrored={handleRecaptchaError}
+                        theme="light"
+                        size="normal"
+                        tabIndex={0}
+                        hl="en"
+                        badge="bottomright"
+                        aria-label="reCAPTCHA verification"
+                      />
                     </div>
                   ) : (
-                    <div className="attempts-info">
-                      <p>Attempts remaining: {attemptsRemaining}</p>
+                    <div className="error" role="alert">
+                      reCAPTCHA configuration is missing. Please contact the administrator.
+                      <br />
+                      <small>Debug info: {process.env.NODE_ENV} environment</small>
                     </div>
                   )}
+                  {errors.captcha && (
+                    <div className="error" role="alert">
+                      {errors.captcha}
+                      {errors.captchaDetails && (
+                        <small>Error details: {errors.captchaDetails.join(', ')}</small>
+                      )}
+                    </div>
+                  )}
+                </div>
 
-                  <button 
-                    type="submit" 
-                    className="btn" 
-                    disabled={isSubmitting || timeUntilReset !== null}
-                  >
-                    {isSubmitting ? 'Sending...' : 'Send Message'}
-                  </button>
-                </form>
+                {timeUntilReset ? (
+                  <div className="attempts-info">
+                    <p className="error">Please wait {timeUntilReset} minutes before trying again.</p>
+                  </div>
+                ) : (
+                  <div className="attempts-info">
+                    <p>Attempts remaining: {attemptsRemaining}</p>
+                  </div>
+                )}
+
+                <button 
+                  type="submit" 
+                  className="btn" 
+                  disabled={isSubmitting || timeUntilReset !== null}
+                >
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
+                </button>
+              </form>
+            </div>
+            <div className="contact-info">
+              <h2>Contact Information</h2>
+              <div className="info-group">
+                <h3><i className="fas fa-building"></i> Office Address</h3>
+                <p>320 Sta Rosa Tagaytay Road Purok 4,<br />Brgy. Pasong Langka,<br />Silang Cavite 4118</p>
               </div>
-            </FadeInSection>
+              <div className="info-group">
+                <h3><i className="fas fa-clock"></i> Office Hours</h3>
+                <p>Monday - Friday: 8:00 AM - 5:00 PM<br />Saturday: 8:00 AM - 12:00 PM<br />Sunday: Closed</p>
+              </div>
+              <div className="info-group">
+                <h3><i className="fas fa-phone-alt"></i> Phone & Email</h3>
+                <p>
+                  <a href="tel:+63465139424">(046) 513 9424</a><br />
+                  <a href="tel:+639669369678">0966 936 9678 - Melissa</a><br />
+                  <a href="tel:+639171668344">0917 166 8344 - Marlon</a><br />
+                  <a href="tel:+639178214720">0917 821 4720 - Gemma</a><br />
+                  <a href="mailto:inquiry@mastertech.com.ph">inquiry@mastertech.com.ph</a>
+                </p>
+              </div>
+              <div className="map-container">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d244.93515605421877!2d120.9966971517091!3d14.16017202394409!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7b0053a0280d%3A0x99434f55287e9a94!2sRestaurant!5e1!3m2!1sen!2sph!4v1743742491118!5m2!1sen!2sph"
+                  width="100%"
+                  height="300"
+                  style={{ border: 0 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Office Location Map"
+                ></iframe>
+              </div>
+            </div>
           </div>
         </div>
       </section>
