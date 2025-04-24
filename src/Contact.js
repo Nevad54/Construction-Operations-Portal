@@ -7,9 +7,17 @@ import Footer from './Footer';
 import './styles.css';
 
 const Contact = () => {
+  console.log('Contact component rendering');
   const API_BASE_URL = process.env.REACT_APP_API_URL || '';
   const IMAGE_BASE_URL = API_BASE_URL;
   const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
+  
+  console.log('Environment variables:', {
+    API_BASE_URL,
+    RECAPTCHA_SITE_KEY,
+    NODE_ENV: process.env.NODE_ENV
+  });
+
   const [isSidebarActive, setIsSidebarActive] = useState(false);
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -242,33 +250,63 @@ const Contact = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Add error handling for missing reCAPTCHA key
   useEffect(() => {
-    // Initialize reCAPTCHA only once when component mounts
+    if (!RECAPTCHA_SITE_KEY) {
+      console.error('reCAPTCHA site key is missing. Please check your environment variables.');
+      setErrors(prev => ({
+        ...prev,
+        captcha: 'reCAPTCHA configuration is missing. Please contact the administrator.'
+      }));
+    }
+  }, [RECAPTCHA_SITE_KEY]);
+
+  // Modify the reCAPTCHA initialization
+  useEffect(() => {
     const loadRecaptcha = () => {
+      if (!RECAPTCHA_SITE_KEY) {
+        console.error('Cannot load reCAPTCHA: site key is missing');
+        return;
+      }
+
       if (window.grecaptcha && recaptchaRef.current) {
-        recaptchaRef.current.reset();
+        try {
+          recaptchaRef.current.reset();
+        } catch (error) {
+          console.error('Error resetting reCAPTCHA:', error);
+        }
       }
     };
 
     // Load reCAPTCHA script if not already loaded
     if (!window.grecaptcha) {
       const script = document.createElement('script');
-      script.src = 'https://www.google.com/recaptcha/api.js';
+      script.src = `https://www.google.com/recaptcha/api.js?render=explicit`;
       script.async = true;
       script.defer = true;
       script.onload = loadRecaptcha;
+      script.onerror = (error) => {
+        console.error('Error loading reCAPTCHA script:', error);
+        setErrors(prev => ({
+          ...prev,
+          captcha: 'Error loading reCAPTCHA. Please refresh the page.'
+        }));
+      };
       document.head.appendChild(script);
     } else {
       loadRecaptcha();
     }
 
     return () => {
-      // Cleanup if needed
       if (window.grecaptcha && recaptchaRef.current) {
-        recaptchaRef.current.reset();
+        try {
+          recaptchaRef.current.reset();
+        } catch (error) {
+          console.error('Error cleaning up reCAPTCHA:', error);
+        }
       }
     };
-  }, []); // Empty dependency array means this only runs once on mount
+  }, [RECAPTCHA_SITE_KEY]); // Add RECAPTCHA_SITE_KEY as dependency
 
   return (
     <div>
@@ -355,16 +393,24 @@ const Contact = () => {
                 </div>
                 
                 <div className="form-group captcha-group">
-                  <ReCAPTCHA
-                    ref={recaptchaRef}
-                    sitekey={RECAPTCHA_SITE_KEY}
-                    onChange={handleRecaptchaChange}
-                    onExpired={handleRecaptchaExpired}
-                    onErrored={handleRecaptchaError}
-                    theme="light"
-                    size="normal"
-                    tabIndex={0}
-                  />
+                  {RECAPTCHA_SITE_KEY ? (
+                    <ReCAPTCHA
+                      ref={recaptchaRef}
+                      sitekey={RECAPTCHA_SITE_KEY}
+                      onChange={handleRecaptchaChange}
+                      onExpired={handleRecaptchaExpired}
+                      onErrored={handleRecaptchaError}
+                      theme="light"
+                      size="normal"
+                      tabIndex={0}
+                    />
+                  ) : (
+                    <div className="error">
+                      reCAPTCHA configuration is missing. Please contact the administrator.
+                      <br />
+                      <small>Debug info: {process.env.NODE_ENV} environment</small>
+                    </div>
+                  )}
                   {errors.captcha && <span className="error">{errors.captcha}</span>}
                 </div>
 
