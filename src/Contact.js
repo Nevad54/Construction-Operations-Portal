@@ -10,6 +10,7 @@ import './styles.css';
 const Contact = () => {
   const API_BASE_URL = process.env.REACT_APP_API_URL || '';
   const IMAGE_BASE_URL = API_BASE_URL;
+  const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
   const [isSidebarActive, setIsSidebarActive] = useState(false);
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -45,15 +46,15 @@ const Contact = () => {
 
   const getActivePage = () => {
     const path = location.pathname;
-    console.log('Current path:', path); // Debug log
+    console.log('Current path:', path);
     if (path === '/') return 'home';
-    if (path === '/pages/about') return 'about';
-    if (path === '/pages/services') return 'services';
-    if (path === '/pages/vision-mission') return 'vision-mission';
-    if (path === '/pages/core-values') return 'core-values';
-    if (path === '/pages/safety') return 'safety';
-    if (path === '/pages/projects') return 'projects';
-    if (path === '/pages/contact') return 'contact';
+    if (path === '/about') return 'about';
+    if (path === '/services') return 'services';
+    if (path === '/vision-mission') return 'vision-mission';
+    if (path === '/core-values') return 'core-values';
+    if (path === '/safety') return 'safety';
+    if (path === '/projects') return 'projects';
+    if (path === '/contact') return 'contact';
     return 'home';
   };
   const activePage = getActivePage();
@@ -245,13 +246,17 @@ const Contact = () => {
   useEffect(() => {
     // Initialize reCAPTCHA only once when component mounts
     const loadRecaptcha = () => {
+      if (!RECAPTCHA_SITE_KEY) {
+        console.error('reCAPTCHA site key is missing. Please check your environment variables.');
+        return;
+      }
       if (window.grecaptcha && recaptchaRef.current) {
         recaptchaRef.current.reset();
       }
     };
 
     // Load reCAPTCHA script if not already loaded
-    if (!window.grecaptcha) {
+    if (!window.grecaptcha && RECAPTCHA_SITE_KEY) {
       const script = document.createElement('script');
       script.src = 'https://www.google.com/recaptcha/api.js';
       script.async = true;
@@ -268,7 +273,7 @@ const Contact = () => {
         recaptchaRef.current.reset();
       }
     };
-  }, []); // Empty dependency array means this only runs once on mount
+  }, [RECAPTCHA_SITE_KEY]); // Add RECAPTCHA_SITE_KEY to dependencies
 
   return (
     <div>
@@ -294,6 +299,11 @@ const Contact = () => {
             <FadeInOnScroll delay={100}>
               <div className="contact-form">
                 <h2>Send Us a Message</h2>
+                {!RECAPTCHA_SITE_KEY && (
+                  <div className="alert alert-error">
+                    reCAPTCHA configuration is missing. Please contact the administrator.
+                  </div>
+                )}
                 {submitStatus && (
                   <div className={`alert ${submitStatus.type === 'success' ? 'alert-success' : 'alert-error'}`}>
                     {submitStatus.message}
@@ -348,13 +358,15 @@ const Contact = () => {
                     {errors.message && <span className="error-message">{errors.message}</span>}
                   </div>
                   <div className="form-group">
-                    <ReCAPTCHA
-                      ref={recaptchaRef}
-                      sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
-                      onChange={handleRecaptchaChange}
-                      onExpired={handleRecaptchaExpired}
-                      onError={handleRecaptchaError}
-                    />
+                    {RECAPTCHA_SITE_KEY ? (
+                      <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={RECAPTCHA_SITE_KEY}
+                        onChange={handleRecaptchaChange}
+                        onExpired={handleRecaptchaExpired}
+                        onError={handleRecaptchaError}
+                      />
+                    ) : null}
                     {errors.captcha && <span className="error-message">{errors.captcha}</span>}
                   </div>
                   <button

@@ -127,13 +127,11 @@ const Home = () => {
                 to="/projects#industrial"
                 className="category-card"
               >
-                <div className="category-image">
-                  <img
-                    src={`${IMAGE_BASE_URL}/uploads/industrial.jpg`}
-                    alt="Industrial Projects"
-                    loading="lazy"
-                  />
-                </div>
+                <img
+                  src={`${IMAGE_BASE_URL}/uploads/industrial.jpg`}
+                  alt="Industrial Projects"
+                  loading="lazy"
+                />
                 <div className="category-overlay">
                   <span>Industrial</span>
                 </div>
@@ -144,13 +142,11 @@ const Home = () => {
                 to="/projects#residential"
                 className="category-card"
               >
-                <div className="category-image">
-                  <img
-                    src={`${IMAGE_BASE_URL}/uploads/residential.jpg`}
-                    alt="Residential Projects"
-                    loading="lazy"
-                  />
-                </div>
+                <img
+                  src={`${IMAGE_BASE_URL}/uploads/residential.jpg`}
+                  alt="Residential Projects"
+                  loading="lazy"
+                />
                 <div className="category-overlay">
                   <span>Residential</span>
                 </div>
@@ -161,13 +157,11 @@ const Home = () => {
                 to="/projects#commercial"
                 className="category-card"
               >
-                <div className="category-image">
-                  <img
-                    src={`${IMAGE_BASE_URL}/uploads/commercial.jpg`}
-                    alt="Commercial Projects"
-                    loading="lazy"
-                  />
-                </div>
+                <img
+                  src={`${IMAGE_BASE_URL}/uploads/commercial.jpg`}
+                  alt="Commercial Projects"
+                  loading="lazy"
+                />
                 <div className="category-overlay">
                   <span>Commercial</span>
                 </div>
@@ -178,13 +172,11 @@ const Home = () => {
                 to="/projects#renovation"
                 className="category-card"
               >
-                <div className="category-image">
-                  <img
-                    src={`${IMAGE_BASE_URL}/uploads/renovation.jpg`}
-                    alt="Renovation Projects"
-                    loading="lazy"
-                  />
-                </div>
+                <img
+                  src={`${IMAGE_BASE_URL}/uploads/renovation.jpg`}
+                  alt="Renovation Projects"
+                  loading="lazy"
+                />
                 <div className="category-overlay">
                   <span>Renovation</span>
                 </div>
@@ -193,78 +185,46 @@ const Home = () => {
           </div>
         </div>
       </section>
-      <section className="services" role="region" aria-labelledby="services-heading">
-        <div className="container">
-          <FadeInOnScroll>
-            <h2 id="services-heading">Our Services</h2>
-          </FadeInOnScroll>
-          <FadeInOnScroll delay={100}>
-            <div className="services-grid">
-              <div className="service-card">
-                <i className="fas fa-hard-hat"></i>
-                <h3>General Contracting</h3>
-                <p>Structural, Civil, Site Development, and Architectural Works</p>
-              </div>
-              <div className="service-card">
-                <i className="fas fa-cogs"></i>
-                <h3>MEPS Works</h3>
-                <p>Mechanical, Electrical, Plumbing, and Fire Protection Works</p>
-              </div>
-              <div className="service-card">
-                <i className="fas fa-wrench"></i>
-                <h3>Industrial Projects</h3>
-                <p>Fabrication & Industrial Plant Projects with Clean Room & Painting Processes</p>
-              </div>
-              <div className="service-card">
-                <i className="fas fa-users-cog"></i>
-                <h3>Technical Support</h3>
-                <p>Manpower and Technical Support for Manufacturing Plants</p>
-              </div>
-              <div className="service-card">
-                <i className="fas fa-tools"></i>
-                <h3>Equipment Supply</h3>
-                <p>Supply of Industrial Materials and Equipment</p>
-              </div>
-            </div>
-          </FadeInOnScroll>
-        </div>
-      </section>
-      <section className="contact-preview" role="region" aria-labelledby="contact-heading">
-        <div className="container">
-          <FadeInOnScroll>
-            <h2 id="contact-heading">Get in Touch</h2>
-          </FadeInOnScroll>
-          <FadeInOnScroll delay={100}>
-            <div className="contact-content">
-              <div className="contact-info">
-                <div className="contact-item">
-                  <i className="fas fa-map-marker-alt"></i>
-                  <div>
-                    <h3>Location</h3>
-                    <p>123 Business Street, City, Country</p>
-                  </div>
-                </div>
-                <div className="contact-item">
-                  <i className="fas fa-phone"></i>
-                  <div>
-                    <h3>Phone</h3>
-                    <p>+1 234 567 8900</p>
-                  </div>
-                </div>
-                <div className="contact-item">
-                  <i className="fas fa-envelope"></i>
-                  <div>
-                    <h3>Email</h3>
-                    <p>info@mastertech.com</p>
-                  </div>
-                </div>
-              </div>
-              <Link to="/contact" className="contact-cta">
-                Contact Us
-              </Link>
-            </div>
-          </FadeInOnScroll>
-        </div>
+      {/* Services Section */}
+      <section
+        className="services"
+        role="region"
+        aria-labelledby="services-heading"
+      >
+        <FadeInOnScroll>
+          <h2 id="services-heading">Our Services</h2>
+        </FadeInOnScroll>
+        <FadeInOnScroll delay={100}>
+          <ul className="services-list">
+            <li>
+              <i className="fas fa-hard-hat"></i>
+              <span>
+                Structural, Civil, Site Development, and Architectural Works
+              </span>
+            </li>
+            <li>
+              <i className="fas fa-cogs"></i>
+              <span>
+                Mechanical, Electrical, Plumbing, and Fire Protection (MEPS) Works
+              </span>
+            </li>
+            <li>
+              <i className="fas fa-wrench"></i>
+              <span>
+                Fabrication & Industrial Plant Projects (Specialized in Clean Room
+                & Painting Processes Improvements, Including Automation)
+              </span>
+            </li>
+            <li>
+              <i className="fas fa-users-cog"></i>
+              <span>Manpower and Technical Support for Manufacturing Plants</span>
+            </li>
+            <li>
+              <i className="fas fa-tools"></i>
+              <span>Supply of Industrial Materials and Equipment</span>
+            </li>
+          </ul>
+        </FadeInOnScroll>
       </section>
       <Footer />
       <button
