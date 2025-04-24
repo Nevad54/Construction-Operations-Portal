@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
-import { useIntersectionObserver } from './hooks/useIntersectionObserver';
 import './styles.css';
 
 const Home = () => {
@@ -82,14 +81,8 @@ const Home = () => {
     };
   }, [isSidebarActive]);
 
-  const heroRef = useIntersectionObserver();
-  const aboutRef = useIntersectionObserver();
-  const servicesRef = useIntersectionObserver();
-  const projectsRef = useIntersectionObserver();
-  const contactRef = useIntersectionObserver();
-
   return (
-    <div className="home">
+    <div>
       <Sidebar
         isSidebarActive={isSidebarActive}
         setIsSidebarActive={setIsSidebarActive}
@@ -103,57 +96,23 @@ const Home = () => {
         setIsNavLinksActive={setIsNavLinksActive}
         activePage={activePage}
       />
-      <section className="hero fade-in hero-animation" ref={heroRef}>
+      <section className="hero" role="banner">
         <div className="hero-content">
-          <h1>Welcome to MasterTech</h1>
-          <p>Your trusted partner in electrical solutions</p>
-          <Link to="/contact" className="cta-button">Get Started</Link>
+          <h1 className="fade-in">
+            Welcome to MASTERTECH INTERGROUPPE INC.
+          </h1>
+          <p className="hero-subtitle fade-in">
+            Your Trusted Partner in Construction and Industrial Solutions
+          </p>
+          <Link
+            to="/contact"
+            className="btn fade-in"
+            aria-label="Contact us"
+          >
+            Get in Touch
+          </Link>
         </div>
       </section>
-
-      <section className="about fade-in about-animation" ref={aboutRef}>
-        <div className="about-content">
-          <h2>About Us</h2>
-          <p>We are a leading electrical solutions provider with years of experience...</p>
-        </div>
-      </section>
-
-      <section className="services fade-in service-animation" ref={servicesRef}>
-        <h2>Our Services</h2>
-        <div className="services-grid">
-          <div className="service-item fade-in service-item-animation">
-            <h3>Electrical Installation</h3>
-            <p>Professional electrical installation services...</p>
-          </div>
-          <div className="service-item fade-in service-item-animation">
-            <h3>Maintenance</h3>
-            <p>Regular maintenance and repair services...</p>
-          </div>
-          {/* Add more service items */}
-        </div>
-      </section>
-
-      <section className="projects fade-in project-animation" ref={projectsRef}>
-        <h2>Our Projects</h2>
-        <div className="projects-grid">
-          <div className="project-item fade-in project-item-animation">
-            <h3>Project 1</h3>
-            <p>Description of project 1...</p>
-          </div>
-          <div className="project-item fade-in project-item-animation">
-            <h3>Project 2</h3>
-            <p>Description of project 2...</p>
-          </div>
-          {/* Add more project items */}
-        </div>
-      </section>
-
-      <section className="contact fade-in contact-animation" ref={contactRef}>
-        <h2>Contact Us</h2>
-        <p>Get in touch with us for your electrical needs</p>
-        <Link to="/contact" className="cta-button">Contact Us</Link>
-      </section>
-
       <section className="project-categories" role="main">
         <div className="container">
           <h2>Our Expertise</h2>
