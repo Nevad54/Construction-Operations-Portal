@@ -65,12 +65,12 @@ const Admin = () => {
     const handleEdit = (project) => {
         // Format the date to YYYY-MM-DD for the date input
         const formattedDate = project.date ? new Date(project.date).toISOString().split('T')[0] : '';
+        const { featured, ...projectWithoutFeatured } = project; // Remove featured field
         setEditingProject({
-            ...project,
+            ...projectWithoutFeatured,
             date: formattedDate,
-            location: project.location || '', // Ensure location is preserved
-            owner: project.owner || '', // Ensure owner is preserved
-            featured: project.featured || false // Ensure featured status is preserved
+            location: project.location || '',
+            owner: project.owner || ''
         });
         setEditImagePreview(project.image);
         setShowModal(true);
@@ -92,7 +92,7 @@ const Admin = () => {
             
             // Handle each field separately to ensure proper formatting
             Object.keys(editingProject).forEach(key => {
-                if (editingProject[key] !== null && key !== '_id' && key !== '__v') {
+                if (editingProject[key] !== null && key !== '_id' && key !== '__v' && key !== 'featured') {
                     if (key === 'date' && editingProject[key]) {
                         // Ensure date is properly formatted
                         const date = new Date(editingProject[key]);
@@ -100,9 +100,6 @@ const Admin = () => {
                             throw new Error('Invalid date format');
                         }
                         formDataToSend.append(key, date.toISOString());
-                    } else if (key === 'featured') {
-                        // Convert featured to boolean
-                        formDataToSend.append(key, editingProject[key] === 'true' || editingProject[key] === true);
                     } else if (key === 'location' || key === 'owner') {
                         // Ensure location and owner are preserved as strings
                         formDataToSend.append(key, editingProject[key] || '');
@@ -113,13 +110,23 @@ const Admin = () => {
             });
 
             // Log the data being sent
-            console.log('Updating project with data:', Object.fromEntries(formDataToSend));
+            const formDataObj = Object.fromEntries(formDataToSend);
+            console.log('Updating project with data:', formDataObj);
             
             const response = await updateProject(editingProject._id, formDataToSend);
             console.log('Project updated successfully:', response);
 
             // Refresh the projects list after update
             await refreshProjects();
+            
+            // Verify the update
+            const updatedProjects = await api.getProjects();
+            const updatedProject = updatedProjects.find(p => p._id === editingProject._id);
+            console.log('Verified updated project:', updatedProject);
+
+            if (!updatedProject) {
+                throw new Error('Failed to verify project update');
+            }
             
             setShowModal(false);
             setEditingProject(null);
@@ -148,7 +155,7 @@ const Admin = () => {
             
             // Handle each field separately to ensure proper formatting
             Object.keys(formData).forEach(key => {
-                if (formData[key] !== null) {
+                if (formData[key] !== null && key !== 'featured') {
                     if (key === 'date' && formData[key]) {
                         // Ensure date is properly formatted
                         const date = new Date(formData[key]);
@@ -156,9 +163,6 @@ const Admin = () => {
                             throw new Error('Invalid date format');
                         }
                         formDataToSend.append(key, date.toISOString());
-                    } else if (key === 'featured') {
-                        // Convert featured to boolean
-                        formDataToSend.append(key, formData[key] === 'true' || formData[key] === true);
                     } else {
                         formDataToSend.append(key, formData[key]);
                     }
@@ -166,7 +170,8 @@ const Admin = () => {
             });
 
             // Log the data being sent
-            console.log('Creating project with data:', Object.fromEntries(formDataToSend));
+            const formDataObj = Object.fromEntries(formDataToSend);
+            console.log('Creating project with data:', formDataObj);
             
             const response = await addProject(formDataToSend);
             console.log('Project created successfully:', response);
@@ -180,8 +185,7 @@ const Admin = () => {
                 location: '',
                 date: '',
                 image: null,
-                status: 'ongoing',
-                featured: false
+                status: 'ongoing'
             });
             setImagePreview(null);
             setShowModal(false);
