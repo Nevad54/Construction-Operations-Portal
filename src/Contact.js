@@ -430,18 +430,20 @@ const Contact = () => {
                 
                 <div className="form-group captcha-group">
                   {RECAPTCHA_SITE_KEY ? (
-                    <ReCAPTCHA
-                      ref={recaptchaRef}
-                      sitekey={RECAPTCHA_SITE_KEY}
-                      onChange={handleRecaptchaChange}
-                      onExpired={handleRecaptchaExpired}
-                      onErrored={handleRecaptchaError}
-                      theme="light"
-                      size="normal"
-                      tabIndex={0}
-                      hl="en"
-                      badge="bottomright"
-                    />
+                    <div role="region" aria-label="reCAPTCHA verification">
+                      <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={RECAPTCHA_SITE_KEY}
+                        onChange={handleRecaptchaChange}
+                        onExpired={handleRecaptchaExpired}
+                        onErrored={handleRecaptchaError}
+                        theme="light"
+                        size="normal"
+                        tabIndex={0}
+                        hl="en"
+                        badge="bottomright"
+                      />
+                    </div>
                   ) : (
                     <div className="error">
                       reCAPTCHA configuration is missing. Please contact the administrator.

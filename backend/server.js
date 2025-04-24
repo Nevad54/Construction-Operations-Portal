@@ -200,7 +200,7 @@ const connectDB = async () => {
 async function verifyRecaptcha(token) {
     return new Promise((resolve) => {
         try {
-            const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh'; // Production secret key
+            const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa'; // Production secret key
             
             const data = querystring.stringify({
                 secret: recaptchaSecret,
@@ -457,7 +457,7 @@ app.post('/api/contact', async (req, res) => {
     }
 
     // Verify reCAPTCHA token
-    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh';
+    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa';
     console.log('Verifying reCAPTCHA with secret:', recaptchaSecret.substring(0, 10) + '...');
     
     try {
