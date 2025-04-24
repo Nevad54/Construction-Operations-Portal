@@ -5,7 +5,7 @@ import '../styles/Admin.css';
 const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
 
 const Admin = () => {
-    const { projects, addProject, updateProject, deleteProject } = useProjects();
+    const { projects, addProject, updateProject, deleteProject, refreshProjects } = useProjects();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [selectedProjects, setSelectedProjects] = useState({ ongoing: [], completed: [] });
@@ -119,7 +119,7 @@ const Admin = () => {
             console.log('Project updated successfully:', response);
 
             // Refresh the projects list after update
-            await fetchProjects();
+            await refreshProjects();
             
             setShowModal(false);
             setEditingProject(null);
@@ -172,7 +172,7 @@ const Admin = () => {
             console.log('Project created successfully:', response);
 
             // Refresh the projects list after creation
-            await fetchProjects();
+            await refreshProjects();
             
             setFormData({
                 title: '',
