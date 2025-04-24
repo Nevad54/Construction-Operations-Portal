@@ -1,7 +1,6 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { ProjectProvider } from './context/ProjectContext';
-import SmoothScroll from './components/SmoothScroll';
 import Home from './Home';
 import About from './About';
 import Services from './Services';
@@ -16,19 +15,17 @@ function App() {
   return (
     <ProjectProvider>
       <Router>
-        <SmoothScroll>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/vision-mission" element={<VisionMission />} />
-            <Route path="/core-values" element={<CoreValues />} />
-            <Route path="/safety" element={<Safety />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/admin" element={<Admin />} />
-          </Routes>
-        </SmoothScroll>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/vision-mission" element={<VisionMission />} />
+          <Route path="/core-values" element={<CoreValues />} />
+          <Route path="/safety" element={<Safety />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/admin" element={<Admin />} />
+        </Routes>
       </Router>
     </ProjectProvider>
   );

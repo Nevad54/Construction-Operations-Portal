@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
-import FadeInOnScroll from './components/FadeInOnScroll';
 import './styles.css';
 
 const VisionMission = () => {
@@ -82,21 +81,15 @@ const VisionMission = () => {
       />
       <section className="vision-mission" role="main">
         <div className="container">
-          <FadeInOnScroll>
-            <h1>Vision & Mission</h1>
-          </FadeInOnScroll>
-          <FadeInOnScroll delay={100}>
-            <div className="vision">
-              <h2>Our Vision</h2>
-              <p>To be the leading construction and industrial solutions provider, recognized for innovation, quality, and sustainability.</p>
-            </div>
-          </FadeInOnScroll>
-          <FadeInOnScroll delay={200}>
-            <div className="mission">
-              <h2>Our Mission</h2>
-              <p>We are committed to delivering exceptional projects through technical expertise, client collaboration, and a focus on safety and environmental responsibility.</p>
-            </div>
-          </FadeInOnScroll>
+          <h1>Vision & Mission</h1>
+          <div className="vision fade-in">
+            <h2>Our Vision</h2>
+            <p>To be the leading construction and industrial solutions provider, recognized for innovation, quality, and sustainability.</p>
+          </div>
+          <div className="mission fade-in">
+            <h2>Our Mission</h2>
+            <p>We are committed to delivering exceptional projects through technical expertise, client collaboration, and a focus on safety and environmental responsibility.</p>
+          </div>
         </div>
       </section>
       <Footer />

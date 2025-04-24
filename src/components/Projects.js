@@ -5,7 +5,6 @@ import { faSearch, faSort, faFilter, faTimes } from '@fortawesome/free-solid-svg
 import Header from '../Header';
 import Sidebar from '../Sidebar';
 import Footer from '../Footer';
-import FadeInOnScroll from './FadeInOnScroll';
 
 const Projects = () => {
   const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
@@ -110,103 +109,95 @@ const Projects = () => {
         activePage="projects"
       />
       <div className="projects-container">
-        <FadeInOnScroll>
-          <div className="controls-container">
-            <div className="search-box">
-              <FontAwesomeIcon icon={faSearch} />
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Search projects by name, location, or description..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            
-            <button
-              className="sort-button"
-              onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
-            >
-              <FontAwesomeIcon icon={faSort} />
-              {` Sort ${sortOrder === 'desc' ? 'Oldest' : 'Newest'} First`}
-            </button>
-            
-            <select
-              className="filter-button"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="all">All Projects</option>
-              <option value="ongoing">Ongoing</option>
-              <option value="completed">Completed</option>
-            </select>
+        <div className="controls-container">
+          <div className="search-box">
+            <FontAwesomeIcon icon={faSearch} />
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search projects by name, location, or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-        </FadeInOnScroll>
+          
+          <button
+            className="sort-button"
+            onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+          >
+            <FontAwesomeIcon icon={faSort} />
+            {` Sort ${sortOrder === 'desc' ? 'Oldest' : 'Newest'} First`}
+          </button>
+          
+          <select
+            className="filter-button"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="all">All Projects</option>
+            <option value="ongoing">Ongoing</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
 
         <div className="projects-sections">
-          <FadeInOnScroll delay={100}>
-            <div className="projects-section">
-              <div className="section-header">
-                <h2 className="section-title">Ongoing Projects</h2>
-                <span className="section-count">{ongoingProjects.length}</span>
-              </div>
-              <div className="projects-grid">
-                {ongoingProjects.map((project, index) => (
-                  <FadeInOnScroll key={project._id} delay={150 + (index * 50)}>
-                    <div
-                      className={`project-card ${exitingProject === project ? 'exit' : ''}`}
-                      onClick={() => handleProjectClick(project)}
-                    >
-                      {project.image && (
-                        <img 
-                          src={`${IMAGE_BASE_URL}${project.image}`} 
-                          alt={project.title} 
-                          className="project-image"
-                        />
-                      )}
-                      <div className="project-content">
-                        <h3 className="project-title">{project.title}</h3>
-                        <p className="project-location">{project.location}</p>
-                        <span className="status-badge status-ongoing">Ongoing</span>
-                      </div>
-                    </div>
-                  </FadeInOnScroll>
-                ))}
-              </div>
+          <div className="projects-section">
+            <div className="section-header">
+              <h2 className="section-title">Ongoing Projects</h2>
+              <span className="section-count">{ongoingProjects.length}</span>
             </div>
-          </FadeInOnScroll>
+            <div className="projects-grid">
+              {ongoingProjects.map(project => (
+                <div
+                  key={project._id}
+                  className={`project-card ${exitingProject === project ? 'exit' : ''}`}
+                  onClick={() => handleProjectClick(project)}
+                >
+                  {project.image && (
+                    <img 
+                      src={`${IMAGE_BASE_URL}${project.image}`} 
+                      alt={project.title} 
+                      className="project-image"
+                    />
+                  )}
+                  <div className="project-content">
+                    <h3 className="project-title">{project.title}</h3>
+                    <p className="project-location">{project.location}</p>
+                    <span className="status-badge status-ongoing">Ongoing</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
-          <FadeInOnScroll delay={200}>
-            <div className="projects-section">
-              <div className="section-header">
-                <h2 className="section-title">Completed Projects</h2>
-                <span className="section-count">{completedProjects.length}</span>
-              </div>
-              <div className="projects-grid">
-                {completedProjects.map((project, index) => (
-                  <FadeInOnScroll key={project._id} delay={250 + (index * 50)}>
-                    <div
-                      className={`project-card ${exitingProject === project ? 'exit' : ''}`}
-                      onClick={() => handleProjectClick(project)}
-                    >
-                      {project.image && (
-                        <img 
-                          src={`${IMAGE_BASE_URL}${project.image}`} 
-                          alt={project.title} 
-                          className="project-image"
-                        />
-                      )}
-                      <div className="project-content">
-                        <h3 className="project-title">{project.title}</h3>
-                        <p className="project-location">{project.location}</p>
-                        <span className="status-badge status-completed">Completed</span>
-                      </div>
-                    </div>
-                  </FadeInOnScroll>
-                ))}
-              </div>
+          <div className="projects-section">
+            <div className="section-header">
+              <h2 className="section-title">Completed Projects</h2>
+              <span className="section-count">{completedProjects.length}</span>
             </div>
-          </FadeInOnScroll>
+            <div className="projects-grid">
+              {completedProjects.map(project => (
+                <div
+                  key={project._id}
+                  className={`project-card ${exitingProject === project ? 'exit' : ''}`}
+                  onClick={() => handleProjectClick(project)}
+                >
+                  {project.image && (
+                    <img 
+                      src={`${IMAGE_BASE_URL}${project.image}`} 
+                      alt={project.title} 
+                      className="project-image"
+                    />
+                  )}
+                  <div className="project-content">
+                    <h3 className="project-title">{project.title}</h3>
+                    <p className="project-location">{project.location}</p>
+                    <span className="status-badge status-completed">Completed</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {selectedProject && (
