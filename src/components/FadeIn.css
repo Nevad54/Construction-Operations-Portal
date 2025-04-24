@@ -1,0 +1,35 @@
+.fade-in {
+  opacity: 0;
+  transition: opacity var(--duration) ease-out,
+              transform var(--duration) ease-out;
+  transition-delay: var(--delay);
+}
+
+.fade-in.up {
+  transform: translateY(20px);
+}
+
+.fade-in.down {
+  transform: translateY(-20px);
+}
+
+.fade-in.left {
+  transform: translateX(20px);
+}
+
+.fade-in.right {
+  transform: translateX(-20px);
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translate(0);
+}
+
+/* Add support for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .fade-in {
+    transition: none;
+    transform: none;
+  }
+} 
