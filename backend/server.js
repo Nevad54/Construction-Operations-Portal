@@ -31,13 +31,19 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Middleware
-app.use(cors({
-    origin: ['https://mastertech-frontend-yqjb.onrender.com', 'https://mastertech-frontend.onrender.com', 'http://localhost:3000'],
+// CORS configuration
+const corsOptions = {
+    origin: [
+        'https://mastertech-frontend-yqjb.onrender.com',
+        'https://mastertech-frontend.onrender.com',
+        'http://localhost:3000'
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
-}));
+};
+
+app.use(cors(corsOptions));
 
 // Add CSP headers
 app.use((req, res, next) => {
