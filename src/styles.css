@@ -873,16 +873,6 @@ header .container {
     border-radius: 8px;
 }
 
-.certification {
-    width: 120px;
-    margin: 10px;
-    transition: transform 0.3s;
-}
-
-.certification:hover {
-    transform: scale(1.1);
-}
-
 /* Footer */
 footer {
     background: #333;
@@ -1735,4 +1725,10 @@ img[loading="lazy"].loaded {
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
+}
+
+/* Remove certification styles */
+.certification,
+.safety-certifications {
+  display: none;
 }
