@@ -9,7 +9,6 @@ import Footer from '../Footer';
 const Projects = () => {
   const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
   const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState(null);
@@ -25,7 +24,6 @@ const Projects = () => {
 
   const loadProjects = async () => {
     try {
-      setLoading(true);
       setError(null);
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/projects`);
       if (!response.ok) {
@@ -35,8 +33,6 @@ const Projects = () => {
       setProjects(data);
     } catch (err) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -69,17 +65,8 @@ const Projects = () => {
     setTimeout(() => {
       setSelectedProject(null);
       setExitingProject(null);
-    }, 300); // Match the animation duration
+    }, 300);
   };
-
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner" />
-        <p>Loading projects...</p>
-      </div>
-    );
-  }
 
   if (error) {
     return (
