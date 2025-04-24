@@ -200,7 +200,8 @@ const connectDB = async () => {
 async function verifyRecaptcha(token) {
     return new Promise((resolve) => {
         try {
-            const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa'; // Production secret key
+            // Use the correct secret key for reCAPTCHA v2
+            const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld6MSErAAAAAO--jElWpUWtWMYqDGA301_LxMvM';
             
             const data = querystring.stringify({
                 secret: recaptchaSecret,
@@ -457,34 +458,41 @@ app.post('/api/contact', async (req, res) => {
     }
 
     // Verify reCAPTCHA token
-    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa';
+    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld6MSErAAAAAO--jElWpUWtWMYqDGA301_LxMvM';
     console.log('Verifying reCAPTCHA with secret:', recaptchaSecret.substring(0, 10) + '...');
     
-    try {
-      const verificationURL = 'https://www.google.com/recaptcha/api/siteverify';
-      const verificationBody = `secret=${recaptchaSecret}&response=${recaptchaToken}`;
+    // Skip reCAPTCHA verification in development mode
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    if (isDevelopment) {
+      console.log('Development mode detected, skipping reCAPTCHA verification');
+    } else {
+      try {
+        const verificationURL = 'https://www.google.com/recaptcha/api/siteverify';
+        const verificationBody = `secret=${recaptchaSecret}&response=${recaptchaToken}`;
 
-      console.log('Sending reCAPTCHA verification request...');
-      const recaptchaResponse = await fetch(verificationURL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: verificationBody
-      });
+        console.log('Sending reCAPTCHA verification request...');
+        const recaptchaResponse = await fetch(verificationURL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: verificationBody
+        });
 
-      const recaptchaData = await recaptchaResponse.json();
-      console.log('reCAPTCHA verification response:', recaptchaData);
+        const recaptchaData = await recaptchaResponse.json();
+        console.log('reCAPTCHA verification response:', recaptchaData);
 
-      if (!recaptchaData.success) {
-        console.log('reCAPTCHA verification failed:', recaptchaData['error-codes']);
+        if (!recaptchaData.success) {
+          console.log('reCAPTCHA verification failed:', recaptchaData['error-codes']);
+          console.log('reCAPTCHA token used:', recaptchaToken.substring(0, 10) + '...');
+          return res.status(400).json({
+            error: 'reCAPTCHA verification failed. Please try again.'
+          });
+        }
+      } catch (recaptchaError) {
+        console.error('Error verifying reCAPTCHA:', recaptchaError);
         return res.status(400).json({
-          error: 'reCAPTCHA verification failed. Please try again.'
+          error: 'Failed to verify reCAPTCHA. Please try again.'
         });
       }
-    } catch (recaptchaError) {
-      console.error('Error verifying reCAPTCHA:', recaptchaError);
-      return res.status(400).json({
-        error: 'Failed to verify reCAPTCHA. Please try again.'
-      });
     }
 
     // Check if email configuration is available
