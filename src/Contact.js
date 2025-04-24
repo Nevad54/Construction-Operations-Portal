@@ -10,8 +10,11 @@ const Contact = () => {
   console.log('Contact component rendering');
   const API_BASE_URL = process.env.REACT_APP_API_URL || '';
   const IMAGE_BASE_URL = API_BASE_URL;
-  const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
+  // Hardcode the reCAPTCHA site key for now
+  const RECAPTCHA_SITE_KEY = '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa';
   
+  console.log('Using hardcoded reCAPTCHA site key:', RECAPTCHA_SITE_KEY);
+
   console.log('Environment variables:', {
     API_BASE_URL,
     RECAPTCHA_SITE_KEY,
@@ -264,6 +267,8 @@ const Contact = () => {
   // Modify the reCAPTCHA initialization
   useEffect(() => {
     const loadRecaptcha = () => {
+      console.log('Loading reCAPTCHA with site key:', RECAPTCHA_SITE_KEY);
+      
       if (!RECAPTCHA_SITE_KEY) {
         console.error('Cannot load reCAPTCHA: site key is missing');
         return;
@@ -271,6 +276,7 @@ const Contact = () => {
 
       if (window.grecaptcha && recaptchaRef.current) {
         try {
+          console.log('Resetting reCAPTCHA');
           recaptchaRef.current.reset();
         } catch (error) {
           console.error('Error resetting reCAPTCHA:', error);
@@ -280,11 +286,15 @@ const Contact = () => {
 
     // Load reCAPTCHA script if not already loaded
     if (!window.grecaptcha) {
+      console.log('Loading reCAPTCHA script');
       const script = document.createElement('script');
-      script.src = `https://www.google.com/recaptcha/api.js?render=explicit`;
+      script.src = 'https://www.google.com/recaptcha/api.js';
       script.async = true;
       script.defer = true;
-      script.onload = loadRecaptcha;
+      script.onload = () => {
+        console.log('reCAPTCHA script loaded successfully');
+        loadRecaptcha();
+      };
       script.onerror = (error) => {
         console.error('Error loading reCAPTCHA script:', error);
         setErrors(prev => ({
@@ -294,12 +304,14 @@ const Contact = () => {
       };
       document.head.appendChild(script);
     } else {
+      console.log('reCAPTCHA already loaded, initializing');
       loadRecaptcha();
     }
 
     return () => {
       if (window.grecaptcha && recaptchaRef.current) {
         try {
+          console.log('Cleaning up reCAPTCHA');
           recaptchaRef.current.reset();
         } catch (error) {
           console.error('Error cleaning up reCAPTCHA:', error);
@@ -403,6 +415,8 @@ const Contact = () => {
                       theme="light"
                       size="normal"
                       tabIndex={0}
+                      hl="en"
+                      badge="bottomright"
                     />
                   ) : (
                     <div className="error">
