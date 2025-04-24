@@ -3,7 +3,9 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 export const api = {
     // Projects
     getProjects: async () => {
-        const response = await fetch(`${API_BASE_URL}/api/projects`);
+        const response = await fetch(`${API_BASE_URL}/api/projects`, {
+            credentials: 'include'
+        });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -18,12 +20,14 @@ export const api = {
             // If it's FormData, send it directly
             response = await fetch(`${API_BASE_URL}/api/projects`, {
                 method: 'POST',
+                credentials: 'include',
                 body: projectData,
             });
         } else {
             // If it's a regular object, send as JSON
             response = await fetch(`${API_BASE_URL}/api/projects`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -47,12 +51,14 @@ export const api = {
             // If it's FormData, send it directly
             response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
                 method: 'PUT',
+                credentials: 'include',
                 body: projectData,
             });
         } else {
             // If it's a regular object, send as JSON
             response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
                 method: 'PUT',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -71,6 +77,7 @@ export const api = {
     deleteProject: async (id) => {
         const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
             method: 'DELETE',
+            credentials: 'include'
         });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -82,6 +89,7 @@ export const api = {
     submitContactForm: async (formData) => {
         const response = await fetch(`${API_BASE_URL}/contact`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -92,7 +100,9 @@ export const api = {
 
     // CAPTCHA
     getCaptcha: async () => {
-        const response = await fetch(`${API_BASE_URL}/captcha`);
+        const response = await fetch(`${API_BASE_URL}/captcha`, {
+            credentials: 'include'
+        });
         return response.json();
     }
 }; 
