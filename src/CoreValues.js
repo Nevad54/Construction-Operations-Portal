@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
+import FadeInOnScroll from './components/FadeInOnScroll';
 import './styles.css';
 
 const CoreValues = () => {
@@ -82,24 +83,34 @@ const CoreValues = () => {
       />
       <section className="core-values" role="main">
         <div className="container">
-          <h1>Our Core Values</h1>
+          <FadeInOnScroll>
+            <h1>Our Core Values</h1>
+          </FadeInOnScroll>
           <div className="values-list">
-            <div className="value-item fade-in">
-              <h2>Integrity</h2>
-              <p>We uphold the highest standards of honesty and ethics in all our dealings.</p>
-            </div>
-            <div className="value-item fade-in">
-              <h2>Excellence</h2>
-              <p>We strive for perfection in every project, delivering superior quality and craftsmanship.</p>
-            </div>
-            <div className="value-item fade-in">
-              <h2>Safety</h2>
-              <p>We prioritize the safety of our team, clients, and communities in every endeavor.</p>
-            </div>
-            <div className="value-item fade in">
-              <h2>Sustainability</h2>
-              <p>We are committed to environmentally responsible practices that benefit future generations.</p>
-            </div>
+            <FadeInOnScroll delay={100}>
+              <div className="value-item">
+                <h2>Integrity</h2>
+                <p>We uphold the highest standards of honesty and ethics in all our dealings.</p>
+              </div>
+            </FadeInOnScroll>
+            <FadeInOnScroll delay={200}>
+              <div className="value-item">
+                <h2>Excellence</h2>
+                <p>We strive for perfection in every project, delivering superior quality and craftsmanship.</p>
+              </div>
+            </FadeInOnScroll>
+            <FadeInOnScroll delay={300}>
+              <div className="value-item">
+                <h2>Safety</h2>
+                <p>We prioritize the safety of our team, clients, and communities in every endeavor.</p>
+              </div>
+            </FadeInOnScroll>
+            <FadeInOnScroll delay={400}>
+              <div className="value-item">
+                <h2>Sustainability</h2>
+                <p>We are committed to environmentally responsible practices that benefit future generations.</p>
+              </div>
+            </FadeInOnScroll>
           </div>
         </div>
       </section>

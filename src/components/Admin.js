@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useProjects } from '../context/ProjectContext';
 import { api } from '../services/api';
+import FadeInOnScroll from './FadeInOnScroll';
 import '../styles/Admin.css';
 
 const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
@@ -341,149 +342,165 @@ const Admin = () => {
 
     return (
         <div className="admin-container">
-            <h1>Admin - Manage Projects</h1>
+            <FadeInOnScroll>
+                <h1>Admin - Manage Projects</h1>
+            </FadeInOnScroll>
 
             {loading && <div className="loading-spinner">Loading...</div>}
             {error && <div className="error-message">{error}</div>}
 
-            <button className="floating-add-btn" onClick={() => setShowModal(true)}>
-                + New Project
-            </button>
+            <FadeInOnScroll delay={100}>
+                <button className="floating-add-btn" onClick={() => setShowModal(true)}>
+                    + New Project
+                </button>
+            </FadeInOnScroll>
 
             {showModal && (
                 <div className="modal-overlay" onClick={e => { if (e.target.className === 'modal-overlay') setShowModal(false); }}>
-                  <div className="modal-card">
-                    <h2>{editingProject ? 'Edit Project' : 'Add New Project'}</h2>
-                    <form className="project-modal-form" onSubmit={editingProject ? handleEditSubmit : handleSubmit}>
-                      <input
-                        type="text"
-                        name="title"
-                        placeholder="Project Title"
-                        value={editingProject ? editingProject.title : formData.title}
-                        onChange={editingProject ? e => setEditingProject({ ...editingProject, title: e.target.value }) : handleInputChange}
-                        required
-                      />
-                      <textarea
-                        name="description"
-                        placeholder="Project Description"
-                        value={editingProject ? editingProject.description : formData.description}
-                        onChange={editingProject ? e => setEditingProject({ ...editingProject, description: e.target.value }) : handleInputChange}
-                        required
-                      ></textarea>
-                      <input
-                        type="text"
-                        name="location"
-                        placeholder="Location"
-                        value={editingProject ? editingProject.location : formData.location}
-                        onChange={editingProject ? e => setEditingProject({ ...editingProject, location: e.target.value }) : handleInputChange}
-                      />
-                      <input
-                        type="date"
-                        name="date"
-                        value={editingProject ? editingProject.date : formData.date}
-                        onChange={editingProject ? e => setEditingProject({ ...editingProject, date: e.target.value }) : handleInputChange}
-                      />
-                      <input
-                        type="file"
-                        name="image"
-                        accept="image/*"
-                        onChange={e => editingProject ? handleImageChange(e, true) : handleImageChange(e)}
-                      />
-                      {(editingProject ? editImagePreview : imagePreview) && (
-                        <img src={editingProject ? `${IMAGE_BASE_URL}${editImagePreview}` : imagePreview} alt="Preview" className="image-preview" />
-                      )}
-                      <select
-                        name="status"
-                        value={editingProject ? editingProject.status : formData.status}
-                        onChange={editingProject ? e => setEditingProject({ ...editingProject, status: e.target.value }) : handleInputChange}
-                      >
-                        <option value="ongoing">Ongoing</option>
-                        <option value="completed">Completed</option>
-                      </select>
-                      <div className="modal-actions">
-                        <button type="button" className="cancel-btn" onClick={() => { setShowModal(false); setEditingProject(null); setImagePreview(null); setEditImagePreview(null); }}>Cancel</button>
-                        <button type="submit" className="submit-btn">{editingProject ? 'Save Changes' : 'Add Project'}</button>
-                      </div>
-                    </form>
-                  </div>
+                    <FadeInOnScroll>
+                        <div className="modal-card">
+                            <h2>{editingProject ? 'Edit Project' : 'Add New Project'}</h2>
+                            <form className="project-modal-form" onSubmit={editingProject ? handleEditSubmit : handleSubmit}>
+                                <input
+                                    type="text"
+                                    name="title"
+                                    placeholder="Project Title"
+                                    value={editingProject ? editingProject.title : formData.title}
+                                    onChange={editingProject ? e => setEditingProject({ ...editingProject, title: e.target.value }) : handleInputChange}
+                                    required
+                                />
+                                <textarea
+                                    name="description"
+                                    placeholder="Project Description"
+                                    value={editingProject ? editingProject.description : formData.description}
+                                    onChange={editingProject ? e => setEditingProject({ ...editingProject, description: e.target.value }) : handleInputChange}
+                                    required
+                                ></textarea>
+                                <input
+                                    type="text"
+                                    name="location"
+                                    placeholder="Location"
+                                    value={editingProject ? editingProject.location : formData.location}
+                                    onChange={editingProject ? e => setEditingProject({ ...editingProject, location: e.target.value }) : handleInputChange}
+                                />
+                                <input
+                                    type="date"
+                                    name="date"
+                                    value={editingProject ? editingProject.date : formData.date}
+                                    onChange={editingProject ? e => setEditingProject({ ...editingProject, date: e.target.value }) : handleInputChange}
+                                />
+                                <input
+                                    type="file"
+                                    name="image"
+                                    accept="image/*"
+                                    onChange={e => editingProject ? handleImageChange(e, true) : handleImageChange(e)}
+                                />
+                                {(editingProject ? editImagePreview : imagePreview) && (
+                                    <img src={editingProject ? `${IMAGE_BASE_URL}${editImagePreview}` : imagePreview} alt="Preview" className="image-preview" />
+                                )}
+                                <select
+                                    name="status"
+                                    value={editingProject ? editingProject.status : formData.status}
+                                    onChange={editingProject ? e => setEditingProject({ ...editingProject, status: e.target.value }) : handleInputChange}
+                                >
+                                    <option value="ongoing">Ongoing</option>
+                                    <option value="completed">Completed</option>
+                                </select>
+                                <div className="modal-actions">
+                                    <button type="button" className="cancel-btn" onClick={() => { setShowModal(false); setEditingProject(null); setImagePreview(null); setEditImagePreview(null); }}>Cancel</button>
+                                    <button type="submit" className="submit-btn">{editingProject ? 'Save Changes' : 'Add Project'}</button>
+                                </div>
+                            </form>
+                        </div>
+                    </FadeInOnScroll>
                 </div>
             )}
 
-            <div className="projects-section">
-                <h2>Ongoing Projects</h2>
-                {selectedProjects.ongoing.length > 0 && (
-                <div className="bulk-toolbar">
-                    <span>{selectedProjects.ongoing.length} selected</span>
-                    <div className="bulk-toolbar-actions">
-                        <button onClick={() => handleSelectAll('ongoing')}>Select All</button>
-                        <button onClick={() => handleClearAll('ongoing')}>Clear All</button>
-                        <button onClick={() => handleBulkDelete('ongoing')}>Delete</button>
-                    </div>
-                </div>
-                )}
-                <div className="projects-list" onMouseDown={e => handleLassoStart('ongoing', e)} onMouseMove={e => handleLassoMove('ongoing', e)} onMouseUp={e => handleLassoEnd('ongoing', e)} style={{ position: 'relative' }}>
-                    {ongoingProjects.map((project, idx) => (
-                        <div key={project._id} ref={el => cardRefs.current.ongoing[project._id] = el} className={`project${selectedProjects.ongoing.includes(project._id) ? ' selected' : ''}`} tabIndex={0} onClick={e => handleCardSelect('ongoing', project._id, idx, e)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleCardSelect('ongoing', project._id, idx, e); }}>
-                            {project.image && <img src={`${IMAGE_BASE_URL}${project.image}`} alt={project.title} />}
-                            <div className="project-content">
-                                <h3>{project.title}</h3>
-                                <p>{project.description}</p>
-                                <p><strong>Location:</strong> {project.location || 'N/A'}</p>
-                                <p><strong>Date Completed:</strong> {project.date ? new Date(project.date).toLocaleDateString() : 'N/A'}</p>
-                            </div>
-                            <div className="project-actions">
-                                <button onClick={() => handleEdit(project)}>
-                                    <i className="fas fa-edit"></i> Edit
-                                </button>
-                                <button onClick={() => handleDelete(project._id)}>
-                                    <i className="fas fa-trash-alt"></i> Delete
-                                </button>
+            <FadeInOnScroll delay={200}>
+                <div className="projects-section">
+                    <h2>Ongoing Projects</h2>
+                    {selectedProjects.ongoing.length > 0 && (
+                        <div className="bulk-toolbar">
+                            <span>{selectedProjects.ongoing.length} selected</span>
+                            <div className="bulk-toolbar-actions">
+                                <button onClick={() => handleSelectAll('ongoing')}>Select All</button>
+                                <button onClick={() => handleClearAll('ongoing')}>Clear All</button>
+                                <button onClick={() => handleBulkDelete('ongoing')}>Delete</button>
                             </div>
                         </div>
-                    ))}
-                    {selectionBox && <div className="lasso-box" style={{ left: selectionBox.x, top: selectionBox.y, width: selectionBox.width, height: selectionBox.height }} />}
-                </div>
-            </div>
-
-            <div className="projects-section">
-                <h2>Completed Projects</h2>
-                {selectedProjects.completed.length > 0 && (
-                <div className="bulk-toolbar">
-                    <span>{selectedProjects.completed.length} selected</span>
-                    <div className="bulk-toolbar-actions">
-                        <button onClick={() => handleSelectAll('completed')}>Select All</button>
-                        <button onClick={() => handleClearAll('completed')}>Clear All</button>
-                        <button onClick={() => handleBulkDelete('completed')}>Delete</button>
+                    )}
+                    <div className="projects-list" onMouseDown={e => handleLassoStart('ongoing', e)} onMouseMove={e => handleLassoMove('ongoing', e)} onMouseUp={e => handleLassoEnd('ongoing', e)} style={{ position: 'relative' }}>
+                        {ongoingProjects.map((project, idx) => (
+                            <FadeInOnScroll key={project._id} delay={300 + (idx * 50)}>
+                                <div ref={el => cardRefs.current.ongoing[project._id] = el} className={`project${selectedProjects.ongoing.includes(project._id) ? ' selected' : ''}`} tabIndex={0} onClick={e => handleCardSelect('ongoing', project._id, idx, e)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleCardSelect('ongoing', project._id, idx, e); }}>
+                                    {project.image && <img src={`${IMAGE_BASE_URL}${project.image}`} alt={project.title} />}
+                                    <div className="project-content">
+                                        <h3>{project.title}</h3>
+                                        <p>{project.description}</p>
+                                        <p><strong>Location:</strong> {project.location || 'N/A'}</p>
+                                        <p><strong>Date Completed:</strong> {project.date ? new Date(project.date).toLocaleDateString() : 'N/A'}</p>
+                                    </div>
+                                    <div className="project-actions">
+                                        <button onClick={() => handleEdit(project)}>
+                                            <i className="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button onClick={() => handleDelete(project._id)}>
+                                            <i className="fas fa-trash-alt"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </FadeInOnScroll>
+                        ))}
+                        {selectionBox && <div className="lasso-box" style={{ left: selectionBox.x, top: selectionBox.y, width: selectionBox.width, height: selectionBox.height }} />}
                     </div>
                 </div>
-                )}
-                <div className="projects-list" onMouseDown={e => handleLassoStart('completed', e)} onMouseMove={e => handleLassoMove('completed', e)} onMouseUp={e => handleLassoEnd('completed', e)} style={{ position: 'relative' }}>
-                    {completedProjects.map((project, idx) => (
-                        <div key={project._id} ref={el => cardRefs.current.completed[project._id] = el} className={`project${selectedProjects.completed.includes(project._id) ? ' selected' : ''}`} tabIndex={0} onClick={e => handleCardSelect('completed', project._id, idx, e)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleCardSelect('completed', project._id, idx, e); }}>
-                            {project.image && <img src={`${IMAGE_BASE_URL}${project.image}`} alt={project.title} />}
-                            <div className="project-content">
-                                <h3>{project.title}</h3>
-                                <p>{project.description}</p>
-                                <p><strong>Location:</strong> {project.location || 'N/A'}</p>
-                                <p><strong>Date Completed:</strong> {project.date ? new Date(project.date).toLocaleDateString() : 'N/A'}</p>
-                            </div>
-                            <div className="project-actions">
-                                <button onClick={() => handleEdit(project)}>
-                                    <i className="fas fa-edit"></i> Edit
-                                </button>
-                                <button onClick={() => handleDelete(project._id)}>
-                                    <i className="fas fa-trash-alt"></i> Delete
-                                </button>
+            </FadeInOnScroll>
+
+            <FadeInOnScroll delay={400}>
+                <div className="projects-section">
+                    <h2>Completed Projects</h2>
+                    {selectedProjects.completed.length > 0 && (
+                        <div className="bulk-toolbar">
+                            <span>{selectedProjects.completed.length} selected</span>
+                            <div className="bulk-toolbar-actions">
+                                <button onClick={() => handleSelectAll('completed')}>Select All</button>
+                                <button onClick={() => handleClearAll('completed')}>Clear All</button>
+                                <button onClick={() => handleBulkDelete('completed')}>Delete</button>
                             </div>
                         </div>
-                    ))}
-                    {selectionBox && <div className="lasso-box" style={{ left: selectionBox.x, top: selectionBox.y, width: selectionBox.width, height: selectionBox.height }} />}
+                    )}
+                    <div className="projects-list" onMouseDown={e => handleLassoStart('completed', e)} onMouseMove={e => handleLassoMove('completed', e)} onMouseUp={e => handleLassoEnd('completed', e)} style={{ position: 'relative' }}>
+                        {completedProjects.map((project, idx) => (
+                            <FadeInOnScroll key={project._id} delay={500 + (idx * 50)}>
+                                <div ref={el => cardRefs.current.completed[project._id] = el} className={`project${selectedProjects.completed.includes(project._id) ? ' selected' : ''}`} tabIndex={0} onClick={e => handleCardSelect('completed', project._id, idx, e)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleCardSelect('completed', project._id, idx, e); }}>
+                                    {project.image && <img src={`${IMAGE_BASE_URL}${project.image}`} alt={project.title} />}
+                                    <div className="project-content">
+                                        <h3>{project.title}</h3>
+                                        <p>{project.description}</p>
+                                        <p><strong>Location:</strong> {project.location || 'N/A'}</p>
+                                        <p><strong>Date Completed:</strong> {project.date ? new Date(project.date).toLocaleDateString() : 'N/A'}</p>
+                                    </div>
+                                    <div className="project-actions">
+                                        <button onClick={() => handleEdit(project)}>
+                                            <i className="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button onClick={() => handleDelete(project._id)}>
+                                            <i className="fas fa-trash-alt"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </FadeInOnScroll>
+                        ))}
+                        {selectionBox && <div className="lasso-box" style={{ left: selectionBox.x, top: selectionBox.y, width: selectionBox.width, height: selectionBox.height }} />}
+                    </div>
                 </div>
-            </div>
+            </FadeInOnScroll>
 
-            <button className="back-to-top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                ↑
-            </button>
+            <FadeInOnScroll delay={600}>
+                <button className="back-to-top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                    ↑
+                </button>
+            </FadeInOnScroll>
         </div>
     );
 };
