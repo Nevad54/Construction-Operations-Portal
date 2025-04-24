@@ -89,30 +89,31 @@ const Admin = () => {
                 throw new Error('Please fill in all required fields');
             }
 
+            // Create a clean object with only the fields we want to update
+            const updateData = {
+                title: editingProject.title,
+                description: editingProject.description,
+                location: editingProject.location || '',
+                owner: editingProject.owner || '',
+                status: editingProject.status || 'ongoing',
+                date: editingProject.date ? new Date(editingProject.date).toISOString() : null
+            };
+
+            // If there's a new image, add it to the form data
             const formDataToSend = new FormData();
-            
-            // Handle each field separately to ensure proper formatting
-            Object.keys(editingProject).forEach(key => {
-                if (editingProject[key] !== null && key !== '_id' && key !== '__v' && key !== 'featured') {
-                    if (key === 'date' && editingProject[key]) {
-                        // Ensure date is properly formatted
-                        const date = new Date(editingProject[key]);
-                        if (isNaN(date.getTime())) {
-                            throw new Error('Invalid date format');
-                        }
-                        formDataToSend.append(key, date.toISOString());
-                    } else if (key === 'location' || key === 'owner') {
-                        // Ensure location and owner are preserved as strings
-                        formDataToSend.append(key, editingProject[key] || '');
-                    } else {
-                        formDataToSend.append(key, editingProject[key]);
-                    }
+            Object.keys(updateData).forEach(key => {
+                if (updateData[key] !== null && updateData[key] !== undefined) {
+                    formDataToSend.append(key, updateData[key]);
                 }
             });
 
+            // If there's a new image file, add it
+            if (editingProject.image instanceof File) {
+                formDataToSend.append('image', editingProject.image);
+            }
+
             // Log the data being sent
-            const formDataObj = Object.fromEntries(formDataToSend);
-            console.log('Updating project with data:', formDataObj);
+            console.log('Updating project with data:', updateData);
             
             // First, update the project
             const response = await updateProject(editingProject._id, formDataToSend);
