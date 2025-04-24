@@ -93,7 +93,7 @@ const Projects = () => {
   }
 
   return (
-    <div className="animate-fade-in">
+    <div>
       <Sidebar
         isSidebarActive={isSidebarActive}
         setIsSidebarActive={setIsSidebarActive}
@@ -108,8 +108,8 @@ const Projects = () => {
         activePage="projects"
       />
       <div className="projects-container">
-        <div className="controls-container animate-slide-in">
-          <div className="search-box hover-lift">
+        <div className="controls-container">
+          <div className="search-box">
             <FontAwesomeIcon icon={faSearch} />
             <input
               type="text"
@@ -121,7 +121,7 @@ const Projects = () => {
           </div>
           
           <button
-            className="sort-button hover-lift"
+            className="sort-button"
             onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
           >
             <FontAwesomeIcon icon={faSort} />
@@ -129,7 +129,7 @@ const Projects = () => {
           </button>
           
           <select
-            className="filter-button hover-lift"
+            className="filter-button"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
           >
@@ -141,15 +141,15 @@ const Projects = () => {
 
         <div className="projects-sections">
           <div className="projects-section">
-            <div className="section-header animate-slide-in stagger-1">
+            <div className="section-header">
               <h2 className="section-title">Ongoing Projects</h2>
               <span className="section-count">{ongoingProjects.length}</span>
             </div>
             <div className="projects-grid">
-              {ongoingProjects.map((project, index) => (
+              {ongoingProjects.map(project => (
                 <div
                   key={project._id}
-                  className={`project-card hover-lift animate-scale-in stagger-${(index % 5) + 1}`}
+                  className={`project-card ${exitingProject === project ? 'exit' : ''}`}
                   onClick={() => handleProjectClick(project)}
                 >
                   {project.image && (
@@ -170,15 +170,15 @@ const Projects = () => {
           </div>
 
           <div className="projects-section">
-            <div className="section-header animate-slide-in stagger-2">
+            <div className="section-header">
               <h2 className="section-title">Completed Projects</h2>
               <span className="section-count">{completedProjects.length}</span>
             </div>
             <div className="projects-grid">
-              {completedProjects.map((project, index) => (
+              {completedProjects.map(project => (
                 <div
                   key={project._id}
-                  className={`project-card hover-lift animate-scale-in stagger-${(index % 5) + 1}`}
+                  className={`project-card ${exitingProject === project ? 'exit' : ''}`}
                   onClick={() => handleProjectClick(project)}
                 >
                   {project.image && (
@@ -200,12 +200,12 @@ const Projects = () => {
         </div>
 
         {selectedProject && (
-          <div className="project-modal animate-fade-in">
-            <div className="modal-content animate-scale-in">
+          <div className="project-modal" onClick={handleCloseModal}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>{selectedProject.title}</h2>
                 <button
-                  className="modal-close hover-rotate"
+                  className="modal-close"
                   onClick={handleCloseModal}
                 >
                   <FontAwesomeIcon icon={faTimes} />
@@ -240,7 +240,6 @@ const Projects = () => {
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         aria-label="Back to top"
         style={{ display: showBackToTop ? 'block' : 'none' }}
-        className="hover-lift"
       >
         ↑
       </button>
