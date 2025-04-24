@@ -1225,7 +1225,7 @@ footer {
     transform: scale(1.05);
 }
 
-/* Fade-in Animation */
+/* Animation Classes */
 .fade-in {
     opacity: 0;
     transform: translateY(20px);
@@ -1237,30 +1237,15 @@ footer {
     transform: translateY(0);
 }
 
-/* Stagger children animations */
-.stagger-children > * {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-
-.stagger-children.visible > *:nth-child(1) { transition-delay: 0.1s; }
-.stagger-children.visible > *:nth-child(2) { transition-delay: 0.2s; }
-.stagger-children.visible > *:nth-child(3) { transition-delay: 0.3s; }
-.stagger-children.visible > *:nth-child(4) { transition-delay: 0.4s; }
-.stagger-children.visible > *:nth-child(5) { transition-delay: 0.5s; }
-.stagger-children.visible > *:nth-child(6) { transition-delay: 0.6s; }
-
-.stagger-children.visible > * {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Slide in animations */
 .slide-in-left {
     opacity: 0;
     transform: translateX(-50px);
     transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.slide-in-left.visible {
+    opacity: 1;
+    transform: translateX(0);
 }
 
 .slide-in-right {
@@ -1269,13 +1254,11 @@ footer {
     transition: opacity 0.6s ease-out, transform 0.6s ease-out;
 }
 
-.slide-in-left.visible,
 .slide-in-right.visible {
     opacity: 1;
     transform: translateX(0);
 }
 
-/* Scale in animation */
 .scale-in {
     opacity: 0;
     transform: scale(0.9);
@@ -1287,98 +1270,36 @@ footer {
     transform: scale(1);
 }
 
-/* Project specific animations */
-.project-item {
+.rotate-in {
     opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out, box-shadow 0.3s ease;
+    transform: rotate(-10deg);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
 }
 
-.project-item.visible {
+.rotate-in.visible {
     opacity: 1;
-    transform: translateY(0);
+    transform: rotate(0);
 }
 
-/* Service item animations */
-.service-item {
+/* Staggered animations for lists or grids */
+.stagger-container > * {
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.6s ease-out, transform 0.6s ease-out;
 }
 
-.service-item.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
+.stagger-container.visible > *:nth-child(1) { transition-delay: 0.1s; }
+.stagger-container.visible > *:nth-child(2) { transition-delay: 0.2s; }
+.stagger-container.visible > *:nth-child(3) { transition-delay: 0.3s; }
+.stagger-container.visible > *:nth-child(4) { transition-delay: 0.4s; }
+.stagger-container.visible > *:nth-child(5) { transition-delay: 0.5s; }
+.stagger-container.visible > *:nth-child(6) { transition-delay: 0.6s; }
+.stagger-container.visible > *:nth-child(7) { transition-delay: 0.7s; }
+.stagger-container.visible > *:nth-child(8) { transition-delay: 0.8s; }
+.stagger-container.visible > *:nth-child(9) { transition-delay: 0.9s; }
+.stagger-container.visible > *:nth-child(10) { transition-delay: 1s; }
 
-/* Contact form animations */
-.contact-form {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-
-.contact-form.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Hero section animations */
-.hero-content {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
-}
-
-.hero-content.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* About section animations */
-.about-content {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-
-.about-content.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Vision & Mission animations */
-.vision, .mission {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-
-.vision.visible, .mission.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Core values animations */
-.value-item {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-
-.value-item.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Safety section animations */
-.safety-content {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-
-.safety-content.visible {
+.stagger-container.visible > * {
     opacity: 1;
     transform: translateY(0);
 }
@@ -1389,16 +1310,8 @@ footer {
     .slide-in-left,
     .slide-in-right,
     .scale-in,
-    .project-item,
-    .service-item,
-    .contact-form,
-    .hero-content,
-    .about-content,
-    .vision,
-    .mission,
-    .value-item,
-    .safety-content,
-    .stagger-children > * {
+    .rotate-in,
+    .stagger-container > * {
         transition: none;
         transform: none;
         opacity: 1;

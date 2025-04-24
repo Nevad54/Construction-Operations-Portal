@@ -10,21 +10,33 @@ import Safety from './Safety';
 import Projects from './components/Projects';
 import Contact from './Contact';
 import Admin from './components/Admin';
+import withFadeIn from './hooks/withFadeIn';
+
+// Wrap each component with the fade-in animation
+const FadeInHome = withFadeIn(Home);
+const FadeInAbout = withFadeIn(About);
+const FadeInServices = withFadeIn(Services);
+const FadeInVisionMission = withFadeIn(VisionMission);
+const FadeInCoreValues = withFadeIn(CoreValues);
+const FadeInSafety = withFadeIn(Safety);
+const FadeInProjects = withFadeIn(Projects);
+const FadeInContact = withFadeIn(Contact);
+const FadeInAdmin = withFadeIn(Admin);
 
 function App() {
   return (
     <ProjectProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/vision-mission" element={<VisionMission />} />
-          <Route path="/core-values" element={<CoreValues />} />
-          <Route path="/safety" element={<Safety />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/" element={<FadeInHome />} />
+          <Route path="/about" element={<FadeInAbout />} />
+          <Route path="/services" element={<FadeInServices />} />
+          <Route path="/vision-mission" element={<FadeInVisionMission />} />
+          <Route path="/core-values" element={<FadeInCoreValues />} />
+          <Route path="/safety" element={<FadeInSafety />} />
+          <Route path="/projects" element={<FadeInProjects />} />
+          <Route path="/contact" element={<FadeInContact />} />
+          <Route path="/admin" element={<FadeInAdmin />} />
         </Routes>
       </Router>
     </ProjectProvider>
