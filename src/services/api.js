@@ -27,20 +27,25 @@ export const api = {
     },
 
     updateProject: async (id, projectData) => {
-        // Convert FormData to a regular object
-        const data = {};
-        for (let [key, value] of projectData.entries()) {
-            data[key] = value;
+        let response;
+        
+        // Check if projectData is FormData or a regular object
+        if (projectData instanceof FormData) {
+            // If it's FormData, send it directly
+            response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
+                method: 'PUT',
+                body: projectData,
+            });
+        } else {
+            // If it's a regular object, send as JSON
+            response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(projectData),
+            });
         }
-
-        // Send as JSON instead of FormData
-        const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        });
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
