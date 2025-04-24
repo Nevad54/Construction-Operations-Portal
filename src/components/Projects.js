@@ -5,6 +5,7 @@ import { faSearch, faSort, faFilter, faTimes } from '@fortawesome/free-solid-svg
 import Header from '../Header';
 import Sidebar from '../Sidebar';
 import Footer from '../Footer';
+import FadeIn from './FadeIn';
 
 const Projects = () => {
   const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
@@ -108,130 +109,140 @@ const Projects = () => {
         activePage="projects"
       />
       <div className="projects-container">
-        <div className="controls-container">
-          <div className="search-box">
-            <FontAwesomeIcon icon={faSearch} />
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search projects by name, location, or description..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        <FadeIn direction="up" delay={0.2}>
+          <div className="controls-container">
+            <div className="search-box">
+              <FontAwesomeIcon icon={faSearch} />
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search projects by name, location, or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            <button
+              className="sort-button"
+              onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+            >
+              <FontAwesomeIcon icon={faSort} />
+              {` Sort ${sortOrder === 'desc' ? 'Oldest' : 'Newest'} First`}
+            </button>
+            
+            <select
+              className="filter-button"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="all">All Projects</option>
+              <option value="ongoing">Ongoing</option>
+              <option value="completed">Completed</option>
+            </select>
           </div>
-          
-          <button
-            className="sort-button"
-            onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
-          >
-            <FontAwesomeIcon icon={faSort} />
-            {` Sort ${sortOrder === 'desc' ? 'Oldest' : 'Newest'} First`}
-          </button>
-          
-          <select
-            className="filter-button"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option value="all">All Projects</option>
-            <option value="ongoing">Ongoing</option>
-            <option value="completed">Completed</option>
-          </select>
-        </div>
+        </FadeIn>
 
         <div className="projects-sections">
-          <div className="projects-section">
-            <div className="section-header">
-              <h2 className="section-title">Ongoing Projects</h2>
-              <span className="section-count">{ongoingProjects.length}</span>
+          <FadeIn direction="up" delay={0.4}>
+            <div className="projects-section">
+              <div className="section-header">
+                <h2 className="section-title">Ongoing Projects</h2>
+                <span className="section-count">{ongoingProjects.length}</span>
+              </div>
+              <div className="projects-grid">
+                {ongoingProjects.map((project, index) => (
+                  <FadeIn key={project._id} direction="up" delay={0.2 + (index * 0.1)}>
+                    <div
+                      className={`project-card ${exitingProject === project ? 'exit' : ''}`}
+                      onClick={() => handleProjectClick(project)}
+                    >
+                      {project.image && (
+                        <img 
+                          src={`${IMAGE_BASE_URL}${project.image}`} 
+                          alt={project.title} 
+                          className="project-image"
+                        />
+                      )}
+                      <div className="project-content">
+                        <h3 className="project-title">{project.title}</h3>
+                        <p className="project-location">{project.location}</p>
+                        <span className="status-badge status-ongoing">Ongoing</span>
+                      </div>
+                    </div>
+                  </FadeIn>
+                ))}
+              </div>
             </div>
-            <div className="projects-grid">
-              {ongoingProjects.map(project => (
-                <div
-                  key={project._id}
-                  className={`project-card ${exitingProject === project ? 'exit' : ''}`}
-                  onClick={() => handleProjectClick(project)}
-                >
-                  {project.image && (
-                    <img 
-                      src={`${IMAGE_BASE_URL}${project.image}`} 
-                      alt={project.title} 
-                      className="project-image"
-                    />
-                  )}
-                  <div className="project-content">
-                    <h3 className="project-title">{project.title}</h3>
-                    <p className="project-location">{project.location}</p>
-                    <span className="status-badge status-ongoing">Ongoing</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          </FadeIn>
 
-          <div className="projects-section">
-            <div className="section-header">
-              <h2 className="section-title">Completed Projects</h2>
-              <span className="section-count">{completedProjects.length}</span>
+          <FadeIn direction="up" delay={0.6}>
+            <div className="projects-section">
+              <div className="section-header">
+                <h2 className="section-title">Completed Projects</h2>
+                <span className="section-count">{completedProjects.length}</span>
+              </div>
+              <div className="projects-grid">
+                {completedProjects.map((project, index) => (
+                  <FadeIn key={project._id} direction="up" delay={0.2 + (index * 0.1)}>
+                    <div
+                      className={`project-card ${exitingProject === project ? 'exit' : ''}`}
+                      onClick={() => handleProjectClick(project)}
+                    >
+                      {project.image && (
+                        <img 
+                          src={`${IMAGE_BASE_URL}${project.image}`} 
+                          alt={project.title} 
+                          className="project-image"
+                        />
+                      )}
+                      <div className="project-content">
+                        <h3 className="project-title">{project.title}</h3>
+                        <p className="project-location">{project.location}</p>
+                        <span className="status-badge status-completed">Completed</span>
+                      </div>
+                    </div>
+                  </FadeIn>
+                ))}
+              </div>
             </div>
-            <div className="projects-grid">
-              {completedProjects.map(project => (
-                <div
-                  key={project._id}
-                  className={`project-card ${exitingProject === project ? 'exit' : ''}`}
-                  onClick={() => handleProjectClick(project)}
-                >
-                  {project.image && (
-                    <img 
-                      src={`${IMAGE_BASE_URL}${project.image}`} 
-                      alt={project.title} 
-                      className="project-image"
-                    />
-                  )}
-                  <div className="project-content">
-                    <h3 className="project-title">{project.title}</h3>
-                    <p className="project-location">{project.location}</p>
-                    <span className="status-badge status-completed">Completed</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          </FadeIn>
         </div>
 
         {selectedProject && (
-          <div className="project-modal" onClick={handleCloseModal}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>{selectedProject.title}</h2>
-                <button
-                  className="modal-close"
-                  onClick={handleCloseModal}
-                >
-                  <FontAwesomeIcon icon={faTimes} />
-                </button>
-              </div>
-              {selectedProject.image && (
-                <img 
-                  src={`${IMAGE_BASE_URL}${selectedProject.image}`} 
-                  alt={selectedProject.title} 
-                  className="modal-image"
-                />
-              )}
-              <div className="modal-details">
-                <p><strong>Location:</strong> {selectedProject.location || 'N/A'}</p>
-                <p><strong>Status:</strong> 
-                  <span className={`modal-status ${selectedProject.status}`}>
-                    {selectedProject.status === 'completed' ? 'Completed' : 'Ongoing'}
-                  </span>
-                </p>
-                {selectedProject.date && (
-                  <p><strong>Date:</strong> {new Date(selectedProject.date).toLocaleDateString()}</p>
+          <FadeIn duration={0.3}>
+            <div className="project-modal" onClick={handleCloseModal}>
+              <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{selectedProject.title}</h2>
+                  <button
+                    className="modal-close"
+                    onClick={handleCloseModal}
+                  >
+                    <FontAwesomeIcon icon={faTimes} />
+                  </button>
+                </div>
+                {selectedProject.image && (
+                  <img 
+                    src={`${IMAGE_BASE_URL}${selectedProject.image}`} 
+                    alt={selectedProject.title} 
+                    className="modal-image"
+                  />
                 )}
-                <p><strong>Description:</strong> {selectedProject.description}</p>
+                <div className="modal-details">
+                  <p><strong>Location:</strong> {selectedProject.location || 'N/A'}</p>
+                  <p><strong>Status:</strong> 
+                    <span className={`modal-status ${selectedProject.status}`}>
+                      {selectedProject.status === 'completed' ? 'Completed' : 'Ongoing'}
+                    </span>
+                  </p>
+                  {selectedProject.date && (
+                    <p><strong>Date:</strong> {new Date(selectedProject.date).toLocaleDateString()}</p>
+                  )}
+                  <p><strong>Description:</strong> {selectedProject.description}</p>
+                </div>
               </div>
             </div>
-          </div>
+          </FadeIn>
         )}
       </div>
       <Footer />
