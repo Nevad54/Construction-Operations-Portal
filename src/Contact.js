@@ -8,12 +8,14 @@ import './styles.css';
 
 const Contact = () => {
   console.log('Contact component rendering');
-  const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+  // Update API URL to point to the backend service
+  const API_BASE_URL = 'https://mastertech-backend.onrender.com';
   const IMAGE_BASE_URL = API_BASE_URL;
   // Hardcode the reCAPTCHA site key for now
   const RECAPTCHA_SITE_KEY = '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa';
   
   console.log('Using hardcoded reCAPTCHA site key:', RECAPTCHA_SITE_KEY);
+  console.log('Using API URL:', API_BASE_URL);
 
   console.log('Environment variables:', {
     API_BASE_URL,
@@ -172,6 +174,11 @@ const Contact = () => {
 
     try {
         setIsSubmitting(true);
+        console.log('Submitting form with data:', {
+            ...formData,
+            recaptchaToken: recaptchaToken ? 'Token present' : 'No token'
+        });
+        
         const response = await fetch(`${API_BASE_URL}/api/contact`, {
             method: 'POST',
             headers: {
@@ -184,6 +191,7 @@ const Contact = () => {
         });
 
         const data = await response.json();
+        console.log('Response from server:', data);
 
         if (!response.ok) {
             if (response.status === 429) {
@@ -195,6 +203,21 @@ const Contact = () => {
                 });
                 return;
             }
+            
+            // Handle reCAPTCHA verification failure
+            if (response.status === 400 && data.error && data.error.includes('reCAPTCHA')) {
+                setErrors(prev => ({
+                    ...prev,
+                    captcha: 'reCAPTCHA verification failed. Please try again.'
+                }));
+                if (recaptchaRef.current) {
+                    recaptchaRef.current.reset();
+                }
+                setRecaptchaToken('');
+                setIsRecaptchaVerified(false);
+                throw new Error('reCAPTCHA verification failed. Please try again.');
+            }
+            
             throw new Error(data.error || 'Failed to send message');
         }
 
@@ -217,11 +240,11 @@ const Contact = () => {
         setIsRecaptchaVerified(false);
         setAttemptsRemaining(prev => Math.max(0, prev - 1));
     } catch (err) {
+        console.error('Contact form error:', err);
         setSubmitStatus({
             type: 'error',
             message: err.message || 'Failed to send message. Please try again.'
         });
-        console.error('Contact form error:', err);
     } finally {
         setIsSubmitting(false);
     }
