@@ -1581,3 +1581,56 @@ footer {
     border-radius: 4px;
     margin-top: 5px;
 }
+
+.recaptcha-container {
+  position: relative;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.recaptcha-container:focus-within {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.recaptcha-container .error {
+  color: #dc3545;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.recaptcha-container .error small {
+  display: block;
+  margin-top: 0.25rem;
+  color: #6c757d;
+}
+
+/* Ensure reCAPTCHA iframe is properly contained */
+.recaptcha-container iframe {
+  border: none;
+  max-width: 100%;
+}
+
+/* Improve focus visibility for reCAPTCHA elements */
+.rc-imageselect-tile:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* Ensure proper contrast for error messages */
+.error {
+  color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+}
+
+.error small {
+  display: block;
+  margin-top: 0.25rem;
+  color: #6c757d;
+}

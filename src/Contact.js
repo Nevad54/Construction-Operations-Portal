@@ -172,93 +172,94 @@ const Contact = () => {
     setSubmitStatus(null);
 
     if (!validateForm()) {
-        return;
+      return;
     }
 
     if (attemptsRemaining <= 0) {
-        setSubmitStatus({
-            type: 'error',
-            message: 'Maximum attempts reached. Please try again later.'
-        });
-        return;
+      setSubmitStatus({
+        type: 'error',
+        message: 'Maximum attempts reached. Please try again later.'
+      });
+      return;
     }
 
     try {
-        setIsSubmitting(true);
-        console.log('Submitting form with data:', {
-            ...formData,
-            recaptchaToken: recaptchaToken ? recaptchaToken.substring(0, 10) + '...' : 'No token'
-        });
-        
-        const response = await fetch(`${API_BASE_URL}/api/contact`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-                ...formData,
-                recaptchaToken
-            }),
-        });
+      setIsSubmitting(true);
+      console.log('Submitting form with data:', {
+        ...formData,
+        recaptchaToken: recaptchaToken ? recaptchaToken.substring(0, 10) + '...' : 'No token'
+      });
+      
+      const response = await fetch(`${API_BASE_URL}/api/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...formData,
+          recaptchaToken
+        }),
+      });
 
-        const data = await response.json();
-        console.log('Response from server:', data);
+      const data = await response.json();
+      console.log('Response from server:', data);
 
-        if (!response.ok) {
-            if (response.status === 429) {
-                const timeLeft = parseInt(data.error.match(/\d+/)[0]);
-                setTimeUntilReset(timeLeft);
-                setSubmitStatus({
-                    type: 'error',
-                    message: data.error
-                });
-                return;
-            }
-            
-            // Handle reCAPTCHA verification failure
-            if (response.status === 400 && data.error && data.error.includes('reCAPTCHA')) {
-                setErrors(prev => ({
-                    ...prev,
-                    captcha: 'reCAPTCHA verification failed. Please try again.'
-                }));
-                if (recaptchaRef.current) {
-                    recaptchaRef.current.reset();
-                }
-                setRecaptchaToken('');
-                setIsRecaptchaVerified(false);
-                throw new Error('reCAPTCHA verification failed. Please try again.');
-            }
-            
-            throw new Error(data.error || 'Failed to send message');
-        }
-
-        setSubmitStatus({
-            type: 'success',
-            message: data.message || 'Message sent successfully!'
-        });
-        
-        // Reset form and reCAPTCHA only on success
-        setFormData({
-            name: '',
-            email: '',
-            phone: '',
-            message: ''
-        });
-        if (recaptchaRef.current) {
-            recaptchaRef.current.reset();
-        }
-        setRecaptchaToken('');
-        setIsRecaptchaVerified(false);
-        setAttemptsRemaining(prev => Math.max(0, prev - 1));
-    } catch (err) {
-        console.error('Contact form error:', err);
-        setSubmitStatus({
+      if (!response.ok) {
+        if (response.status === 429) {
+          const timeLeft = parseInt(data.error.match(/\d+/)[0]);
+          setTimeUntilReset(timeLeft);
+          setSubmitStatus({
             type: 'error',
-            message: err.message || 'Failed to send message. Please try again.'
-        });
+            message: data.error
+          });
+          return;
+        }
+        
+        // Handle reCAPTCHA verification failure
+        if (response.status === 400 && data.error && data.error.includes('reCAPTCHA')) {
+          setErrors(prev => ({
+            ...prev,
+            captcha: 'reCAPTCHA verification failed. Please try again.',
+            captchaDetails: data.details || []
+          }));
+          if (recaptchaRef.current) {
+            recaptchaRef.current.reset();
+          }
+          setRecaptchaToken('');
+          setIsRecaptchaVerified(false);
+          throw new Error('reCAPTCHA verification failed. Please try again.');
+        }
+        
+        throw new Error(data.error || 'Failed to send message');
+      }
+
+      setSubmitStatus({
+        type: 'success',
+        message: data.message || 'Message sent successfully!'
+      });
+      
+      // Reset form and reCAPTCHA only on success
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        message: ''
+      });
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset();
+      }
+      setRecaptchaToken('');
+      setIsRecaptchaVerified(false);
+      setAttemptsRemaining(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Contact form error:', err);
+      setSubmitStatus({
+        type: 'error',
+        message: err.message || 'Failed to send message. Please try again.'
+      });
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -441,7 +442,12 @@ const Contact = () => {
                 
                 <div className="form-group captcha-group">
                   {RECAPTCHA_SITE_KEY ? (
-                    <div role="region" aria-label="reCAPTCHA verification" tabIndex={-1}>
+                    <div 
+                      role="region" 
+                      aria-label="reCAPTCHA verification" 
+                      tabIndex={-1}
+                      className="recaptcha-container"
+                    >
                       <ReCAPTCHA
                         ref={recaptchaRef}
                         sitekey={RECAPTCHA_SITE_KEY}
@@ -463,7 +469,14 @@ const Contact = () => {
                       <small>Debug info: {process.env.NODE_ENV} environment</small>
                     </div>
                   )}
-                  {errors.captcha && <span className="error" role="alert">{errors.captcha}</span>}
+                  {errors.captcha && (
+                    <div className="error" role="alert">
+                      {errors.captcha}
+                      {errors.captchaDetails && (
+                        <small>Error details: {errors.captchaDetails.join(', ')}</small>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {timeUntilReset ? (
