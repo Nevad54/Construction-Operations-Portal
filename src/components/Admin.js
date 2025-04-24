@@ -128,13 +128,6 @@ const Admin = () => {
             if (!updatedProject) {
                 throw new Error('Failed to get updated project data');
             }
-
-            // Update the local state with the new data
-            setProjects(prevProjects => 
-                prevProjects.map(project => 
-                    project._id === editingProject._id ? updatedProject : project
-                )
-            );
             
             setShowModal(false);
             setEditingProject(null);
