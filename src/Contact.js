@@ -9,6 +9,7 @@ import './styles.css';
 const Contact = () => {
   const API_BASE_URL = process.env.REACT_APP_API_URL || '';
   const IMAGE_BASE_URL = API_BASE_URL;
+  const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
   const [isSidebarActive, setIsSidebarActive] = useState(false);
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -356,7 +357,7 @@ const Contact = () => {
                 <div className="form-group captcha-group">
                   <ReCAPTCHA
                     ref={recaptchaRef}
-                    sitekey="6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02"
+                    sitekey={RECAPTCHA_SITE_KEY}
                     onChange={handleRecaptchaChange}
                     onExpired={handleRecaptchaExpired}
                     onErrored={handleRecaptchaError}
