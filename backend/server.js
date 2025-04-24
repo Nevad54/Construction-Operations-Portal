@@ -33,9 +33,7 @@ const upload = multer({ storage });
 
 // Middleware
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? ['https://mastertech-frontend-yqjb.onrender.com', 'https://mastertech-app.onrender.com', 'https://mastertech-frontend.onrender.com']
-        : true,
+    origin: ['https://mastertech-frontend-yqjb.onrender.com', 'https://mastertech-frontend.onrender.com', 'http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
