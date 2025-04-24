@@ -425,12 +425,7 @@ const Contact = () => {
       >
         ↑
       </button>
-      {/* Footer */}
-      <footer role="contentinfo">
-        <div className="container_footer">
-          <p> 2025 MASTERTECH INTERGROUPPE INC. All Rights Reserved.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
