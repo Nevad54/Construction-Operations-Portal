@@ -479,6 +479,11 @@ app.post('/api/contact', async (req, res) => {
           body: verificationBody
         });
 
+        if (!recaptchaResponse.ok) {
+          console.error('reCAPTCHA verification request failed:', recaptchaResponse.status, recaptchaResponse.statusText);
+          throw new Error('Failed to verify reCAPTCHA: Network error');
+        }
+
         const recaptchaData = await recaptchaResponse.json();
         console.log('reCAPTCHA verification response:', recaptchaData);
 
@@ -491,7 +496,8 @@ app.post('/api/contact', async (req, res) => {
             console.log('Development mode: Continuing despite reCAPTCHA failure');
           } else {
             return res.status(400).json({
-              error: 'reCAPTCHA verification failed. Please try again.'
+              error: 'reCAPTCHA verification failed. Please try again.',
+              details: recaptchaData['error-codes']
             });
           }
         }
@@ -503,7 +509,8 @@ app.post('/api/contact', async (req, res) => {
           console.log('Development mode: Continuing despite reCAPTCHA error');
         } else {
           return res.status(400).json({
-            error: 'Failed to verify reCAPTCHA. Please try again.'
+            error: 'Failed to verify reCAPTCHA. Please try again.',
+            details: recaptchaError.message
           });
         }
       }

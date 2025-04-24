@@ -110,6 +110,10 @@ const Contact = () => {
 
   const handleRecaptchaChange = (token) => {
     console.log('reCAPTCHA token received:', token ? token.substring(0, 10) + '...' : 'No token');
+    if (!token) {
+      setErrors(prev => ({ ...prev, captcha: 'reCAPTCHA verification failed. Please try again.' }));
+      return;
+    }
     setRecaptchaToken(token);
     setIsRecaptchaVerified(true);
     setErrors(prev => ({ ...prev, captcha: undefined }));
@@ -120,15 +124,22 @@ const Contact = () => {
     setRecaptchaToken('');
     setIsRecaptchaVerified(false);
     setErrors(prev => ({ ...prev, captcha: 'reCAPTCHA verification expired. Please verify again.' }));
+    if (recaptchaRef.current) {
+      recaptchaRef.current.reset();
+    }
   };
 
   const handleRecaptchaError = (err) => {
     console.error('reCAPTCHA error:', err);
+    setRecaptchaToken('');
     setIsRecaptchaVerified(false);
     setErrors(prev => ({
       ...prev,
-      captcha: 'Error loading reCAPTCHA. Please refresh the page.'
+      captcha: 'Error loading reCAPTCHA. Please refresh the page and try again.'
     }));
+    if (recaptchaRef.current) {
+      recaptchaRef.current.reset();
+    }
   };
 
   const handleChange = (e) => {
@@ -430,7 +441,7 @@ const Contact = () => {
                 
                 <div className="form-group captcha-group">
                   {RECAPTCHA_SITE_KEY ? (
-                    <div role="region" aria-label="reCAPTCHA verification">
+                    <div role="region" aria-label="reCAPTCHA verification" tabIndex={-1}>
                       <ReCAPTCHA
                         ref={recaptchaRef}
                         sitekey={RECAPTCHA_SITE_KEY}
@@ -442,16 +453,17 @@ const Contact = () => {
                         tabIndex={0}
                         hl="en"
                         badge="bottomright"
+                        aria-label="reCAPTCHA verification"
                       />
                     </div>
                   ) : (
-                    <div className="error">
+                    <div className="error" role="alert">
                       reCAPTCHA configuration is missing. Please contact the administrator.
                       <br />
                       <small>Debug info: {process.env.NODE_ENV} environment</small>
                     </div>
                   )}
-                  {errors.captcha && <span className="error">{errors.captcha}</span>}
+                  {errors.captcha && <span className="error" role="alert">{errors.captcha}</span>}
                 </div>
 
                 {timeUntilReset ? (
