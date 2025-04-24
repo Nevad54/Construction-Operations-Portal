@@ -67,7 +67,10 @@ const Admin = () => {
         const formattedDate = project.date ? new Date(project.date).toISOString().split('T')[0] : '';
         setEditingProject({
             ...project,
-            date: formattedDate
+            date: formattedDate,
+            location: project.location || '', // Ensure location is preserved
+            owner: project.owner || '', // Ensure owner is preserved
+            featured: project.featured || false // Ensure featured status is preserved
         });
         setEditImagePreview(project.image);
         setShowModal(true);
@@ -100,6 +103,9 @@ const Admin = () => {
                     } else if (key === 'featured') {
                         // Convert featured to boolean
                         formDataToSend.append(key, editingProject[key] === 'true' || editingProject[key] === true);
+                    } else if (key === 'location' || key === 'owner') {
+                        // Ensure location and owner are preserved as strings
+                        formDataToSend.append(key, editingProject[key] || '');
                     } else {
                         formDataToSend.append(key, editingProject[key]);
                     }
