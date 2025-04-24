@@ -61,59 +61,14 @@ const Admin = () => {
         }));
     };
 
-    // Handle form submission
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            setLoading(true);
-            setError(null);
-            
-            // Validate required fields
-            if (!formData.title || !formData.description || !formData.date) {
-                throw new Error('Please fill in all required fields');
-            }
-
-            const formDataToSend = new FormData();
-            Object.keys(formData).forEach(key => {
-                if (formData[key] !== null) {
-                    // Format date if it's the date field
-                    if (key === 'date' && formData[key]) {
-                        const date = new Date(formData[key]);
-                        if (isNaN(date.getTime())) {
-                            throw new Error('Invalid date format');
-                        }
-                        formDataToSend.append(key, date.toISOString());
-                    } else {
-                        formDataToSend.append(key, formData[key]);
-                    }
-                }
-            });
-
-            console.log('Submitting project data:', Object.fromEntries(formDataToSend));
-            const response = await addProject(formDataToSend);
-            console.log('Project added successfully:', response);
-
-            setFormData({
-                title: '',
-                description: '',
-                location: '',
-                date: '',
-                image: null,
-                status: 'ongoing'
-            });
-            setImagePreview(null);
-            setShowModal(false);
-        } catch (error) {
-            console.error('Error adding project:', error);
-            setError('Error adding project: ' + error.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     // Handle project edit
     const handleEdit = (project) => {
-        setEditingProject(project);
+        // Format the date to YYYY-MM-DD for the date input
+        const formattedDate = project.date ? new Date(project.date).toISOString().split('T')[0] : '';
+        setEditingProject({
+            ...project,
+            date: formattedDate
+        });
         setEditImagePreview(project.image);
         setShowModal(true);
     };
@@ -126,36 +81,107 @@ const Admin = () => {
             setError(null);
 
             // Validate required fields
-            if (!editingProject.title || !editingProject.description || !editingProject.date) {
+            if (!editingProject.title || !editingProject.description) {
                 throw new Error('Please fill in all required fields');
             }
 
             const formDataToSend = new FormData();
+            
+            // Handle each field separately to ensure proper formatting
             Object.keys(editingProject).forEach(key => {
-                if (editingProject[key] !== null) {
-                    // Format date if it's the date field
+                if (editingProject[key] !== null && key !== '_id' && key !== '__v') {
                     if (key === 'date' && editingProject[key]) {
+                        // Ensure date is properly formatted
                         const date = new Date(editingProject[key]);
                         if (isNaN(date.getTime())) {
                             throw new Error('Invalid date format');
                         }
                         formDataToSend.append(key, date.toISOString());
+                    } else if (key === 'featured') {
+                        // Convert featured to boolean
+                        formDataToSend.append(key, editingProject[key] === 'true' || editingProject[key] === true);
                     } else {
                         formDataToSend.append(key, editingProject[key]);
                     }
                 }
             });
 
-            console.log('Updating project data:', Object.fromEntries(formDataToSend));
+            // Log the data being sent
+            console.log('Updating project with data:', Object.fromEntries(formDataToSend));
+            
             const response = await updateProject(editingProject._id, formDataToSend);
             console.log('Project updated successfully:', response);
 
+            // Refresh the projects list after update
+            await fetchProjects();
+            
             setShowModal(false);
             setEditingProject(null);
             setEditImagePreview(null);
         } catch (error) {
             console.error('Error updating project:', error);
             setError('Error updating project: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Handle form submission for new projects
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            setLoading(true);
+            setError(null);
+            
+            // Validate required fields
+            if (!formData.title || !formData.description) {
+                throw new Error('Please fill in all required fields');
+            }
+
+            const formDataToSend = new FormData();
+            
+            // Handle each field separately to ensure proper formatting
+            Object.keys(formData).forEach(key => {
+                if (formData[key] !== null) {
+                    if (key === 'date' && formData[key]) {
+                        // Ensure date is properly formatted
+                        const date = new Date(formData[key]);
+                        if (isNaN(date.getTime())) {
+                            throw new Error('Invalid date format');
+                        }
+                        formDataToSend.append(key, date.toISOString());
+                    } else if (key === 'featured') {
+                        // Convert featured to boolean
+                        formDataToSend.append(key, formData[key] === 'true' || formData[key] === true);
+                    } else {
+                        formDataToSend.append(key, formData[key]);
+                    }
+                }
+            });
+
+            // Log the data being sent
+            console.log('Creating project with data:', Object.fromEntries(formDataToSend));
+            
+            const response = await addProject(formDataToSend);
+            console.log('Project created successfully:', response);
+
+            // Refresh the projects list after creation
+            await fetchProjects();
+            
+            setFormData({
+                title: '',
+                description: '',
+                location: '',
+                date: '',
+                image: null,
+                status: 'ongoing',
+                featured: false
+            });
+            setImagePreview(null);
+            setShowModal(false);
+        } catch (error) {
+            console.error('Error adding project:', error);
+            setError('Error adding project: ' + error.message);
         } finally {
             setLoading(false);
         }
