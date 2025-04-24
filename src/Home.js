@@ -88,19 +88,27 @@ const Home = () => {
 
   const ProjectCategory = ({ title, description, image, onImageError }) => {
     const [isLoaded, setIsLoaded] = useState(false);
+    const [hasError, setHasError] = useState(false);
+
+    const handleImageError = () => {
+      setHasError(true);
+      onImageError();
+    };
 
     return (
       <div className="project-category">
         <div className="image-container">
-          <img
-            src={image}
-            alt={title}
-            loading="lazy"
-            className={isLoaded ? 'loaded' : ''}
-            onLoad={() => setIsLoaded(true)}
-            onError={onImageError}
-          />
-          {!isLoaded && <div className="placeholder-image" />}
+          {!hasError ? (
+            <img
+              src={image}
+              alt={title}
+              loading="lazy"
+              className={isLoaded ? 'loaded' : ''}
+              onLoad={() => setIsLoaded(true)}
+              onError={handleImageError}
+            />
+          ) : null}
+          {(!isLoaded || hasError) && <div className="placeholder-image" />}
           <div className="category-overlay">
             <span>{title}</span>
           </div>
