@@ -4,7 +4,6 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
-import useIntersectionObserver from './hooks/useIntersectionObserver';
 import './styles.css';
 
 const Contact = () => {
@@ -357,9 +356,6 @@ const Contact = () => {
     };
   }, [RECAPTCHA_SITE_KEY]); // Add RECAPTCHA_SITE_KEY as dependency
 
-  const contactFormRef = useIntersectionObserver();
-  const contactInfoRef = useIntersectionObserver();
-
   return (
     <div>
       <Sidebar
@@ -377,9 +373,9 @@ const Contact = () => {
       />
       <section className="contact" role="main">
         <div className="container">
-          <h1 className="fade-in">Contact Us</h1>
+          <h1>Contact Us</h1>
           <div className="contact-content">
-            <div className="contact-form" ref={contactFormRef}>
+            <div className="contact-form">
               <h2>Send Us a Message</h2>
               {submitStatus && (
                 <div className={`alert ${submitStatus.type === 'success' ? 'alert-success' : 'alert-error'}`}>
@@ -502,17 +498,17 @@ const Contact = () => {
                 </button>
               </form>
             </div>
-            <div className="contact-info" ref={contactInfoRef}>
+            <div className="contact-info">
               <h2>Contact Information</h2>
-              <div className="info-group stagger-children">
+              <div className="info-group">
                 <h3><i className="fas fa-building"></i> Office Address</h3>
                 <p>320 Sta Rosa Tagaytay Road Purok 4,<br />Brgy. Pasong Langka,<br />Silang Cavite 4118</p>
               </div>
-              <div className="info-group stagger-children">
+              <div className="info-group">
                 <h3><i className="fas fa-clock"></i> Office Hours</h3>
                 <p>Monday - Friday: 8:00 AM - 5:00 PM<br />Saturday: 8:00 AM - 12:00 PM<br />Sunday: Closed</p>
               </div>
-              <div className="info-group stagger-children">
+              <div className="info-group">
                 <h3><i className="fas fa-phone-alt"></i> Phone & Email</h3>
                 <p>
                   <a href="tel:+63465139424">(046) 513 9424</a><br />
@@ -522,7 +518,7 @@ const Contact = () => {
                   <a href="mailto:inquiry@mastertech.com.ph">inquiry@mastertech.com.ph</a>
                 </p>
               </div>
-              <div className="map-container fade-in">
+              <div className="map-container">
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d244.93515605421877!2d120.9966971517091!3d14.16017202394409!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7b0053a0280d%3A0x99434f55287e9a94!2sRestaurant!5e1!3m2!1sen!2sph!4v1743742491118!5m2!1sen!2sph"
                   width="100%"
@@ -544,11 +540,15 @@ const Contact = () => {
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         aria-label="Back to top"
         style={{ display: showBackToTop ? 'block' : 'none' }}
-        className="fade-in"
       >
         ↑
       </button>
-      <Footer />
+      {/* Footer */}
+      <footer role="contentinfo">
+        <div className="container_footer">
+          <p> 2025 MASTERTECH INTERGROUPPE INC. All Rights Reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 };
