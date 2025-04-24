@@ -1634,3 +1634,119 @@ footer {
   margin-top: 0.25rem;
   color: #6c757d;
 }
+
+/* Project Loading State */
+.project-gallery.loading {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.project-skeleton {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  animation: pulse 1.5s infinite;
+}
+
+.project-skeleton-image {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.project-skeleton-content {
+  padding: 15px;
+}
+
+.project-skeleton-title {
+  height: 24px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  width: 80%;
+}
+
+.project-skeleton-text {
+  height: 16px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  width: 60%;
+}
+
+.project-skeleton-text:last-child {
+  width: 40%;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Project Filter Loading State */
+.filter-buttons.loading {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.filter-skeleton {
+  width: 100px;
+  height: 36px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 20px;
+}
+
+/* Responsive adjustments for loading state */
+@media (max-width: 768px) {
+  .project-gallery.loading {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+
+  .project-skeleton-image {
+    height: 150px;
+  }
+
+  .filter-skeleton {
+    width: 80px;
+    height: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .project-gallery.loading {
+    grid-template-columns: 1fr;
+  }
+
+  .project-skeleton-image {
+    height: 180px;
+  }
+}
