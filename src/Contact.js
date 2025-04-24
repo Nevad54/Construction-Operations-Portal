@@ -4,6 +4,7 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
+import FadeInOnScroll from './components/FadeInOnScroll';
 import './styles.css';
 
 const Contact = () => {
@@ -286,139 +287,120 @@ const Contact = () => {
       />
       <section className="contact" role="main">
         <div className="container">
-          <h1>Contact Us</h1>
+          <FadeInOnScroll>
+            <h1>Contact Us</h1>
+          </FadeInOnScroll>
           <div className="contact-content">
-            <div className="contact-form">
-              <h2>Send Us a Message</h2>
-              {submitStatus && (
-                <div className={`alert ${submitStatus.type === 'success' ? 'alert-success' : 'alert-error'}`}>
-                  {submitStatus.message}
-                </div>
-              )}
-              <form onSubmit={handleSubmit} noValidate>
-                <div className="form-group">
-                  <label htmlFor="name">Name</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    aria-required="true"
-                    aria-describedby="name-error"
-                    disabled={isSubmitting}
-                  />
-                  {errors.name && <span id="name-error" className="error">{errors.name}</span>}
-                </div>
-                <div className="form-group">
-                  <label htmlFor="email">Email</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    aria-required="true"
-                    aria-describedby="email-error"
-                    disabled={isSubmitting}
-                  />
-                  {errors.email && <span id="email-error" className="error">{errors.email}</span>}
-                </div>
-                <div className="form-group">
-                  <label htmlFor="phone">Phone Number (Optional)</label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="+1 (123) 456-7890"
-                    aria-describedby="phone-error"
-                    disabled={isSubmitting}
-                  />
-                  {errors.phone && <span id="phone-error" className="error">{errors.phone}</span>}
-                </div>
-                <div className="form-group">
-                  <label htmlFor="message">Message</label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    rows="5"
-                    aria-required="true"
-                    aria-describedby="message-error"
-                    disabled={isSubmitting}
-                  ></textarea>
-                  {errors.message && <span id="message-error" className="error">{errors.message}</span>}
-                </div>
-                
-                <div className="form-group captcha-group">
-                  <ReCAPTCHA
-                    ref={recaptchaRef}
-                    sitekey="6Ld7MSErAAAAAJTgJ-Lq6eqVkUED2FXdCJAszG02"
-                    onChange={handleRecaptchaChange}
-                    onExpired={handleRecaptchaExpired}
-                    onErrored={handleRecaptchaError}
-                    theme="light"
-                    size="normal"
-                    tabIndex={0}
-                  />
-                  {errors.captcha && <span className="error">{errors.captcha}</span>}
-                </div>
-
-                {timeUntilReset ? (
-                  <div className="attempts-info">
-                    <p className="error">Please wait {timeUntilReset} minutes before trying again.</p>
-                  </div>
-                ) : (
-                  <div className="attempts-info">
-                    <p>Attempts remaining: {attemptsRemaining}</p>
+            <FadeInOnScroll delay={100}>
+              <div className="contact-form">
+                <h2>Send Us a Message</h2>
+                {submitStatus && (
+                  <div className={`alert ${submitStatus.type === 'success' ? 'alert-success' : 'alert-error'}`}>
+                    {submitStatus.message}
                   </div>
                 )}
-
-                <button 
-                  type="submit" 
-                  className="btn" 
-                  disabled={isSubmitting || timeUntilReset !== null}
-                >
-                  {isSubmitting ? 'Sending...' : 'Send Message'}
-                </button>
-              </form>
-            </div>
-            <div className="contact-info">
-              <h2>Contact Information</h2>
-              <div className="info-group">
-                <h3><i className="fas fa-building"></i> Office Address</h3>
-                <p>320 Sta Rosa Tagaytay Road Purok 4,<br />Brgy. Pasong Langka,<br />Silang Cavite 4118</p>
+                <form onSubmit={handleSubmit} noValidate>
+                  <div className="form-group">
+                    <label htmlFor="name">Name</label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className={errors.name ? 'error' : ''}
+                    />
+                    {errors.name && <span className="error-message">{errors.name}</span>}
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="email">Email</label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className={errors.email ? 'error' : ''}
+                    />
+                    {errors.email && <span className="error-message">{errors.email}</span>}
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="phone">Phone (Optional)</label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className={errors.phone ? 'error' : ''}
+                    />
+                    {errors.phone && <span className="error-message">{errors.phone}</span>}
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="message">Message</label>
+                    <textarea
+                      id="message"
+                      name="message"
+                      value={formData.message}
+                      onChange={handleChange}
+                      className={errors.message ? 'error' : ''}
+                    />
+                    {errors.message && <span className="error-message">{errors.message}</span>}
+                  </div>
+                  <div className="form-group">
+                    <ReCAPTCHA
+                      ref={recaptchaRef}
+                      sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
+                      onChange={handleRecaptchaChange}
+                      onExpired={handleRecaptchaExpired}
+                      onError={handleRecaptchaError}
+                    />
+                    {errors.captcha && <span className="error-message">{errors.captcha}</span>}
+                  </div>
+                  <button
+                    type="submit"
+                    className="submit-button"
+                    disabled={isSubmitting || attemptsRemaining <= 0}
+                  >
+                    {isSubmitting ? 'Sending...' : 'Send Message'}
+                  </button>
+                  {attemptsRemaining <= 0 && (
+                    <p className="attempts-message">
+                      Maximum attempts reached. Please try again in {timeUntilReset} minutes.
+                    </p>
+                  )}
+                </form>
               </div>
-              <div className="info-group">
-                <h3><i className="fas fa-clock"></i> Office Hours</h3>
-                <p>Monday - Friday: 8:00 AM - 5:00 PM<br />Saturday: 8:00 AM - 12:00 PM<br />Sunday: Closed</p>
+            </FadeInOnScroll>
+            <FadeInOnScroll delay={200}>
+              <div className="contact-info">
+                <h2>Get in Touch</h2>
+                <div className="info-item">
+                  <i className="fas fa-map-marker-alt"></i>
+                  <p>320 Sta Rosa Tagaytay Road Purok 4 Brgy. Pasong Langka, Silang Cavite 4118</p>
+                </div>
+                <div className="info-item">
+                  <i className="fas fa-phone"></i>
+                  <p>+63 912 345 6789</p>
+                </div>
+                <div className="info-item">
+                  <i className="fas fa-envelope"></i>
+                  <p>inquiry@mastertech.com.ph</p>
+                </div>
+                <div className="map-container">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d244.93515605421877!2d120.9966971517091!3d14.16017202394409!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7b0053a0280d%3A0x99434f55287e9a94!2sRestaurant!5e1!3m2!1sen!2sph!4v1743742491118!5m2!1sen!2sph"
+                    width="100%"
+                    height="300"
+                    style={{ border: 0 }}
+                    allowFullScreen=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="MASTERTECH Location Map"
+                  ></iframe>
+                </div>
               </div>
-              <div className="info-group">
-                <h3><i className="fas fa-phone-alt"></i> Phone & Email</h3>
-                <p>
-                  <a href="tel:+63465139424">(046) 513 9424</a><br />
-                  <a href="tel:+639669369678">0966 936 9678 - Melissa</a><br />
-                  <a href="tel:+639171668344">0917 166 8344 - Marlon</a><br />
-                  <a href="tel:+639178214720">0917 821 4720 - Gemma</a><br />
-                  <a href="mailto:inquiry@mastertech.com.ph">inquiry@mastertech.com.ph</a>
-                </p>
-              </div>
-              <div className="map-container">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d244.93515605421877!2d120.9966971517091!3d14.16017202394409!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7b0053a0280d%3A0x99434f55287e9a94!2sRestaurant!5e1!3m2!1sen!2sph!4v1743742491118!5m2!1sen!2sph"
-                  width="100%"
-                  height="300"
-                  style={{ border: 0 }}
-                  allowFullScreen=""
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Office Location Map"
-                ></iframe>
-              </div>
-            </div>
+            </FadeInOnScroll>
           </div>
         </div>
       </section>

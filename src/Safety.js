@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
+import FadeInOnScroll from './components/FadeInOnScroll';
 import './styles.css';
 
 const Safety = () => {
@@ -81,16 +82,22 @@ const Safety = () => {
       />
       <section className="safety" role="main">
         <div className="container">
-          <h1>Safety</h1>
-          <div className="safety-content fade-in">
-            <p>At MASTERTECH INTERGROUPPE INC., safety is our top priority. We adhere to strict safety protocols to protect our team, clients, and the communities we serve.</p>
-            <p>Our comprehensive safety programs include regular training, risk assessments, and compliance with all industry standards. We are proud to maintain an exemplary safety record across all our projects.</p>
-          </div>
-          <div className="safety-certifications fade-in">
-            <h2>Our Safety Certifications</h2>
-            <img src="/Uploads/certification1.jpg" alt="ISO 9001 Certification" className="certification" loading="lazy" />
-            <img src="/Uploads/certification2.jpg" alt="Safety Compliance Certification" className="certification" loading="lazy" />
-          </div>
+          <FadeInOnScroll>
+            <h1>Safety</h1>
+          </FadeInOnScroll>
+          <FadeInOnScroll delay={100}>
+            <div className="safety-content">
+              <p>At MASTERTECH INTERGROUPPE INC., safety is our top priority. We adhere to strict safety protocols to protect our team, clients, and the communities we serve.</p>
+              <p>Our comprehensive safety programs include regular training, risk assessments, and compliance with all industry standards. We are proud to maintain an exemplary safety record across all our projects.</p>
+            </div>
+          </FadeInOnScroll>
+          <FadeInOnScroll delay={200}>
+            <div className="safety-certifications">
+              <h2>Our Safety Certifications</h2>
+              <img src="/Uploads/certification1.jpg" alt="ISO 9001 Certification" className="certification" loading="lazy" />
+              <img src="/Uploads/certification2.jpg" alt="Safety Compliance Certification" className="certification" loading="lazy" />
+            </div>
+          </FadeInOnScroll>
         </div>
       </section>
       <Footer />
