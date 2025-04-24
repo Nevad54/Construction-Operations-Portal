@@ -17,9 +17,21 @@ const Projects = () => {
   const [isSidebarActive, setIsSidebarActive] = useState(false);
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
   const [exitingProject, setExitingProject] = useState(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
     loadProjects();
+  }, []);
+
+  const handleScroll = () => {
+    setShowBackToTop(window.scrollY > 200);
+  };
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   const loadProjects = async () => {
@@ -223,6 +235,14 @@ const Projects = () => {
         )}
       </div>
       <Footer />
+      <button
+        id="backToTop"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        aria-label="Back to top"
+        style={{ display: showBackToTop ? 'block' : 'none' }}
+      >
+        ↑
+      </button>
     </div>
   );
 };
