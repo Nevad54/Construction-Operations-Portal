@@ -89,11 +89,14 @@ app.use(session({
     resave: true,
     saveUninitialized: true,
     cookie: { 
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: true,
+        sameSite: 'none',
         maxAge: 60 * 60 * 1000 // 1 hour
     }
 }));
+
+// Global OPTIONS handler for all routes
+app.options('*', cors(corsOptions));
 
 // Root Route
 app.get('/', (req, res) => {
@@ -102,6 +105,8 @@ app.get('/', (req, res) => {
 });
 
 // CAPTCHA Route
+app.options('/api/captcha', cors(corsOptions)); // Add OPTIONS handler for captcha
+
 app.get('/api/captcha', (req, res) => {
     console.log('HIT /api/captcha');
     const imageOptions = [
@@ -243,7 +248,11 @@ app.get('/api/projects', async (req, res) => {
     }
 });
 
-// Project Routes
+// Projects Routes
+app.options('/api/projects', cors(corsOptions)); // Add OPTIONS handler for projects
+app.options('/api/projects/bulk-delete', cors(corsOptions)); // Add OPTIONS handler for bulk delete
+app.options('/api/projects/:id', cors(corsOptions)); // Add OPTIONS handler for project update/delete
+
 app.post('/api/projects', upload.single('image'), async (req, res) => {
     try {
         if (!mongoose.connection.readyState) {
@@ -345,6 +354,8 @@ app.delete('/api/projects/:id', async (req, res) => {
 });
 
 // Contact Form Route
+app.options('/api/contact', cors(corsOptions)); // Add OPTIONS handler for contact form
+
 app.post('/api/contact', async (req, res) => {
     try {
         const clientIp = requestIp.getClientIp(req);
