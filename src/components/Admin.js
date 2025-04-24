@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useProjects } from '../context/ProjectContext';
+import { api } from '../services/api';
 import '../styles/Admin.css';
 
 const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
@@ -119,9 +120,8 @@ const Admin = () => {
             // Refresh the projects list after update
             await refreshProjects();
             
-            // Verify the update
-            const updatedProjects = await api.getProjects();
-            const updatedProject = updatedProjects.find(p => p._id === editingProject._id);
+            // Verify the update by checking the projects list
+            const updatedProject = projects.find(p => p._id === editingProject._id);
             console.log('Verified updated project:', updatedProject);
 
             if (!updatedProject) {
