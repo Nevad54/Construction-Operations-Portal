@@ -1,9 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
 import './styles.css';
+
+const useScrollAnimation = () => {
+  const elementRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      }
+    );
+
+    if (elementRef.current) {
+      observer.observe(elementRef.current);
+    }
+
+    return () => {
+      if (elementRef.current) {
+        observer.unobserve(elementRef.current);
+      }
+    };
+  }, []);
+
+  return elementRef;
+};
 
 const Home = () => {
   const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
@@ -12,6 +45,11 @@ const Home = () => {
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   const location = useLocation();
+
+  // Refs for scroll animations
+  const heroRef = useScrollAnimation();
+  const expertiseRef = useScrollAnimation();
+  const servicesRef = useScrollAnimation();
 
   const getActivePage = () => {
     const path = location.pathname;
@@ -96,7 +134,7 @@ const Home = () => {
         setIsNavLinksActive={setIsNavLinksActive}
         activePage={activePage}
       />
-      <section className="hero" role="banner">
+      <section className="hero" role="banner" ref={heroRef}>
         <div className="hero-content">
           <h1 className="fade-in">
             Welcome to MASTERTECH INTERGROUPPE INC.
@@ -113,9 +151,9 @@ const Home = () => {
           </Link>
         </div>
       </section>
-      <section className="project-categories" role="main">
+      <section className="project-categories" role="main" ref={expertiseRef}>
         <div className="container">
-          <h2>Our Expertise</h2>
+          <h2 className="fade-in">Our Expertise</h2>
           <div className="categories-grid">
             <Link
               to="/projects#industrial"
@@ -172,38 +210,38 @@ const Home = () => {
           </div>
         </div>
       </section>
-      {/* Services Section */}
       <section
         className="services"
         role="region"
         aria-labelledby="services-heading"
+        ref={servicesRef}
       >
-        <h2 id="services-heading">Our Services</h2>
+        <h2 id="services-heading" className="fade-in">Our Services</h2>
         <ul className="services-list">
-          <li>
+          <li className="fade-in">
             <i className="fas fa-hard-hat"></i>
             <span>
               Structural, Civil, Site Development, and Architectural Works
             </span>
           </li>
-          <li>
+          <li className="fade-in">
             <i className="fas fa-cogs"></i>
             <span>
               Mechanical, Electrical, Plumbing, and Fire Protection (MEPS) Works
             </span>
           </li>
-          <li>
+          <li className="fade-in">
             <i className="fas fa-wrench"></i>
             <span>
               Fabrication & Industrial Plant Projects (Specialized in Clean Room
               & Painting Processes Improvements, Including Automation)
             </span>
           </li>
-          <li>
+          <li className="fade-in">
             <i className="fas fa-users-cog"></i>
             <span>Manpower and Technical Support for Manufacturing Plants</span>
           </li>
-          <li>
+          <li className="fade-in">
             <i className="fas fa-tools"></i>
             <span>Supply of Industrial Materials and Equipment</span>
           </li>
