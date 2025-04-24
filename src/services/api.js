@@ -27,15 +27,21 @@ export const api = {
     },
 
     updateProject: async (id, projectData) => {
-        const formData = new FormData();
-        Object.keys(projectData).forEach(key => {
-            formData.append(key, projectData[key]);
-        });
+        // Convert FormData to a regular object
+        const data = {};
+        for (let [key, value] of projectData.entries()) {
+            data[key] = value;
+        }
 
+        // Send as JSON instead of FormData
         const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
             method: 'PUT',
-            body: formData,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
         });
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }

@@ -99,24 +99,25 @@ const Admin = () => {
                 date: editingProject.date ? new Date(editingProject.date).toISOString() : null
             };
 
-            // If there's a new image, add it to the form data
-            const formDataToSend = new FormData();
-            Object.keys(updateData).forEach(key => {
-                if (updateData[key] !== null && updateData[key] !== undefined) {
-                    formDataToSend.append(key, updateData[key]);
-                }
-            });
-
-            // If there's a new image file, add it
+            // If there's a new image file, create FormData
+            let dataToSend;
             if (editingProject.image instanceof File) {
-                formDataToSend.append('image', editingProject.image);
+                dataToSend = new FormData();
+                Object.keys(updateData).forEach(key => {
+                    if (updateData[key] !== null && updateData[key] !== undefined) {
+                        dataToSend.append(key, updateData[key]);
+                    }
+                });
+                dataToSend.append('image', editingProject.image);
+            } else {
+                dataToSend = updateData;
             }
 
             // Log the data being sent
             console.log('Updating project with data:', updateData);
             
             // First, update the project
-            const response = await updateProject(editingProject._id, formDataToSend);
+            const response = await updateProject(editingProject._id, dataToSend);
             console.log('Project updated successfully:', response);
 
             // Then, refresh the projects list
