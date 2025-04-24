@@ -87,7 +87,7 @@ export const api = {
 
     // Contact Form
     submitContactForm: async (formData) => {
-        const response = await fetch(`${API_BASE_URL}/contact`, {
+        const response = await fetch(`${API_BASE_URL}/api/contact`, {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -100,7 +100,7 @@ export const api = {
 
     // CAPTCHA
     getCaptcha: async () => {
-        const response = await fetch(`${API_BASE_URL}/captcha`, {
+        const response = await fetch(`${API_BASE_URL}/api/captcha`, {
             credentials: 'include'
         });
         return response.json();

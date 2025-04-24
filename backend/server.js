@@ -31,25 +31,34 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// CORS configuration
-const corsOptions = {
-    origin: [
-        'https://mastertech-frontend-yqjb.onrender.com',
-        'https://mastertech-frontend.onrender.com',
-        'http://localhost:3000'
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-};
+// Add CORS headers directly to the response
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://mastertech-frontend-yqjb.onrender.com');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
 
-app.use(cors(corsOptions));
+// CORS configuration
+app.use(cors({
+  origin: 'https://mastertech-frontend-yqjb.onrender.com',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 
 // Add CSP headers
 app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'self' https://www.google.com https://recaptcha.google.com https://www.gstatic.com; frame-src 'self' https://www.google.com https://recaptcha.google.com https://www.gstatic.com;"
+    "default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'self' https://www.google.com https://recaptcha.google.com https://www.gstatic.com https://mastertech-frontend-yqjb.onrender.com; frame-src 'self' https://www.google.com https://recaptcha.google.com https://www.gstatic.com;"
   );
   next();
 });
@@ -96,7 +105,12 @@ app.use(session({
 }));
 
 // Global OPTIONS handler for all routes
-app.options('*', cors(corsOptions));
+app.options('*', cors({
+    origin: true, // Allow all origins for now
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Root Route
 app.get('/', (req, res) => {
@@ -105,7 +119,12 @@ app.get('/', (req, res) => {
 });
 
 // CAPTCHA Route
-app.options('/api/captcha', cors(corsOptions)); // Add OPTIONS handler for captcha
+app.options('/api/captcha', cors({
+    origin: true, // Allow all origins for now
+    credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+})); // Add OPTIONS handler for captcha
 
 app.get('/api/captcha', (req, res) => {
     console.log('HIT /api/captcha');
@@ -249,9 +268,24 @@ app.get('/api/projects', async (req, res) => {
 });
 
 // Projects Routes
-app.options('/api/projects', cors(corsOptions)); // Add OPTIONS handler for projects
-app.options('/api/projects/bulk-delete', cors(corsOptions)); // Add OPTIONS handler for bulk delete
-app.options('/api/projects/:id', cors(corsOptions)); // Add OPTIONS handler for project update/delete
+app.options('/api/projects', cors({
+    origin: true, // Allow all origins for now
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+})); // Add OPTIONS handler for projects
+app.options('/api/projects/bulk-delete', cors({
+    origin: true, // Allow all origins for now
+    credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+})); // Add OPTIONS handler for bulk delete
+app.options('/api/projects/:id', cors({
+    origin: true, // Allow all origins for now
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+})); // Add OPTIONS handler for project update/delete
 
 app.post('/api/projects', upload.single('image'), async (req, res) => {
     try {
@@ -354,150 +388,160 @@ app.delete('/api/projects/:id', async (req, res) => {
 });
 
 // Contact Form Route
-app.options('/api/contact', cors(corsOptions)); // Add OPTIONS handler for contact form
+app.options('/api/contact', (req, res) => {
+  res.header('Access-Control-Allow-Origin', 'https://mastertech-frontend-yqjb.onrender.com');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.status(200).end();
+});
 
 app.post('/api/contact', async (req, res) => {
-    try {
-        const clientIp = requestIp.getClientIp(req);
-        const now = Date.now();
-        const oneHourAgo = now - (60 * 60 * 1000);
+  // Set CORS headers
+  res.header('Access-Control-Allow-Origin', 'https://mastertech-frontend-yqjb.onrender.com');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  try {
+    const clientIp = requestIp.getClientIp(req);
+    const now = Date.now();
+    const oneHourAgo = now - (60 * 60 * 1000);
 
-        // Initialize session if it doesn't exist
-        if (!req.session.contactAttempts) {
-            req.session.contactAttempts = [];
-        }
-
-        // Clean up old attempts
-        req.session.contactAttempts = req.session.contactAttempts.filter(time => time > oneHourAgo);
-
-        // Check if user has exceeded attempts
-        if (req.session.contactAttempts.length >= 3) {
-            const oldestAttempt = req.session.contactAttempts[0];
-            const timeLeft = Math.ceil((oldestAttempt + (60 * 60 * 1000) - now) / 1000 / 60);
-            console.log('Too many attempts from IP:', clientIp);
-            return res.status(429).json({
-                error: `Too many attempts. Please try again in ${timeLeft} minutes.`
-            });
-        }
-
-        // Add attempt before processing
-        req.session.contactAttempts.push(now);
-        req.session.save((err) => {
-            if (err) {
-                console.error('Error saving session:', err);
-            }
-        });
-
-        console.log('Received contact form submission:', {
-            name: req.body.name,
-            email: req.body.email,
-            phone: req.body.phone,
-            hasMessage: !!req.body.message,
-            hasRecaptcha: !!req.body.recaptchaToken,
-            attemptsRemaining: 3 - req.session.contactAttempts.length
-        });
-
-        const { name, email, phone, message, recaptchaToken } = req.body;
-
-        if (!name || !email || !message || !recaptchaToken) {
-            console.log('Missing required fields:', {
-                name: !!name,
-                email: !!email,
-                phone: !!phone,
-                message: !!message,
-                recaptchaToken: !!recaptchaToken
-            });
-            return res.status(400).json({
-                error: 'All fields are required, including reCAPTCHA verification.'
-            });
-        }
-
-        // Verify reCAPTCHA token
-        const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh';
-        console.log('Verifying reCAPTCHA with secret:', recaptchaSecret.substring(0, 10) + '...');
-        
-        try {
-            const verificationURL = 'https://www.google.com/recaptcha/api/siteverify';
-            const verificationBody = `secret=${recaptchaSecret}&response=${recaptchaToken}`;
-
-            console.log('Sending reCAPTCHA verification request...');
-            const recaptchaResponse = await fetch(verificationURL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: verificationBody
-            });
-
-            const recaptchaData = await recaptchaResponse.json();
-            console.log('reCAPTCHA verification response:', recaptchaData);
-
-            if (!recaptchaData.success) {
-                console.log('reCAPTCHA verification failed:', recaptchaData['error-codes']);
-                return res.status(400).json({
-                    error: 'reCAPTCHA verification failed. Please try again.'
-                });
-            }
-        } catch (recaptchaError) {
-            console.error('Error verifying reCAPTCHA:', recaptchaError);
-            return res.status(400).json({
-                error: 'Failed to verify reCAPTCHA. Please try again.'
-            });
-        }
-
-        // Check if email configuration is available
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            console.log('Email configuration missing. Returning success without sending email.');
-            return res.status(200).json({ 
-                message: 'Message received successfully. We will get back to you soon.'
-            });
-        }
-
-        try {
-            console.log('Setting up email transport...');
-            const transporter = nodemailer.createTransport({
-                host: 'smtp.gmail.com',
-                port: 587,
-                secure: false,
-                auth: {
-                    user: process.env.EMAIL_USER,
-                    pass: process.env.EMAIL_PASS
-                }
-            });
-
-            const mailOptions = {
-                from: process.env.EMAIL_USER,
-                replyTo: email,
-                to: process.env.CONTACT_EMAIL || process.env.EMAIL_USER,
-                subject: `New Contact Form Submission from ${name}`,
-                text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\nMessage: ${message}`,
-                html: `<p><strong>Name:</strong> ${name}</p>
-                       <p><strong>Email:</strong> ${email}</p>
-                       <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-                       <p><strong>Message:</strong> ${message}</p>`
-            };
-
-            console.log('Sending email...');
-            await transporter.sendMail(mailOptions);
-            console.log('Email sent successfully');
-            
-            res.status(200).json({ message: 'Message sent successfully' });
-        } catch (emailError) {
-            console.error('Error sending email:', emailError);
-            res.status(200).json({ 
-                message: 'Message received successfully. We will get back to you soon.'
-            });
-        }
-    } catch (err) {
-        console.error('Error processing contact form:', err);
-        console.error('Error details:', {
-            name: err.name,
-            message: err.message,
-            stack: err.stack
-        });
-        res.status(500).json({
-            error: 'Failed to send message. Please try again.',
-            details: process.env.NODE_ENV === 'development' ? err.message : undefined
-        });
+    // Initialize session if it doesn't exist
+    if (!req.session.contactAttempts) {
+      req.session.contactAttempts = [];
     }
+
+    // Clean up old attempts
+    req.session.contactAttempts = req.session.contactAttempts.filter(time => time > oneHourAgo);
+
+    // Check if user has exceeded attempts
+    if (req.session.contactAttempts.length >= 3) {
+      const oldestAttempt = req.session.contactAttempts[0];
+      const timeLeft = Math.ceil((oldestAttempt + (60 * 60 * 1000) - now) / 1000 / 60);
+      console.log('Too many attempts from IP:', clientIp);
+      return res.status(429).json({
+        error: `Too many attempts. Please try again in ${timeLeft} minutes.`
+      });
+    }
+
+    // Add attempt before processing
+    req.session.contactAttempts.push(now);
+    req.session.save((err) => {
+      if (err) {
+        console.error('Error saving session:', err);
+      }
+    });
+
+    console.log('Received contact form submission:', {
+      name: req.body.name,
+      email: req.body.email,
+      phone: req.body.phone,
+      hasMessage: !!req.body.message,
+      hasRecaptcha: !!req.body.recaptchaToken,
+      attemptsRemaining: 3 - req.session.contactAttempts.length
+    });
+
+    const { name, email, phone, message, recaptchaToken } = req.body;
+
+    if (!name || !email || !message || !recaptchaToken) {
+      console.log('Missing required fields:', {
+        name: !!name,
+        email: !!email,
+        phone: !!phone,
+        message: !!message,
+        recaptchaToken: !!recaptchaToken
+      });
+      return res.status(400).json({
+        error: 'All fields are required, including reCAPTCHA verification.'
+      });
+    }
+
+    // Verify reCAPTCHA token
+    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6Ld7MSErAAAAAEm-A_oRw1bcU2EhpK78zia29yZh';
+    console.log('Verifying reCAPTCHA with secret:', recaptchaSecret.substring(0, 10) + '...');
+    
+    try {
+      const verificationURL = 'https://www.google.com/recaptcha/api/siteverify';
+      const verificationBody = `secret=${recaptchaSecret}&response=${recaptchaToken}`;
+
+      console.log('Sending reCAPTCHA verification request...');
+      const recaptchaResponse = await fetch(verificationURL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: verificationBody
+      });
+
+      const recaptchaData = await recaptchaResponse.json();
+      console.log('reCAPTCHA verification response:', recaptchaData);
+
+      if (!recaptchaData.success) {
+        console.log('reCAPTCHA verification failed:', recaptchaData['error-codes']);
+        return res.status(400).json({
+          error: 'reCAPTCHA verification failed. Please try again.'
+        });
+      }
+    } catch (recaptchaError) {
+      console.error('Error verifying reCAPTCHA:', recaptchaError);
+      return res.status(400).json({
+        error: 'Failed to verify reCAPTCHA. Please try again.'
+      });
+    }
+
+    // Check if email configuration is available
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.log('Email configuration missing. Returning success without sending email.');
+      return res.status(200).json({ 
+        message: 'Message received successfully. We will get back to you soon.'
+      });
+    }
+
+    try {
+      console.log('Setting up email transport...');
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        replyTo: email,
+        to: process.env.CONTACT_EMAIL || process.env.EMAIL_USER,
+        subject: `New Contact Form Submission from ${name}`,
+        text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\nMessage: ${message}`,
+        html: `<p><strong>Name:</strong> ${name}</p>
+               <p><strong>Email:</strong> ${email}</p>
+               <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+               <p><strong>Message:</strong> ${message}</p>`
+      };
+
+      console.log('Sending email...');
+      await transporter.sendMail(mailOptions);
+      console.log('Email sent successfully');
+      
+      res.status(200).json({ message: 'Message sent successfully' });
+    } catch (emailError) {
+      console.error('Error sending email:', emailError);
+      res.status(200).json({ 
+        message: 'Message received successfully. We will get back to you soon.'
+      });
+    }
+  } catch (err) {
+    console.error('Error processing contact form:', err);
+    console.error('Error details:', {
+      name: err.name,
+      message: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({
+      error: 'Failed to send message. Please try again.',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
 });
 
 // Serve React app for all other routes
