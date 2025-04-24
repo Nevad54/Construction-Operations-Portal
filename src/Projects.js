@@ -1,5 +1,11 @@
   return (
     <div>
+      {loading && (
+        <div className="loading-spinner-container">
+          <div className="loading-spinner"></div>
+          <div className="loading-spinner-text">Loading Projects...</div>
+        </div>
+      )}
       <Sidebar
         isSidebarActive={isSidebarActive}
         setIsSidebarActive={setIsSidebarActive}
