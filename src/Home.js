@@ -101,9 +101,10 @@ const Home = () => {
             onError={onImageError}
           />
           {!isLoaded && <div className="placeholder-image" />}
+          <div className="category-overlay">
+            <span>{title}</span>
+          </div>
         </div>
-        <h3>{title}</h3>
-        <p>{description}</p>
       </div>
     );
   };

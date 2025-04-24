@@ -447,7 +447,13 @@ header .container {
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
-.category-card img {
+.project-category {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.project-category img {
     width: 100%;
     height: 200px;
     object-fit: cover;
@@ -455,7 +461,7 @@ header .container {
     transition: transform 0.5s ease;
 }
 
-.category-item:hover img {
+.project-category:hover img {
     transform: scale(1.05);
 }
 
