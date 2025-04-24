@@ -106,7 +106,7 @@ app.use(session({
 
 // Global OPTIONS handler for all routes
 app.options('*', cors({
-    origin: true, // Allow all origins for now
+    origin: 'https://mastertech-frontend-yqjb.onrender.com',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -120,7 +120,7 @@ app.get('/', (req, res) => {
 
 // CAPTCHA Route
 app.options('/api/captcha', cors({
-    origin: true, // Allow all origins for now
+    origin: 'https://mastertech-frontend-yqjb.onrender.com',
     credentials: true,
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -269,19 +269,19 @@ app.get('/api/projects', async (req, res) => {
 
 // Projects Routes
 app.options('/api/projects', cors({
-    origin: true, // Allow all origins for now
+    origin: 'https://mastertech-frontend-yqjb.onrender.com',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 })); // Add OPTIONS handler for projects
 app.options('/api/projects/bulk-delete', cors({
-    origin: true, // Allow all origins for now
+    origin: 'https://mastertech-frontend-yqjb.onrender.com',
     credentials: true,
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 })); // Add OPTIONS handler for bulk delete
 app.options('/api/projects/:id', cors({
-    origin: true, // Allow all origins for now
+    origin: 'https://mastertech-frontend-yqjb.onrender.com',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
