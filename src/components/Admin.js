@@ -114,19 +114,27 @@ const Admin = () => {
             const formDataObj = Object.fromEntries(formDataToSend);
             console.log('Updating project with data:', formDataObj);
             
+            // First, update the project
             const response = await updateProject(editingProject._id, formDataToSend);
             console.log('Project updated successfully:', response);
 
-            // Refresh the projects list after update
+            // Then, refresh the projects list
             await refreshProjects();
-            
-            // Verify the update by checking the projects list
-            const updatedProject = projects.find(p => p._id === editingProject._id);
-            console.log('Verified updated project:', updatedProject);
+
+            // Get the updated project from the response
+            const updatedProject = response;
+            console.log('Updated project from response:', updatedProject);
 
             if (!updatedProject) {
-                throw new Error('Failed to verify project update');
+                throw new Error('Failed to get updated project data');
             }
+
+            // Update the local state with the new data
+            setProjects(prevProjects => 
+                prevProjects.map(project => 
+                    project._id === editingProject._id ? updatedProject : project
+                )
+            );
             
             setShowModal(false);
             setEditingProject(null);
