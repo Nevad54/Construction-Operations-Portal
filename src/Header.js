@@ -1,9 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 import './styles.css';
 
 const Header = ({ isSidebarActive, setIsSidebarActive, isNavLinksActive, setIsNavLinksActive, activePage }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Initialize AOS
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      once: true,
+      offset: 100,
+      easing: 'ease-in-out'
+    });
+  }, []);
 
   const toggleSidebar = () => {
     setIsSidebarActive(!isSidebarActive);
@@ -26,16 +38,16 @@ const Header = ({ isSidebarActive, setIsSidebarActive, isNavLinksActive, setIsNa
   };
 
   return (
-    <header role="banner">
+    <header role="banner" data-aos="fade-down">
       <div className="container">
         <div className="hamburger" onClick={toggleSidebar} aria-label="Toggle navigation">
           <i className="fas fa-bars"></i>
         </div>
-        <Link to="/" className="logo-link">
+        <Link to="/" className="logo-link" data-aos="fade-right" data-aos-delay="100">
           <img src="/Uploads/logo.png" alt="MASTERTECH INTERGROUPPE INC. Logo" className="logo" loading="lazy" />
         </Link>
         <nav aria-label="Main menu">
-          <ul className={`nav-links ${isNavLinksActive ? 'active' : ''}`}>
+          <ul className={`nav-links ${isNavLinksActive ? 'active' : ''}`} data-aos="fade-left" data-aos-delay="200">
             <li className={activePage === 'home' ? 'active' : ''}>
               <Link to="/" onClick={() => setIsNavLinksActive(false)}>
                 <i className="fas fa-home"></i> Home
