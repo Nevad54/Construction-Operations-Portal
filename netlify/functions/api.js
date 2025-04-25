@@ -90,17 +90,56 @@ exports.handler = async (event, context) => {
     headers: event.headers
   });
 
+  // Create a new request object
+  const request = {
+    ...event,
+    path: event.path.replace('/.netlify/functions/api', ''),
+    headers: {
+      ...event.headers,
+      'content-type': 'application/json'
+    }
+  };
+
   try {
-    const response = await app(event, context);
-    console.log('Response:', {
-      statusCode: response.statusCode,
-      headers: response.headers
+    // Create a promise to handle the response
+    return new Promise((resolve, reject) => {
+      // Create a mock response object
+      const response = {
+        statusCode: 200,
+        headers: {},
+        body: '',
+        setHeader: (key, value) => {
+          response.headers[key.toLowerCase()] = value;
+        },
+        end: (body) => {
+          response.body = body;
+          resolve({
+            statusCode: response.statusCode,
+            headers: response.headers,
+            body: response.body
+          });
+        },
+        json: (data) => {
+          response.setHeader('content-type', 'application/json');
+          response.end(JSON.stringify(data));
+        }
+      };
+
+      // Handle the request
+      app(request, response, (err) => {
+        if (err) {
+          console.error('Error handling request:', err);
+          reject(err);
+        }
+      });
     });
-    return response;
   } catch (error) {
     console.error('Error handling request:', error);
     return {
       statusCode: 500,
+      headers: {
+        'content-type': 'application/json'
+      },
       body: JSON.stringify({ error: 'Internal Server Error' })
     };
   }
