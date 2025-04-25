@@ -18,6 +18,7 @@ const Projects = () => {
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
   const [exitingProject, setExitingProject] = useState(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     loadProjects();
@@ -68,7 +69,11 @@ const Projects = () => {
   const ongoingProjects = filteredProjects.filter(p => p.status === 'ongoing');
   const completedProjects = filteredProjects.filter(p => p.status === 'completed');
 
-  const handleProjectClick = (project) => {
+  const handleProjectClick = (project, event) => {
+    setClickPosition({
+      x: event.clientX,
+      y: event.clientY
+    });
     setSelectedProject(project);
   };
 
@@ -150,7 +155,7 @@ const Projects = () => {
                 <div
                   key={project._id}
                   className={`project-card hover-lift animate-scale-in stagger-${(index % 5) + 1}`}
-                  onClick={() => handleProjectClick(project)}
+                  onClick={(e) => handleProjectClick(project, e)}
                 >
                   {project.image && (
                     <img 
@@ -179,7 +184,7 @@ const Projects = () => {
                 <div
                   key={project._id}
                   className={`project-card hover-lift animate-scale-in stagger-${(index % 5) + 1}`}
-                  onClick={() => handleProjectClick(project)}
+                  onClick={(e) => handleProjectClick(project, e)}
                 >
                   {project.image && (
                     <img 
@@ -201,7 +206,13 @@ const Projects = () => {
 
         {selectedProject && (
           <div className="project-modal animate-fade-in">
-            <div className="modal-content animate-scale-in">
+            <div 
+              className="modal-content animate-scale-in"
+              style={{
+                left: `${clickPosition.x}px`,
+                top: `${clickPosition.y}px`
+              }}
+            >
               <div className="modal-header">
                 <h2>{selectedProject.title}</h2>
                 <button
