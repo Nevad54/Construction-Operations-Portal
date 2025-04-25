@@ -2,14 +2,14 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { ProjectProvider } from './context/ProjectContext';
-import Home from './components/Home';
-import About from './components/About';
-import Services from './components/Services';
+import Home from './Home';
+import About from './About';
+import Services from './Services';
 import VisionMission from './VisionMission';
 import CoreValues from './CoreValues';
 import Safety from './Safety';
 import Projects from './components/Projects';
-import Contact from './components/Contact';
+import Contact from './Contact';
 import Admin from './components/Admin';
 import './App.css';
 
