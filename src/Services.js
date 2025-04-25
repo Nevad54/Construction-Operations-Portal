@@ -16,22 +16,25 @@ const Services = () => {
   // Determine activePage based on the current URL
   const getActivePage = () => {
     const path = location.pathname;
+    console.log('Current path:', path);
     if (path === '/') return 'home';
-    if (path === '/about') return 'about';
-    if (path === '/services') return 'services';
-    if (path === '/vision-mission') return 'vision-mission';
-    if (path === '/core-values') return 'core-values';
-    if (path === '/safety') return 'safety';
-    if (path === '/projects') return 'projects';
-    if (path === '/contact') return 'contact';
-    return 'home';
+    if (path === '/pages/about') return 'about';
+    if (path === '/pages/services') return 'services';
+    if (path === '/pages/vision-mission') return 'vision-mission';
+    if (path === '/pages/core-values') return 'core-values';
+    if (path === '/pages/safety') return 'safety';
+    if (path === '/pages/projects') return 'projects';
+    if (path === '/pages/contact') return 'contact';
+    return 'home'; // Default to 'home' if no match
   };
 
   const [activePage, setActivePage] = useState(getActivePage());
 
   // Update activePage when the route changes
   useEffect(() => {
-    setActivePage(getActivePage());
+    const newActivePage = getActivePage();
+    console.log('Updating activePage to:', newActivePage);
+    setActivePage(newActivePage);
   }, [location.pathname]);
 
   // Close sidebar on outside click for small screens
@@ -86,29 +89,25 @@ const Services = () => {
   // Services data
   const services = [
     {
-      title: 'Structural, Civil, and Architectural Works',
-      description: 'Comprehensive construction services for buildings and infrastructure projects.'
+      title: 'General Contracting',
+      description:
+        'Comprehensive project management from start to finish.',
     },
     {
-      title: 'MEPS Works',
-      description: 'Mechanical, Electrical, Plumbing, and Fire Protection systems installation and maintenance.'
+      title: 'Design-Build',
+      description:
+        'Integrated design and construction services for seamless delivery.',
     },
     {
-      title: 'Fabrication & Industrial Plant Projects',
-      description: 'Specialized in Clean Room & Painting Processes Improvements, including Automation.'
+      title: 'Renovations',
+      description:
+        'Modernizing and upgrading existing structures.',
     },
     {
-      title: 'Maintenance Services',
-      description: 'Expert maintenance services for manufacturing plants and industrial facilities.'
+      title: 'Consulting',
+      description:
+        'Expert advice on project planning and execution.',
     },
-    {
-      title: 'Manpower and Technical Support',
-      description: 'Professional technical support and skilled manpower for manufacturing plants.'
-    },
-    {
-      title: 'Industrial Materials Supply',
-      description: 'Supply of high-quality industrial materials and equipment for various applications.'
-    }
   ];
 
   return (
@@ -154,11 +153,7 @@ const Services = () => {
         {/* Footer Info Section */}
         <section className="footer-info" role="contentinfo">
           <div className="container">
-            <div 
-              className="footer-item"
-              data-aos="fade-up"
-              data-aos-delay="100"
-            >
+            <div className="footer-item" data-aos="fade-up" data-aos-delay="100">
               <h2>Send Us a Message</h2>
               <p>
                 If you have any questions or need a quote, feel free to contact
@@ -172,11 +167,7 @@ const Services = () => {
                 Email Us
               </a>
             </div>
-            <div 
-              className="footer-item"
-              data-aos="fade-up"
-              data-aos-delay="200"
-            >
+            <div className="footer-item" data-aos="fade-up" data-aos-delay="200">
               <h2>Our Location</h2>
               <p>
                 <i className="fas fa-map-marker-alt"></i> 320 Sta Rosa Tagaytay
@@ -195,11 +186,7 @@ const Services = () => {
                 ></iframe>
               </div>
             </div>
-            <div 
-              className="footer-item"
-              data-aos="fade-up"
-              data-aos-delay="300"
-            >
+            <div className="footer-item" data-aos="fade-up" data-aos-delay="300">
               <h2>Certifications</h2>
               <img
                 src="/Uploads/certification1.jpg"
