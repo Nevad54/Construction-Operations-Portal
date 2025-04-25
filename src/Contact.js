@@ -5,8 +5,20 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
 import './styles.css';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 const Contact = () => {
+  // Initialize AOS
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      once: true,
+      offset: 100,
+      easing: 'ease-in-out'
+    });
+  }, []);
+
   console.log('Contact component rendering');
   // Update API URL to point to the backend service
   const API_BASE_URL = 'https://mastertech-app.onrender.com';
