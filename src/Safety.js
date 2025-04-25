@@ -76,16 +76,20 @@ const Safety = () => {
         isSidebarActive={isSidebarActive}
         setIsSidebarActive={setIsSidebarActive}
         isNavLinksActive={isNavLinksActive}
-        setIsNavLinksActive={setIsNavLinksActive}
+        setIsNavLinksActive={setIsNavLinksActive} // Fixed typo
         activePage={activePage}
       />
       <section className="safety" role="main">
         <div className="container">
-          <h1 className="fade-in">Safety First</h1>
+          <h1>Safety</h1>
           <div className="safety-content fade-in">
-            <p>
-              At MASTERTECH INTERGROUPPE INC., safety is our top priority. We are committed to maintaining the highest standards of safety in all our operations.
-            </p>
+            <p>At MASTERTECH INTERGROUPPE INC., safety is our top priority. We adhere to strict safety protocols to protect our team, clients, and the communities we serve.</p>
+            <p>Our comprehensive safety programs include regular training, risk assessments, and compliance with all industry standards. We are proud to maintain an exemplary safety record across all our projects.</p>
+          </div>
+          <div className="safety-certifications fade-in">
+            <h2>Our Safety Certifications</h2>
+            <img src="/Uploads/certification1.jpg" alt="ISO 9001 Certification" className="certification" loading="lazy" />
+            <img src="/Uploads/certification2.jpg" alt="Safety Compliance Certification" className="certification" loading="lazy" />
           </div>
         </div>
       </section>
