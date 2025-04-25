@@ -21,7 +21,7 @@ const Contact = () => {
 
   console.log('Contact component rendering');
   // Update API URL to point to the backend service
-  const API_BASE_URL = 'https://mastertech-app.onrender.com';
+  const API_BASE_URL = 'https://mastertech3.netlify.app';
   const IMAGE_BASE_URL = API_BASE_URL;
   // Use environment variable for reCAPTCHA site key with fallback
   const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa';
@@ -198,17 +198,12 @@ const Contact = () => {
 
     try {
       setIsSubmitting(true);
-      console.log('Submitting form with data:', {
-        ...formData,
-        recaptchaToken: recaptchaToken ? recaptchaToken.substring(0, 10) + '...' : 'No token'
-      });
       
       const response = await fetch(`${API_BASE_URL}/api/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           ...formData,
           recaptchaToken
@@ -216,7 +211,6 @@ const Contact = () => {
       });
 
       const data = await response.json();
-      console.log('Response from server:', data);
 
       if (!response.ok) {
         if (response.status === 429) {
@@ -229,7 +223,6 @@ const Contact = () => {
           return;
         }
         
-        // Handle reCAPTCHA verification failure
         if (response.status === 400 && data.error && data.error.includes('reCAPTCHA')) {
           setErrors(prev => ({
             ...prev,

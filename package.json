@@ -8,9 +8,8 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^14.1.2",
-    "@testing-library/user-event": "^14.5.2",
-    "aos": "^2.3.4",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^13.5.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
@@ -19,15 +18,12 @@
     "framer-motion": "^12.9.1",
     "mongoose": "^8.0.3",
     "multer": "^1.4.5-lts.1",
-    "node-notifier": "^10.0.1",
     "nodemailer": "^6.9.7",
-    "nth-check": "^2.1.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "react-google-recaptcha": "^3.1.0",
-    "react-router-dom": "^7.5.2",
+    "react-router-dom": "^7.5.0",
     "request-ip": "^3.3.0",
-    "tough-cookie": "^5.1.2",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -59,9 +55,7 @@
   "devDependencies": {
     "concurrently": "^8.2.2",
     "nodemon": "^3.0.2",
-    "postcss": "^8.5.3",
-    "react-scripts": "^5.0.1",
-    "svgo": "^3.3.2"
+    "react-scripts": "^5.0.1"
   },
   "proxy": "http://localhost:3002"
 }
