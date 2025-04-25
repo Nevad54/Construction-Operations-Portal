@@ -157,7 +157,106 @@ const Projects = () => {
   }
 
   return (
-    <div className="animate-fade-in">
+    <div className="projects-page">
+      <section className="projects-hero">
+        <div className="hero-content" data-aos="fade-up">
+          <h1>Our Projects</h1>
+          <p>Discover Our Engineering Excellence</p>
+        </div>
+      </section>
+
+      <section className="projects-filter">
+        <div className="container" data-aos="fade-up">
+          <div className="filter-options">
+            <button className="filter-btn active" data-aos="fade-up" data-aos-delay="100">All Projects</button>
+            <button className="filter-btn" data-aos="fade-up" data-aos-delay="200">Engineering</button>
+            <button className="filter-btn" data-aos="fade-up" data-aos-delay="300">Construction</button>
+            <button className="filter-btn" data-aos="fade-up" data-aos-delay="400">Consulting</button>
+          </div>
+        </div>
+      </section>
+
+      <section className="projects-gallery">
+        <div className="container">
+          <div className="projects-grid">
+            <div className="project-card" data-aos="zoom-in" data-aos-delay="100">
+              <div className="project-image">
+                <img src="/images/projects/project1.jpg" alt="Project 1" loading="lazy" />
+              </div>
+              <div className="project-info">
+                <h3>Industrial Complex</h3>
+                <p>Engineering & Construction</p>
+                <a href="/projects/1" className="btn">View Details</a>
+              </div>
+            </div>
+
+            <div className="project-card" data-aos="zoom-in" data-aos-delay="200">
+              <div className="project-image">
+                <img src="/images/projects/project2.jpg" alt="Project 2" loading="lazy" />
+              </div>
+              <div className="project-info">
+                <h3>Commercial Building</h3>
+                <p>Construction & Design</p>
+                <a href="/projects/2" className="btn">View Details</a>
+              </div>
+            </div>
+
+            <div className="project-card" data-aos="zoom-in" data-aos-delay="300">
+              <div className="project-image">
+                <img src="/images/projects/project3.jpg" alt="Project 3" loading="lazy" />
+              </div>
+              <div className="project-info">
+                <h3>Infrastructure Project</h3>
+                <p>Engineering & Consulting</p>
+                <a href="/projects/3" className="btn">View Details</a>
+              </div>
+            </div>
+
+            <div className="project-card" data-aos="zoom-in" data-aos-delay="400">
+              <div className="project-image">
+                <img src="/images/projects/project4.jpg" alt="Project 4" loading="lazy" />
+              </div>
+              <div className="project-info">
+                <h3>Residential Complex</h3>
+                <p>Construction & Engineering</p>
+                <a href="/projects/4" className="btn">View Details</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="project-stats">
+        <div className="container">
+          <div className="stats-grid">
+            <div className="stat-item" data-aos="fade-up" data-aos-delay="100">
+              <h3>200+</h3>
+              <p>Projects Completed</p>
+            </div>
+            <div className="stat-item" data-aos="fade-up" data-aos-delay="200">
+              <h3>50+</h3>
+              <p>Happy Clients</p>
+            </div>
+            <div className="stat-item" data-aos="fade-up" data-aos-delay="300">
+              <h3>15+</h3>
+              <p>Years Experience</p>
+            </div>
+            <div className="stat-item" data-aos="fade-up" data-aos-delay="400">
+              <h3>100%</h3>
+              <p>Success Rate</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="cta-section">
+        <div className="container" data-aos="fade-up">
+          <h2>Ready to Start Your Project?</h2>
+          <p>Contact us today for a consultation</p>
+          <a href="/contact" className="btn">Get in Touch</a>
+        </div>
+      </section>
+
       <Sidebar
         isSidebarActive={isSidebarActive}
         setIsSidebarActive={setIsSidebarActive}
