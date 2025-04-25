@@ -120,21 +120,23 @@ const Services = () => {
 
         <section className="services">
           <div className="container">
-            <h1 data-aos="fade-up">Our Services</h1>
+            <h1 data-aos="fade-up" data-aos-duration="1000">Our Services</h1>
             <div className="services-grid">
               {services.map((service, index) => (
                 <div 
                   key={index} 
                   className="service-card"
-                  data-aos="fade-up"
-                  data-aos-delay={index * 100}
+                  data-aos="zoom-in"
+                  data-aos-duration="800"
+                  data-aos-delay={index * 150}
+                  data-aos-easing="ease-out-cubic"
                 >
-                  <div className="service-icon">
+                  <div className="service-icon" data-aos="flip-left" data-aos-delay={index * 150 + 200}>
                     <FontAwesomeIcon icon={service.icon} />
                   </div>
-                  <h3>{service.title}</h3>
-                  <p>{service.description}</p>
-                  <a href="/contact" className="btn">Learn More</a>
+                  <h3 data-aos="fade-up" data-aos-delay={index * 150 + 300}>{service.title}</h3>
+                  <p data-aos="fade-up" data-aos-delay={index * 150 + 400}>{service.description}</p>
+                  <a href="/contact" className="btn" data-aos="fade-up" data-aos-delay={index * 150 + 500}>Learn More</a>
                 </div>
               ))}
             </div>
@@ -144,12 +146,12 @@ const Services = () => {
         {/* Footer Info Section */}
         <section className="footer-info">
           <div className="container">
-            <div className="footer-item" data-aos="fade-right">
+            <div className="footer-item" data-aos="fade-right" data-aos-duration="1000" data-aos-easing="ease-out-cubic">
               <h2>Send Us a Message</h2>
               <p>If you have any questions or need a quote, feel free to contact us!</p>
               <a href="/contact" className="btn">Contact Us</a>
             </div>
-            <div className="footer-item" data-aos="fade-up">
+            <div className="footer-item" data-aos="fade-up" data-aos-duration="1000" data-aos-easing="ease-out-cubic">
               <h2>Our Location</h2>
               <p><FontAwesomeIcon icon={faMapMarkerAlt} /> 320 Sta Rosa Tagaytay Road Purok 4 Brgy. Pasong Langka, Silang Cavite 4118</p>
               <div className="map-container">
@@ -164,7 +166,7 @@ const Services = () => {
                 ></iframe>
               </div>
             </div>
-            <div className="footer-item" data-aos="fade-left">
+            <div className="footer-item" data-aos="fade-left" data-aos-duration="1000" data-aos-easing="ease-out-cubic">
               <h2>Certifications</h2>
               <div 
                 className="certification" 
