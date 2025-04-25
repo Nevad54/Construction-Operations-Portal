@@ -18,12 +18,15 @@ const corsOptions = {
     'http://localhost:3000'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
 
 // Middleware
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Enable preflight requests for all routes
 app.use(express.json());
 app.use(requestIp.mw());
 
@@ -34,7 +37,8 @@ app.use(session({
   saveUninitialized: true,
   cookie: { 
     secure: true,
-    sameSite: 'none'
+    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
 
@@ -121,5 +125,17 @@ app.use('/.netlify/functions/api', router);
 const handler = app;
 
 exports.handler = async (event, context) => {
-  return handler(event, context);
+  // Add CORS headers to the response
+  const response = await handler(event, context);
+  
+  if (!response.headers) {
+    response.headers = {};
+  }
+  
+  response.headers['Access-Control-Allow-Origin'] = 'https://mastertech2.netlify.app';
+  response.headers['Access-Control-Allow-Credentials'] = 'true';
+  response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+  response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept';
+  
+  return response;
 }; 
