@@ -122,20 +122,57 @@ router.get('/admin/projects', adminAuth, async (req, res) => {
 app.use('/.netlify/functions/api', router);
 
 // Export the handler for Netlify Functions
-const handler = app;
-
 exports.handler = async (event, context) => {
-  // Add CORS headers to the response
-  const response = await handler(event, context);
-  
-  if (!response.headers) {
-    response.headers = {};
+  // Create a new request object
+  const request = {
+    ...event,
+    headers: {
+      ...event.headers,
+      'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept'
+    }
+  };
+
+  // Handle preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers: {
+        'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept'
+      }
+    };
   }
-  
-  response.headers['Access-Control-Allow-Origin'] = 'https://mastertech2.netlify.app';
-  response.headers['Access-Control-Allow-Credentials'] = 'true';
-  response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
-  response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept';
-  
-  return response;
+
+  try {
+    const response = await app(request, context);
+    
+    // Add CORS headers to the response
+    return {
+      ...response,
+      headers: {
+        ...response.headers,
+        'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept'
+      }
+    };
+  } catch (error) {
+    console.error('Error handling request:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept'
+      },
+      body: JSON.stringify({ error: 'Internal Server Error' })
+    };
+  }
 }; 
