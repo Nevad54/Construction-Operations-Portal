@@ -24,6 +24,39 @@ const CoreValues = () => {
     });
   }, []);
 
+  // Add Organization Schema
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Mastertech Intergrouppe Inc.",
+      "url": "https://mastertech-app.vercel.app",
+      "description": "Leading construction and engineering company in Silang Cavite, Philippines",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Sta Rosa Tagaytay Road Purok 4",
+        "addressLocality": "Brgy. Pasong Langka",
+        "addressRegion": "Silang",
+        "postalCode": "4118",
+        "addressCountry": "PH"
+      },
+      "coreValues": [
+        "Quality Excellence",
+        "Safety First",
+        "Customer Satisfaction",
+        "Innovation",
+        "Teamwork",
+        "Integrity"
+      ]
+    });
+    document.head.appendChild(script);
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
+
   const getActivePage = () => {
     const path = location.pathname;
     console.log('Current path:', path); // Debug log
@@ -92,36 +125,45 @@ const CoreValues = () => {
         setIsNavLinksActive={setIsNavLinksActive}
         activePage={activePage}
       />
-      <section className="core-values" role="main">
-        <div className="container">
-          <h1 data-aos="fade-up">Our Core Values</h1>
-          <div className="values-list">
-            <div className="value-item" data-aos="fade-up" data-aos-delay="100">
-              <h2>Integrity</h2>
-              <p>We uphold the highest standards of honesty and ethics in all our dealings.</p>
-            </div>
-            <div className="value-item" data-aos="fade-up" data-aos-delay="200">
-              <h2>Excellence</h2>
-              <p>We strive for perfection in every project, delivering superior quality and craftsmanship.</p>
-            </div>
-            <div className="value-item" data-aos="fade-up" data-aos-delay="300">
-              <h2>Safety</h2>
-              <p>We prioritize the safety of our team, clients, and communities in every endeavor.</p>
-            </div>
-            <div className="value-item" data-aos="fade-up" data-aos-delay="400">
-              <h2>Sustainability</h2>
-              <p>We are committed to environmentally responsible practices that benefit future generations.</p>
+      <main>
+        <section className="core-values" role="main">
+          <div className="container">
+            <h1>Our Core Values at Mastertech Intergrouppe Inc.</h1>
+            <div className="values-grid">
+              <div className="value-card">
+                <h2>Quality Excellence</h2>
+                <p>We are committed to delivering the highest quality in every project we undertake in Silang Cavite and beyond.</p>
+              </div>
+              <div className="value-card">
+                <h2>Safety First</h2>
+                <p>Safety is our top priority in all construction and engineering operations.</p>
+              </div>
+              <div className="value-card">
+                <h2>Customer Satisfaction</h2>
+                <p>We strive to exceed our clients' expectations through exceptional service and results.</p>
+              </div>
+              <div className="value-card">
+                <h2>Innovation</h2>
+                <p>We embrace new technologies and methods to improve our construction processes.</p>
+              </div>
+              <div className="value-card">
+                <h2>Teamwork</h2>
+                <p>We believe in the power of collaboration to achieve outstanding results.</p>
+              </div>
+              <div className="value-card">
+                <h2>Integrity</h2>
+                <p>We conduct our business with honesty, transparency, and ethical practices.</p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
       <Footer />
       <button
         id="backToTop"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         aria-label="Back to top"
         style={{ display: showBackToTop ? 'block' : 'none' }}
-        data-aos="fade-up"
       >
         ↑
       </button>
