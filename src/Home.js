@@ -66,7 +66,7 @@ const Home = () => {
   };
 
   const handleScroll = () => {
-    setShowBackToTop(window.scrollY > 300);
+    setShowBackToTop(window.scrollY > 200);
   };
 
   useEffect(() => {
@@ -82,7 +82,7 @@ const Home = () => {
   }, [isSidebarActive]);
 
   return (
-    <div className="home">
+    <div>
       <Sidebar
         isSidebarActive={isSidebarActive}
         setIsSidebarActive={setIsSidebarActive}
@@ -115,11 +115,24 @@ const Home = () => {
       </section>
       <section className="project-categories" role="main">
         <div className="container">
-          <h2>Our Project Categories</h2>
+          <h2>Our Expertise</h2>
           <div className="categories-grid">
             <Link
+              to="/projects#industrial"
+              className="category-card fade-in"
+            >
+              <img
+                src={`${IMAGE_BASE_URL}/uploads/industrial.jpg`}
+                alt="Industrial Projects"
+                loading="lazy"
+              />
+              <div className="category-overlay">
+                <span>Industrial</span>
+              </div>
+            </Link>
+            <Link
               to="/projects#residential"
-              className="category-card"
+              className="category-card fade-in"
             >
               <img
                 src={`${IMAGE_BASE_URL}/uploads/residential.jpg`}
@@ -132,7 +145,7 @@ const Home = () => {
             </Link>
             <Link
               to="/projects#commercial"
-              className="category-card"
+              className="category-card fade-in"
             >
               <img
                 src={`${IMAGE_BASE_URL}/uploads/commercial.jpg`}
@@ -145,7 +158,7 @@ const Home = () => {
             </Link>
             <Link
               to="/projects#renovation"
-              className="category-card"
+              className="category-card fade-in"
             >
               <img
                 src={`${IMAGE_BASE_URL}/uploads/renovation.jpg`}
