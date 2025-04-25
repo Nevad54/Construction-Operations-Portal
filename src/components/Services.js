@@ -26,13 +26,15 @@ import './Services.css';
 const Services = () => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
-  // Initialize AOS
+  // Initialize AOS with enhanced settings
   useEffect(() => {
     AOS.init({
-      duration: 800,
-      once: true,
-      offset: 100,
-      easing: 'ease-in-out'
+      duration: 1000,
+      once: false,
+      offset: 50,
+      easing: 'ease-out-cubic',
+      mirror: true,
+      anchorPlacement: 'top-bottom'
     });
   }, []);
 
@@ -120,23 +122,55 @@ const Services = () => {
 
         <section className="services">
           <div className="container">
-            <h1 data-aos="fade-up" data-aos-duration="1000">Our Services</h1>
+            <h1 
+              data-aos="fade-down"
+              data-aos-duration="1000"
+              data-aos-easing="ease-out-cubic"
+            >
+              Our Services
+            </h1>
             <div className="services-grid">
               {services.map((service, index) => (
                 <div 
                   key={index} 
                   className="service-card"
-                  data-aos="zoom-in"
+                  data-aos="fade-up"
                   data-aos-duration="800"
-                  data-aos-delay={index * 150}
+                  data-aos-delay={index * 200}
                   data-aos-easing="ease-out-cubic"
+                  data-aos-anchor-placement="top-bottom"
                 >
-                  <div className="service-icon" data-aos="flip-left" data-aos-delay={index * 150 + 200}>
+                  <div 
+                    className="service-icon"
+                    data-aos="zoom-in"
+                    data-aos-duration="600"
+                    data-aos-delay={index * 200 + 300}
+                  >
                     <FontAwesomeIcon icon={service.icon} />
                   </div>
-                  <h3 data-aos="fade-up" data-aos-delay={index * 150 + 300}>{service.title}</h3>
-                  <p data-aos="fade-up" data-aos-delay={index * 150 + 400}>{service.description}</p>
-                  <a href="/contact" className="btn" data-aos="fade-up" data-aos-delay={index * 150 + 500}>Learn More</a>
+                  <h3 
+                    data-aos="fade-up"
+                    data-aos-duration="600"
+                    data-aos-delay={index * 200 + 400}
+                  >
+                    {service.title}
+                  </h3>
+                  <p 
+                    data-aos="fade-up"
+                    data-aos-duration="600"
+                    data-aos-delay={index * 200 + 500}
+                  >
+                    {service.description}
+                  </p>
+                  <a 
+                    href="/contact" 
+                    className="btn"
+                    data-aos="fade-up"
+                    data-aos-duration="600"
+                    data-aos-delay={index * 200 + 600}
+                  >
+                    Learn More
+                  </a>
                 </div>
               ))}
             </div>
@@ -146,12 +180,24 @@ const Services = () => {
         {/* Footer Info Section */}
         <section className="footer-info">
           <div className="container">
-            <div className="footer-item" data-aos="fade-right" data-aos-duration="1000" data-aos-easing="ease-out-cubic">
+            <div 
+              className="footer-item" 
+              data-aos="fade-right"
+              data-aos-duration="1000"
+              data-aos-easing="ease-out-cubic"
+              data-aos-anchor-placement="top-bottom"
+            >
               <h2>Send Us a Message</h2>
               <p>If you have any questions or need a quote, feel free to contact us!</p>
               <a href="/contact" className="btn">Contact Us</a>
             </div>
-            <div className="footer-item" data-aos="fade-up" data-aos-duration="1000" data-aos-easing="ease-out-cubic">
+            <div 
+              className="footer-item" 
+              data-aos="fade-up"
+              data-aos-duration="1000"
+              data-aos-easing="ease-out-cubic"
+              data-aos-anchor-placement="top-bottom"
+            >
               <h2>Our Location</h2>
               <p><FontAwesomeIcon icon={faMapMarkerAlt} /> 320 Sta Rosa Tagaytay Road Purok 4 Brgy. Pasong Langka, Silang Cavite 4118</p>
               <div className="map-container">
@@ -166,7 +212,13 @@ const Services = () => {
                 ></iframe>
               </div>
             </div>
-            <div className="footer-item" data-aos="fade-left" data-aos-duration="1000" data-aos-easing="ease-out-cubic">
+            <div 
+              className="footer-item" 
+              data-aos="fade-left"
+              data-aos-duration="1000"
+              data-aos-easing="ease-out-cubic"
+              data-aos-anchor-placement="top-bottom"
+            >
               <h2>Certifications</h2>
               <div 
                 className="certification" 
