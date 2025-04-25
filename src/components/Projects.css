@@ -26,11 +26,11 @@
 @keyframes modalFadeIn {
   from {
     opacity: 0;
-    transform: translate(-50%, -45%);
+    transform: scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%);
+    transform: scale(1);
   }
 }
 
@@ -417,13 +417,12 @@ header {
 /* Modal */
 .project-modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0; /* shorthand for top: 0, right: 0, bottom: 0, left: 0 */
   background-color: rgba(0, 0, 0, 0.7);
   z-index: 1000;
-  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .modal-content {
@@ -433,10 +432,8 @@ header {
   max-width: 800px;
   max-height: 90vh;
   overflow-y: auto;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: relative;
+  margin: 20px;
   animation: modalFadeIn 0.3s ease-out;
   box-shadow: var(--shadow-xl);
 }
