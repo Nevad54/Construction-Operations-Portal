@@ -65,50 +65,19 @@ const Safety = () => {
   }, [isSidebarActive]);
 
   return (
-    <div>
-      <Sidebar
-        isSidebarActive={isSidebarActive}
-        setIsSidebarActive={setIsSidebarActive}
-        setIsNavLinksActive={setIsNavLinksActive}
-        activePage={activePage}
-      />
-      <Header
-        isSidebarActive={isSidebarActive}
-        setIsSidebarActive={setIsSidebarActive}
-        isNavLinksActive={isNavLinksActive}
-        setIsNavLinksActive={setIsNavLinksActive} // Fixed typo
-        activePage={activePage}
-      />
-      <section className="safety" role="main">
-        <div className="container">
-          <h1>Commitment to Safety</h1>
-          <div className="safety-content fade-in">
-            <p>
-              The management of Mastertech Intergrouppe Inc. (MTI, Mastertech) holds the highest regard for the health and safety of all employees, subcontractors, partners, and the general public. MTI is equally committed to environmental protection and will not compromise on this principle.
-            </p>
-            <p>
-              Therefore, it is Mastertech's fundamental responsibility to exercise due diligence and take all necessary precautions to prevent accidents and unsafe practices that could endanger employees, the public, the environment, or property. To uphold this commitment, the company will actively and continuously develop Safety, Health, and Environmental (SHE) standards aligned with its methodologies.
-            </p>
-            <p>
-              MTI will also ensure the employment of qualified safety personnel with the necessary authority and responsibility to implement and uphold these objectives. Furthermore, the company recognizes that an effective health and safety program significantly enhances operational efficiency.
-            </p>
-          </div>
-          <div className="safety-certifications fade-in">
-            <h2>Our Safety Certifications</h2>
-            <img src="/Uploads/certification1.jpg" alt="ISO 9001 Certification" className="certification" loading="lazy" />
-            <img src="/Uploads/certification2.jpg" alt="Safety Compliance Certification" className="certification" loading="lazy" />
-          </div>
-        </div>
-      </section>
-      <Footer />
-      <button
-        id="backToTop"
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        aria-label="Back to top"
-        style={{ display: showBackToTop ? 'block' : 'none' }}
-      >
-        ↑
-      </button>
+    <div className="safety-container">
+      <h1>Commitment to Safety</h1>
+      <div className="safety-content">
+        <p>
+          The management of Mastertech Intergrouppe Inc. (MTI, Mastertech) holds the highest regard for the health and safety of all employees, subcontractors, partners, and the general public. MTI is equally committed to environmental protection and will not compromise on this principle.
+        </p>
+        <p>
+          Therefore, it is Mastertech's fundamental responsibility to exercise due diligence and take all necessary precautions to prevent accidents and unsafe practices that could endanger employees, the public, the environment, or property. To uphold this commitment, the company will actively and continuously develop Safety, Health, and Environmental (SHE) standards aligned with its methodologies.
+        </p>
+        <p>
+          MTI will also ensure the employment of qualified safety personnel with the necessary authority and responsibility to implement and uphold these objectives. Furthermore, the company recognizes that an effective health and safety program significantly enhances operational efficiency.
+        </p>
+      </div>
     </div>
   );
 };

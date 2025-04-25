@@ -867,16 +867,6 @@ header .container {
     border-radius: 8px;
 }
 
-.certification {
-    width: 120px;
-    margin: 10px;
-    transition: transform 0.3s;
-}
-
-.certification:hover {
-    transform: scale(1.1);
-}
-
 /* Footer */
 footer {
     background: #333;
@@ -1669,4 +1659,10 @@ footer {
 /* Enhanced Modal */
 .modal-content {
   animation: scaleIn 0.3s ease-out;
+}
+
+/* Remove certification styles */
+.certification,
+.safety-certifications {
+  display: none;
 }
