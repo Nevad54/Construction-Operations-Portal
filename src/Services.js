@@ -133,15 +133,10 @@ const Services = () => {
       <main>
         <section className="services" role="main">
           <div className="container">
-            <h1 data-aos="fade-up">Our Services</h1>
+            <h1>Our Services</h1>
             <div className="service-list">
               {services.map((service, index) => (
-                <div 
-                  key={index} 
-                  className="service-item"
-                  data-aos="fade-up"
-                  data-aos-delay={100 + (index * 100)}
-                >
+                <div key={index} className="service-item">
                   <h2>{service.title}</h2>
                   <p>{service.description}</p>
                 </div>
@@ -153,7 +148,7 @@ const Services = () => {
         {/* Footer Info Section */}
         <section className="footer-info" role="contentinfo">
           <div className="container">
-            <div className="footer-item" data-aos="fade-up" data-aos-delay="100">
+            <div className="footer-item">
               <h2>Send Us a Message</h2>
               <p>
                 If you have any questions or need a quote, feel free to contact
@@ -167,7 +162,7 @@ const Services = () => {
                 Email Us
               </a>
             </div>
-            <div className="footer-item" data-aos="fade-up" data-aos-delay="200">
+            <div className="footer-item">
               <h2>Our Location</h2>
               <p>
                 <i className="fas fa-map-marker-alt"></i> 320 Sta Rosa Tagaytay
@@ -186,7 +181,7 @@ const Services = () => {
                 ></iframe>
               </div>
             </div>
-            <div className="footer-item" data-aos="fade-up" data-aos-delay="300">
+            <div className="footer-item">
               <h2>Certifications</h2>
               <img
                 src="/Uploads/certification1.jpg"
@@ -205,7 +200,7 @@ const Services = () => {
         </section>
       </main>
 
-      <Footer />
+    
 
       {/* Back to Top Button */}
       <button
@@ -213,7 +208,6 @@ const Services = () => {
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         aria-label="Back to top"
         style={{ display: showBackToTop ? 'block' : 'none' }}
-        data-aos="fade-up"
       >
         ↑
       </button>
