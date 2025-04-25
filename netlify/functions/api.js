@@ -12,11 +12,7 @@ const router = express.Router();
 
 // CORS configuration
 const corsOptions = {
-  origin: [
-    'https://mastertech2.netlify.app',
-    'https://mastertech3.netlify.app',
-    'http://localhost:3000'
-  ],
+  origin: 'https://mastertech2.netlify.app', // Frontend domain
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   credentials: true,
