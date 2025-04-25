@@ -23,10 +23,9 @@ const Contact = () => {
   // Update API URL to point to the backend service
   const API_BASE_URL = 'https://mastertech-app.onrender.com';
   const IMAGE_BASE_URL = API_BASE_URL;
-  // Hardcode the reCAPTCHA site key for now
-  const RECAPTCHA_SITE_KEY = '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa';
+  // Use environment variable for reCAPTCHA site key with fallback
+  const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa';
   
-  console.log('Using hardcoded reCAPTCHA site key:', RECAPTCHA_SITE_KEY);
   console.log('Using API URL:', API_BASE_URL);
 
   console.log('Environment variables:', {
@@ -121,9 +120,11 @@ const Contact = () => {
   }, [isSidebarActive]);
 
   const handleRecaptchaChange = (token) => {
-    console.log('reCAPTCHA token received:', token ? token.substring(0, 10) + '...' : 'No token');
+    console.log('reCAPTCHA token received');
     if (!token) {
       setErrors(prev => ({ ...prev, captcha: 'reCAPTCHA verification failed. Please try again.' }));
+      setIsRecaptchaVerified(false);
+      setRecaptchaToken('');
       return;
     }
     setRecaptchaToken(token);
@@ -453,34 +454,14 @@ const Contact = () => {
                 </div>
                 
                 <div className="form-group captcha-group" data-aos="fade-up" data-aos-delay="600">
-                  {RECAPTCHA_SITE_KEY ? (
-                    <div 
-                      role="region" 
-                      aria-label="reCAPTCHA verification" 
-                      tabIndex={-1}
-                      className="recaptcha-container"
-                    >
-                      <ReCAPTCHA
-                        ref={recaptchaRef}
-                        sitekey={RECAPTCHA_SITE_KEY}
-                        onChange={handleRecaptchaChange}
-                        onExpired={handleRecaptchaExpired}
-                        onErrored={handleRecaptchaError}
-                        theme="light"
-                        size="normal"
-                        tabIndex={0}
-                        hl="en"
-                        badge="bottomright"
-                        aria-label="reCAPTCHA verification"
-                      />
-                    </div>
-                  ) : (
-                    <div className="error" role="alert">
-                      reCAPTCHA configuration is missing. Please contact the administrator.
-                      <br />
-                      <small>Debug info: {process.env.NODE_ENV} environment</small>
-                    </div>
-                  )}
+                  <ReCAPTCHA
+                    ref={recaptchaRef}
+                    sitekey={RECAPTCHA_SITE_KEY}
+                    onChange={handleRecaptchaChange}
+                    onExpired={handleRecaptchaExpired}
+                    onErrored={handleRecaptchaError}
+                    className="recaptcha-container"
+                  />
                   {errors.captcha && (
                     <div className="error" role="alert">
                       {errors.captcha}
@@ -504,7 +485,7 @@ const Contact = () => {
                 <button 
                   type="submit" 
                   className="btn" 
-                  disabled={isSubmitting || timeUntilReset !== null}
+                  disabled={isSubmitting || timeUntilReset !== null || !isRecaptchaVerified}
                   data-aos="fade-up" 
                   data-aos-delay="800"
                 >
