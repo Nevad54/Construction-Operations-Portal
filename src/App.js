@@ -1,20 +1,34 @@
 import React from 'react';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { ProjectProvider } from './context/ProjectContext';
-import Home from './Home';
-import About from './About';
-import Services from './Services';
+import Home from './components/Home';
+import About from './components/About';
+import Services from './components/Services';
 import VisionMission from './VisionMission';
 import CoreValues from './CoreValues';
 import Safety from './Safety';
 import Projects from './components/Projects';
-import Contact from './Contact';
+import Contact from './components/Contact';
 import Admin from './components/Admin';
+import './App.css';
+
+// Scroll to top component
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
 
 function App() {
   return (
     <ProjectProvider>
       <Router>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
