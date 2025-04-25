@@ -92,10 +92,11 @@ const Projects = () => {
         }
 
         // Ensure modal stays within viewport
-        const maxTop = scrollY + viewportHeight - modalHeight;
-        const minTop = scrollY;
+        const maxTop = scrollY + viewportHeight - modalHeight - 20; // 20px padding
+        const minTop = scrollY + 20; // 20px padding
         topPosition = Math.min(Math.max(topPosition, minTop), maxTop);
 
+        // Apply the position
         modalRef.current.style.top = `${topPosition}px`;
         
         console.log('Modal positioned at:', {
@@ -103,7 +104,8 @@ const Projects = () => {
           scrollY,
           topPosition,
           modalHeight,
-          viewportHeight
+          viewportHeight,
+          windowWidth: window.innerWidth
         });
       }
     }, 0);
