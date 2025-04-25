@@ -171,8 +171,8 @@ const Projects = () => {
         setIsNavLinksActive={setIsNavLinksActive}
         activePage="projects"
       />
-      <div className="projects-container">
-        <div className="controls-container animate-slide-in">
+      <div className="projects-container" data-aos="fade-up">
+        <div className="controls-container" data-aos="fade-up" data-aos-delay="100">
           <div className="search-box hover-lift">
             <FontAwesomeIcon icon={faSearch} />
             <input
@@ -205,7 +205,7 @@ const Projects = () => {
 
         <div className="projects-sections">
           <div className="projects-section">
-            <div className="section-header animate-slide-in stagger-1">
+            <div className="section-header" data-aos="fade-up" data-aos-delay="200">
               <h2 className="section-title">Ongoing Projects</h2>
               <span className="section-count">{ongoingProjects.length}</span>
             </div>
@@ -213,8 +213,10 @@ const Projects = () => {
               {ongoingProjects.map((project, index) => (
                 <div
                   key={project._id}
-                  className={`project-card hover-lift animate-scale-in stagger-${(index % 5) + 1}`}
+                  className="project-card hover-lift"
                   onClick={(e) => handleProjectClick(project, e)}
+                  data-aos="zoom-in"
+                  data-aos-delay={300 + (index * 100)}
                 >
                   {project.image && (
                     <img 
@@ -234,7 +236,7 @@ const Projects = () => {
           </div>
 
           <div className="projects-section">
-            <div className="section-header animate-slide-in stagger-2">
+            <div className="section-header" data-aos="fade-up" data-aos-delay="200">
               <h2 className="section-title">Completed Projects</h2>
               <span className="section-count">{completedProjects.length}</span>
             </div>
@@ -242,8 +244,10 @@ const Projects = () => {
               {completedProjects.map((project, index) => (
                 <div
                   key={project._id}
-                  className={`project-card hover-lift animate-scale-in stagger-${(index % 5) + 1}`}
+                  className="project-card hover-lift"
                   onClick={(e) => handleProjectClick(project, e)}
+                  data-aos="zoom-in"
+                  data-aos-delay={300 + (index * 100)}
                 >
                   {project.image && (
                     <img 
@@ -266,11 +270,13 @@ const Projects = () => {
         {selectedProject && (
           <div 
             ref={modalContainerRef}
-            className="project-modal animate-fade-in"
+            className="project-modal"
+            data-aos="fade-in"
           >
             <div 
               ref={modalRef}
-              className="modal-content animate-scale-in"
+              className="modal-content"
+              data-aos="zoom-in"
             >
               <div className="modal-header">
                 <h2>{selectedProject.title}</h2>
@@ -311,6 +317,7 @@ const Projects = () => {
         aria-label="Back to top"
         style={{ display: showBackToTop ? 'block' : 'none' }}
         className="hover-lift"
+        data-aos="fade-up"
       >
         ↑
       </button>
