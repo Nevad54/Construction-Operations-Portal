@@ -153,24 +153,36 @@ const Services = () => {
             </div>
             <div className="footer-item">
               <h2>Certifications</h2>
-              <img 
-                src="/Uploads/certification1.jpg" 
-                alt="ISO 9001 Certification" 
+              <div 
                 className="certification" 
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = '/assets/placeholder.jpg';
+                style={{
+                  backgroundColor: '#eee',
+                  width: '100%',
+                  height: '200px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#999',
+                  fontSize: '14px'
                 }}
-              />
-              <img 
-                src="/Uploads/certification2.jpg" 
-                alt="Safety Compliance Certification" 
+              >
+                No Image Available
+              </div>
+              <div 
                 className="certification" 
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = '/assets/placeholder.jpg';
+                style={{
+                  backgroundColor: '#eee',
+                  width: '100%',
+                  height: '200px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#999',
+                  fontSize: '14px'
                 }}
-              />
+              >
+                No Image Available
+              </div>
             </div>
           </div>
         </section>
