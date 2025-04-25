@@ -27,5 +27,5 @@
   NPM_VERSION = "9"
   NODE_ENV = "production"
   CI = "false"
-  REACT_APP_API_BASE_URL = "https://mastertech3.netlify.app"
+  REACT_APP_API_URL = "https://mastertech3.netlify.app"
   REACT_APP_RECAPTCHA_SITE_KEY = "6LdJ5J4pAAAAAABQJQJQJQJQJQJQJQJQJQJQJQJQ"

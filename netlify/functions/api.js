@@ -58,7 +58,9 @@ const Project = mongoose.model('Project', projectSchema);
 // Projects routes
 router.get('/projects', async (req, res) => {
   try {
+    console.log('Fetching projects...');
     const projects = await Project.find();
+    console.log('Projects found:', projects.length);
     res.json(projects);
   } catch (error) {
     console.error('Error fetching projects:', error);
@@ -82,8 +84,18 @@ app.use('/.netlify/functions/api', router);
 
 // Export the handler for Netlify Functions
 exports.handler = async (event, context) => {
+  console.log('Received request:', {
+    path: event.path,
+    method: event.httpMethod,
+    headers: event.headers
+  });
+
   try {
     const response = await app(event, context);
+    console.log('Response:', {
+      statusCode: response.statusCode,
+      headers: response.headers
+    });
     return response;
   } catch (error) {
     console.error('Error handling request:', error);
