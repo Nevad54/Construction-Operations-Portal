@@ -47,10 +47,26 @@ const adminAuth = basicAuth({
 });
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/mastertech', {
+const MONGODB_URI = 'mongodb://mtiuser:MtiPass123!@ac-thlzd0c-shard-00-00.ayq9k3f.mongodb.net:27017,ac-thlzd0c-shard-00-01.ayq9k3f.mongodb.net:27017,ac-thlzd0c-shard-00-02.ayq9k3f.mongodb.net:27017/mti-projects?ssl=true&replicaSet=atlas-s9yn0c-shard-0&authSource=admin&retryWrites=true&w=majority&appName=mti-cluster';
+
+mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB connected successfully'))
+.catch(err => console.error('MongoDB connection error:', err));
+
+// Project Schema
+const projectSchema = new mongoose.Schema({
+  title: String,
+  description: String,
+  image: String,
+  category: String,
+  date: Date,
+  status: String
 });
+
+const Project = mongoose.model('Project', projectSchema);
 
 // Contact form submission
 router.post('/contact', async (req, res) => {
@@ -104,12 +120,24 @@ router.post('/contact', async (req, res) => {
   }
 });
 
+// Projects routes
+router.get('/projects', async (req, res) => {
+  try {
+    const projects = await Project.find();
+    res.json(projects);
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    res.status(500).json({ error: 'Failed to fetch projects' });
+  }
+});
+
 // Admin routes
 router.get('/admin/projects', adminAuth, async (req, res) => {
   try {
     const projects = await Project.find();
     res.json(projects);
   } catch (error) {
+    console.error('Error fetching admin projects:', error);
     res.status(500).json({ error: 'Failed to fetch projects' });
   }
 });
