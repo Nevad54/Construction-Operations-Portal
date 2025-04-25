@@ -26,11 +26,11 @@
 @keyframes modalFadeIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) scale(0.95);
+    transform: scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) scale(1);
+    transform: scale(1);
   }
 }
 
@@ -421,6 +421,8 @@ header {
   background-color: rgba(0, 0, 0, 0.7);
   z-index: 1000;
   overflow-y: auto;
+  display: flex;
+  justify-content: center;
 }
 
 .modal-content {
@@ -431,9 +433,9 @@ header {
   max-height: 90vh;
   overflow-y: auto;
   position: absolute;
-  margin: 20px auto;
-  left: 50%;
-  transform: translateX(-50%);
+  margin: 0 auto;
+  left: 0;
+  right: 0;
   animation: modalFadeIn 0.3s ease-out;
   box-shadow: var(--shadow-xl);
 }
