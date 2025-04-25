@@ -1670,3 +1670,19 @@ footer {
 .modal-content {
   animation: scaleIn 0.3s ease-out;
 }
+
+.logo-link {
+  display: inline-block;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.logo-link:hover {
+  transform: scale(1.02);
+}
+
+.logo {
+  height: 50px;
+  width: auto;
+  display: block;
+}

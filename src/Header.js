@@ -31,7 +31,9 @@ const Header = ({ isSidebarActive, setIsSidebarActive, isNavLinksActive, setIsNa
         <div className="hamburger" onClick={toggleSidebar} aria-label="Toggle navigation">
           <i className="fas fa-bars"></i>
         </div>
-        <img src="/Uploads/logo.png" alt="MASTERTECH INTERGROUPPE INC. Logo" className="logo" loading="lazy" />
+        <Link to="/" className="logo-link">
+          <img src="/Uploads/logo.png" alt="MASTERTECH INTERGROUPPE INC. Logo" className="logo" loading="lazy" />
+        </Link>
         <nav aria-label="Main menu">
           <ul className={`nav-links ${isNavLinksActive ? 'active' : ''}`}>
             <li className={activePage === 'home' ? 'active' : ''}>
