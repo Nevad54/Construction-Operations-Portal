@@ -71,25 +71,39 @@ const Projects = () => {
 
   const handleProjectClick = (project, event) => {
     setSelectedProject(project);
-    // Log click position
-    console.log('Click position:', {
-      clickY: event.clientY,
-      windowHeight: window.innerHeight,
-      scrollPosition: window.scrollY
-    });
-
-    // After modal is rendered, log its position
+    
+    // Calculate the ideal position for the modal
+    const clickY = event.clientY;
+    const scrollY = window.scrollY;
+    const viewportHeight = window.innerHeight;
+    
+    // After modal is rendered, position it appropriately
     setTimeout(() => {
       if (modalRef.current) {
-        const modalRect = modalRef.current.getBoundingClientRect();
-        console.log('Modal position:', {
-          top: modalRect.top,
-          bottom: modalRect.bottom,
-          height: modalRect.height,
-          viewportHeight: window.innerHeight,
-          isFullyVisible: 
-            modalRect.top >= 0 &&
-            modalRect.bottom <= window.innerHeight
+        const modalHeight = modalRef.current.offsetHeight;
+        let topPosition;
+
+        // If clicked in the upper half of viewport
+        if (clickY < viewportHeight / 2) {
+          topPosition = scrollY + clickY;
+        } else {
+          // If clicked in the lower half, position modal above click
+          topPosition = scrollY + clickY - modalHeight;
+        }
+
+        // Ensure modal stays within viewport
+        const maxTop = scrollY + viewportHeight - modalHeight;
+        const minTop = scrollY;
+        topPosition = Math.min(Math.max(topPosition, minTop), maxTop);
+
+        modalRef.current.style.top = `${topPosition}px`;
+        
+        console.log('Modal positioned at:', {
+          clickY,
+          scrollY,
+          topPosition,
+          modalHeight,
+          viewportHeight
         });
       }
     }, 0);
