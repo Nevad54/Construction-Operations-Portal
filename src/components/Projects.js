@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Projects.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faSort, faFilter, faTimes } from '@fortawesome/free-solid-svg-icons';
@@ -18,6 +18,7 @@ const Projects = () => {
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
   const [exitingProject, setExitingProject] = useState(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const modalRef = useRef(null);
 
   useEffect(() => {
     loadProjects();
@@ -68,8 +69,30 @@ const Projects = () => {
   const ongoingProjects = filteredProjects.filter(p => p.status === 'ongoing');
   const completedProjects = filteredProjects.filter(p => p.status === 'completed');
 
-  const handleProjectClick = (project) => {
+  const handleProjectClick = (project, event) => {
     setSelectedProject(project);
+    // Log click position
+    console.log('Click position:', {
+      clickY: event.clientY,
+      windowHeight: window.innerHeight,
+      scrollPosition: window.scrollY
+    });
+
+    // After modal is rendered, log its position
+    setTimeout(() => {
+      if (modalRef.current) {
+        const modalRect = modalRef.current.getBoundingClientRect();
+        console.log('Modal position:', {
+          top: modalRect.top,
+          bottom: modalRect.bottom,
+          height: modalRect.height,
+          viewportHeight: window.innerHeight,
+          isFullyVisible: 
+            modalRect.top >= 0 &&
+            modalRect.bottom <= window.innerHeight
+        });
+      }
+    }, 0);
   };
 
   const handleCloseModal = () => {
@@ -150,7 +173,7 @@ const Projects = () => {
                 <div
                   key={project._id}
                   className={`project-card hover-lift animate-scale-in stagger-${(index % 5) + 1}`}
-                  onClick={() => handleProjectClick(project)}
+                  onClick={(e) => handleProjectClick(project, e)}
                 >
                   {project.image && (
                     <img 
@@ -179,7 +202,7 @@ const Projects = () => {
                 <div
                   key={project._id}
                   className={`project-card hover-lift animate-scale-in stagger-${(index % 5) + 1}`}
-                  onClick={() => handleProjectClick(project)}
+                  onClick={(e) => handleProjectClick(project, e)}
                 >
                   {project.image && (
                     <img 
@@ -201,7 +224,10 @@ const Projects = () => {
 
         {selectedProject && (
           <div className="project-modal animate-fade-in">
-            <div className="modal-content animate-scale-in">
+            <div 
+              ref={modalRef}
+              className="modal-content animate-scale-in"
+            >
               <div className="modal-header">
                 <h2>{selectedProject.title}</h2>
                 <button
