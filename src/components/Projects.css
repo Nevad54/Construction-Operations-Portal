@@ -26,11 +26,11 @@
 @keyframes modalFadeIn {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: translateY(-20px);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -418,49 +418,53 @@ header {
 .project-modal {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.7);
   z-index: 1000;
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: 20px;
+  align-items: flex-start;
+  padding-top: 5vh;
+  overflow-y: auto;
 }
 
 .modal-content {
   background-color: white;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   width: 100%;
   max-width: 800px;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
+  margin: 0 20px;
   animation: modalFadeIn 0.3s ease-out;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-xl);
 }
 
 .modal-header {
-  position: sticky;
-  top: 0;
-  background: white;
-  padding: 20px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--neutral-200);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 1;
+  background-color: var(--neutral-50);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  color: var(--neutral-900);
+  font-family: var(--font-heading);
 }
 
 .modal-close {
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: var(--text-xl);
   cursor: pointer;
-  color: #6b7280;
-  padding: 8px;
-  border-radius: 50%;
-  transition: all 0.2s ease;
+  color: var(--neutral-600);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-full);
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -469,19 +473,9 @@ header {
 }
 
 .modal-close:hover {
-  background: #f3f4f6;
-  color: #1f2937;
-}
-
-.modal-body {
-  padding: 20px;
-}
-
-.modal-header h2 {
-  margin: 0;
-  font-size: var(--text-2xl);
+  background: var(--neutral-100);
   color: var(--neutral-900);
-  font-family: var(--font-heading);
+  transform: rotate(90deg);
 }
 
 .modal-image {
@@ -715,21 +709,4 @@ footer {
 .fade-exit-active {
   opacity: 0;
   transition: opacity 200ms ease-in;
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .modal-content {
-    margin: 0;
-    border-radius: 0;
-    max-height: 100vh;
-  }
-  
-  .modal-header {
-    padding: 16px;
-  }
-  
-  .modal-body {
-    padding: 16px;
-  }
 } 
