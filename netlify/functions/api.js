@@ -1,5 +1,4 @@
 const express = require('express');
-const cors = require('cors');
 const nodemailer = require('nodemailer');
 const basicAuth = require('express-basic-auth');
 const session = require('express-session');
@@ -56,58 +55,6 @@ const projectSchema = new mongoose.Schema({
 
 const Project = mongoose.model('Project', projectSchema);
 
-// Contact form submission
-router.post('/contact', async (req, res) => {
-  try {
-    const { name, email, phone, message, recaptchaToken } = req.body;
-
-    // Verify reCAPTCHA
-    const recaptchaResponse = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`
-    });
-
-    const recaptchaData = await recaptchaResponse.json();
-
-    if (!recaptchaData.success) {
-      return res.status(400).json({ 
-        error: 'reCAPTCHA verification failed',
-        details: recaptchaData['error-codes']
-      });
-    }
-
-    // Send email
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-      }
-    });
-
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_RECIPIENT,
-      subject: 'New Contact Form Submission',
-      text: `
-        Name: ${name}
-        Email: ${email}
-        Phone: ${phone}
-        Message: ${message}
-      `
-    };
-
-    await transporter.sendMail(mailOptions);
-    res.json({ message: 'Message sent successfully' });
-  } catch (error) {
-    console.error('Contact form error:', error);
-    res.status(500).json({ error: 'Failed to send message' });
-  }
-});
-
 // Projects routes
 router.get('/projects', async (req, res) => {
   try {
@@ -135,47 +82,13 @@ app.use('/.netlify/functions/api', router);
 
 // Export the handler for Netlify Functions
 exports.handler = async (event, context) => {
-  // Set CORS headers
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
-    'Access-Control-Allow-Credentials': 'true'
-  };
-
-  // Handle preflight requests
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 204,
-      headers: corsHeaders
-    };
-  }
-
   try {
-    // Create a new request object
-    const request = {
-      ...event,
-      headers: {
-        ...event.headers,
-        ...corsHeaders
-      }
-    };
-
-    const response = await app(request, context);
-    
-    // Add CORS headers to the response
-    return {
-      ...response,
-      headers: {
-        ...response.headers,
-        ...corsHeaders
-      }
-    };
+    const response = await app(event, context);
+    return response;
   } catch (error) {
     console.error('Error handling request:', error);
     return {
       statusCode: 500,
-      headers: corsHeaders,
       body: JSON.stringify({ error: 'Internal Server Error' })
     };
   }
