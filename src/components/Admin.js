@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useProjects } from '../context/ProjectContext';
 import { api } from '../services/api';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 import '../styles/Admin.css';
 
 const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
@@ -34,6 +36,16 @@ const Admin = () => {
 
     const [imagePreview, setImagePreview] = useState(null);
     const [editImagePreview, setEditImagePreview] = useState(null);
+
+    // Initialize AOS
+    useEffect(() => {
+        AOS.init({
+            duration: 800,
+            once: true,
+            offset: 100,
+            easing: 'ease-in-out'
+        });
+    }, []);
 
     // Handle image preview
     const handleImageChange = (e, isEdit = false) => {
@@ -340,76 +352,90 @@ const Admin = () => {
     const completedProjects = projects.filter(p => p.status === 'completed');
 
     return (
-        <div className="admin-container">
-            <h1>Admin - Manage Projects</h1>
+        <div className="admin-container" data-aos="fade-up">
+            <h1 data-aos="fade-up">Project Management</h1>
 
             {loading && <div className="loading-spinner">Loading...</div>}
-            {error && <div className="error-message">{error}</div>}
+            {error && <div className="error-message" data-aos="fade-up">{error}</div>}
 
-            <button className="floating-add-btn" onClick={() => setShowModal(true)}>
-                + New Project
+            <button 
+                className="add-project-btn" 
+                onClick={() => setShowModal(true)}
+                data-aos="fade-up"
+                data-aos-delay="100"
+            >
+                Add New Project
             </button>
 
             {showModal && (
-                <div className="modal-overlay" onClick={e => { if (e.target.className === 'modal-overlay') setShowModal(false); }}>
-                  <div className="modal-card">
-                    <h2>{editingProject ? 'Edit Project' : 'Add New Project'}</h2>
-                    <form className="project-modal-form" onSubmit={editingProject ? handleEditSubmit : handleSubmit}>
-                      <input
-                        type="text"
-                        name="title"
-                        placeholder="Project Title"
-                        value={editingProject ? editingProject.title : formData.title}
-                        onChange={editingProject ? e => setEditingProject({ ...editingProject, title: e.target.value }) : handleInputChange}
-                        required
-                      />
-                      <textarea
-                        name="description"
-                        placeholder="Project Description"
-                        value={editingProject ? editingProject.description : formData.description}
-                        onChange={editingProject ? e => setEditingProject({ ...editingProject, description: e.target.value }) : handleInputChange}
-                        required
-                      ></textarea>
-                      <input
-                        type="text"
-                        name="location"
-                        placeholder="Location"
-                        value={editingProject ? editingProject.location : formData.location}
-                        onChange={editingProject ? e => setEditingProject({ ...editingProject, location: e.target.value }) : handleInputChange}
-                      />
-                      <input
-                        type="date"
-                        name="date"
-                        value={editingProject ? editingProject.date : formData.date}
-                        onChange={editingProject ? e => setEditingProject({ ...editingProject, date: e.target.value }) : handleInputChange}
-                      />
-                      <input
-                        type="file"
-                        name="image"
-                        accept="image/*"
-                        onChange={e => editingProject ? handleImageChange(e, true) : handleImageChange(e)}
-                      />
-                      {(editingProject ? editImagePreview : imagePreview) && (
-                        <img src={editingProject ? `${IMAGE_BASE_URL}${editImagePreview}` : imagePreview} alt="Preview" className="image-preview" />
-                      )}
-                      <select
-                        name="status"
-                        value={editingProject ? editingProject.status : formData.status}
-                        onChange={editingProject ? e => setEditingProject({ ...editingProject, status: e.target.value }) : handleInputChange}
-                      >
-                        <option value="ongoing">Ongoing</option>
-                        <option value="completed">Completed</option>
-                      </select>
-                      <div className="modal-actions">
-                        <button type="button" className="cancel-btn" onClick={() => { setShowModal(false); setEditingProject(null); setImagePreview(null); setEditImagePreview(null); }}>Cancel</button>
-                        <button type="submit" className="submit-btn">{editingProject ? 'Save Changes' : 'Add Project'}</button>
-                      </div>
-                    </form>
-                  </div>
+                <div 
+                    className="modal-overlay"
+                    onClick={handleClickOutside}
+                    data-aos="fade-in"
+                >
+                    <div 
+                        className="modal-content"
+                        ref={modalRef}
+                        data-aos="zoom-in"
+                        data-aos-delay="100"
+                    >
+                        <h2>{editingProject ? 'Edit Project' : 'Add New Project'}</h2>
+                        <form className="project-modal-form" onSubmit={editingProject ? handleEditSubmit : handleSubmit}>
+                          <input
+                            type="text"
+                            name="title"
+                            placeholder="Project Title"
+                            value={editingProject ? editingProject.title : formData.title}
+                            onChange={editingProject ? e => setEditingProject({ ...editingProject, title: e.target.value }) : handleInputChange}
+                            required
+                          />
+                          <textarea
+                            name="description"
+                            placeholder="Project Description"
+                            value={editingProject ? editingProject.description : formData.description}
+                            onChange={editingProject ? e => setEditingProject({ ...editingProject, description: e.target.value }) : handleInputChange}
+                            required
+                          ></textarea>
+                          <input
+                            type="text"
+                            name="location"
+                            placeholder="Location"
+                            value={editingProject ? editingProject.location : formData.location}
+                            onChange={editingProject ? e => setEditingProject({ ...editingProject, location: e.target.value }) : handleInputChange}
+                          />
+                          <input
+                            type="date"
+                            name="date"
+                            value={editingProject ? editingProject.date : formData.date}
+                            onChange={editingProject ? e => setEditingProject({ ...editingProject, date: e.target.value }) : handleInputChange}
+                          />
+                          <input
+                            type="file"
+                            name="image"
+                            accept="image/*"
+                            onChange={e => editingProject ? handleImageChange(e, true) : handleImageChange(e)}
+                          />
+                          {(editingProject ? editImagePreview : imagePreview) && (
+                            <img src={editingProject ? `${IMAGE_BASE_URL}${editImagePreview}` : imagePreview} alt="Preview" className="image-preview" />
+                          )}
+                          <select
+                            name="status"
+                            value={editingProject ? editingProject.status : formData.status}
+                            onChange={editingProject ? e => setEditingProject({ ...editingProject, status: e.target.value }) : handleInputChange}
+                          >
+                            <option value="ongoing">Ongoing</option>
+                            <option value="completed">Completed</option>
+                          </select>
+                          <div className="modal-actions">
+                            <button type="button" className="cancel-btn" onClick={() => { setShowModal(false); setEditingProject(null); setImagePreview(null); setEditImagePreview(null); }}>Cancel</button>
+                            <button type="submit" className="submit-btn">{editingProject ? 'Save Changes' : 'Add Project'}</button>
+                          </div>
+                        </form>
+                    </div>
                 </div>
             )}
 
-            <div className="projects-section">
+            <section className="projects-section" data-aos="fade-up" data-aos-delay="200">
                 <h2>Ongoing Projects</h2>
                 {selectedProjects.ongoing.length > 0 && (
                 <div className="bulk-toolbar">
@@ -443,9 +469,9 @@ const Admin = () => {
                     ))}
                     {selectionBox && <div className="lasso-box" style={{ left: selectionBox.x, top: selectionBox.y, width: selectionBox.width, height: selectionBox.height }} />}
                 </div>
-            </div>
+            </section>
 
-            <div className="projects-section">
+            <section className="projects-section" data-aos="fade-up" data-aos-delay="200">
                 <h2>Completed Projects</h2>
                 {selectedProjects.completed.length > 0 && (
                 <div className="bulk-toolbar">
@@ -479,7 +505,7 @@ const Admin = () => {
                     ))}
                     {selectionBox && <div className="lasso-box" style={{ left: selectionBox.x, top: selectionBox.y, width: selectionBox.width, height: selectionBox.height }} />}
                 </div>
-            </div>
+            </section>
 
             <button className="back-to-top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
                 ↑
