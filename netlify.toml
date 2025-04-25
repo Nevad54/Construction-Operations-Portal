@@ -1,5 +1,5 @@
 [build]
-  command = "npm install && npm run build"
+  command = "npm install --legacy-peer-deps && npm run build"
   publish = "build"
   functions = "netlify/functions"
 
@@ -17,5 +17,6 @@
   NODE_VERSION = "18"
   NPM_VERSION = "9"
   NODE_ENV = "production"
+  CI = "false"
   REACT_APP_API_BASE_URL = "https://mastertech3.netlify.app"
   REACT_APP_RECAPTCHA_SITE_KEY = "6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa"
