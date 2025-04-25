@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Projects.css';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faSort, faFilter, faTimes } from '@fortawesome/free-solid-svg-icons';
 import Header from '../Header';
@@ -23,6 +25,13 @@ const Projects = () => {
 
   useEffect(() => {
     loadProjects();
+    // Initialize AOS
+    AOS.init({
+      duration: 800,
+      once: true,
+      offset: 100,
+      easing: 'ease-in-out'
+    });
   }, []);
 
   useEffect(() => {
@@ -171,7 +180,8 @@ const Projects = () => {
         setIsNavLinksActive={setIsNavLinksActive}
         activePage="projects"
       />
-      <div className="projects-container" data-aos="fade-up">
+      <div className="projects-container">
+        <h1 data-aos="fade-up">Our Projects</h1>
         <div className="controls-container" data-aos="fade-up" data-aos-delay="100">
           <div className="search-box hover-lift">
             <FontAwesomeIcon icon={faSearch} />
@@ -186,6 +196,8 @@ const Projects = () => {
           
           <button
             className="sort-button hover-lift"
+            data-aos="fade-up"
+            data-aos-delay="200"
             onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
           >
             <FontAwesomeIcon icon={faSort} />
@@ -194,12 +206,14 @@ const Projects = () => {
           
           <select
             className="filter-button hover-lift"
+            data-aos="fade-up"
+            data-aos-delay="300"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
           >
             <option value="all">All Projects</option>
-            <option value="ongoing">Ongoing</option>
-            <option value="completed">Completed</option>
+            <option value="ongoing">Ongoing Projects</option>
+            <option value="completed">Completed Projects</option>
           </select>
         </div>
 
@@ -214,9 +228,9 @@ const Projects = () => {
                 <div
                   key={project._id}
                   className="project-card hover-lift"
+                  data-aos="fade-up"
+                  data-aos-delay={500 + (index * 100)}
                   onClick={(e) => handleProjectClick(project, e)}
-                  data-aos="zoom-in"
-                  data-aos-delay={300 + (index * 100)}
                 >
                   {project.image && (
                     <img 
@@ -245,9 +259,9 @@ const Projects = () => {
                 <div
                   key={project._id}
                   className="project-card hover-lift"
+                  data-aos="fade-up"
+                  data-aos-delay={500 + (index * 100)}
                   onClick={(e) => handleProjectClick(project, e)}
-                  data-aos="zoom-in"
-                  data-aos-delay={300 + (index * 100)}
                 >
                   {project.image && (
                     <img 

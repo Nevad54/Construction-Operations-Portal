@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faHome, 
@@ -23,6 +25,16 @@ import './Services.css';
 
 const Services = () => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
+  // Initialize AOS
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      once: true,
+      offset: 100,
+      easing: 'ease-in-out'
+    });
+  }, []);
 
   const services = [
     {
@@ -108,13 +120,14 @@ const Services = () => {
 
         <section className="services">
           <div className="container">
-            <h1>Our Services</h1>
+            <h1 data-aos="fade-up">Our Services</h1>
             <div className="services-grid">
               {services.map((service, index) => (
                 <div 
                   key={index} 
                   className="service-card"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  data-aos="fade-up"
+                  data-aos-delay={index * 100}
                 >
                   <div className="service-icon">
                     <FontAwesomeIcon icon={service.icon} />
@@ -131,12 +144,12 @@ const Services = () => {
         {/* Footer Info Section */}
         <section className="footer-info">
           <div className="container">
-            <div className="footer-item">
+            <div className="footer-item" data-aos="fade-right">
               <h2>Send Us a Message</h2>
               <p>If you have any questions or need a quote, feel free to contact us!</p>
               <a href="/contact" className="btn">Contact Us</a>
             </div>
-            <div className="footer-item">
+            <div className="footer-item" data-aos="fade-up">
               <h2>Our Location</h2>
               <p><FontAwesomeIcon icon={faMapMarkerAlt} /> 320 Sta Rosa Tagaytay Road Purok 4 Brgy. Pasong Langka, Silang Cavite 4118</p>
               <div className="map-container">
@@ -151,7 +164,7 @@ const Services = () => {
                 ></iframe>
               </div>
             </div>
-            <div className="footer-item">
+            <div className="footer-item" data-aos="fade-left">
               <h2>Certifications</h2>
               <div 
                 className="certification" 
