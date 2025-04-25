@@ -1,19 +1,7 @@
-import React, { useEffect } from 'react';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
+import React from 'react';
 import './styles.css';
 
 const Footer = () => {
-  // Initialize AOS
-  useEffect(() => {
-    AOS.init({
-      duration: 800,
-      once: true,
-      offset: 100,
-      easing: 'ease-in-out'
-    });
-  }, []);
-
   const placeholderStyle = {
     backgroundColor: '#eee',
     width: '100%',
@@ -30,12 +18,12 @@ const Footer = () => {
       {/* Footer Info Section */}
       <section className="footer-info" role="contentinfo">
         <div className="container">
-          <div className="footer-item" data-aos="fade-right" data-aos-delay="100">
+          <div className="footer-item">
             <h2>Send Us a Message</h2>
             <p>If you have any questions or need a quote, feel free to contact us!</p>
             <a href="mailto:inquiry@mastertech.com.ph" className="btn" aria-label="Send us an email">Email Us</a>
           </div>
-          <div className="footer-item" data-aos="fade-up" data-aos-delay="200">
+          <div className="footer-item">
             <h2>Our Location</h2>
             <p><i className="fas fa-map-marker-alt"></i> 320 Sta Rosa Tagaytay Road Purok 4 Brgy. Pasong Langka, Silang Cavite 4118</p>
             <div className="map-container">
@@ -51,21 +39,17 @@ const Footer = () => {
               ></iframe>
             </div>
           </div>
-          <div className="footer-item" data-aos="fade-left" data-aos-delay="300">
+          <div className="footer-item">
             <h2>Certifications</h2>
             <div 
               className="certification" 
               style={placeholderStyle}
-              data-aos="fade-up"
-              data-aos-delay="400"
             >
               No Image Available
             </div>
             <div 
               className="certification" 
               style={placeholderStyle}
-              data-aos="fade-up"
-              data-aos-delay="500"
             >
               No Image Available
             </div>
@@ -74,7 +58,7 @@ const Footer = () => {
       </section>
 
       {/* Footer */}
-      <footer role="contentinfo" data-aos="fade-up" data-aos-delay="600">
+      <footer role="contentinfo">
         <div className="container_footer">
           <p>© 2025 MASTERTECH INTERGROUPPE INC. All Rights Reserved.</p>
         </div>
