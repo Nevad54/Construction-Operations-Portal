@@ -1,6 +1,9 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
  
 =======
+=======
+>>>>>>> parent of 4fb365b (go)
 /* Services Component Styles */
 .services-container {
   min-height: 100vh;
@@ -369,5 +372,9 @@ footer {
 .btn:active {
   transform: translateY(0);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+<<<<<<< HEAD
+} 
+>>>>>>> parent of 4fb365b (go)
+=======
 } 
 >>>>>>> parent of 4fb365b (go)
