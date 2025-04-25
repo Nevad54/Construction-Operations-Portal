@@ -102,5 +102,9 @@ router.get('/admin/projects', adminAuth, async (req, res) => {
 // Mount the router
 app.use('/.netlify/functions/api', router);
 
-// Export the Express app as a Netlify function
-exports.handler = app; 
+// Export the handler for Netlify Functions
+const handler = app;
+
+exports.handler = async (event, context) => {
+  return handler(event, context);
+}; 
