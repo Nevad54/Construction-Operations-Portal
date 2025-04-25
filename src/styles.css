@@ -1660,12 +1660,15 @@ footer {
 .modal-content {
   animation: scaleIn 0.3s ease-out;
 <<<<<<< HEAD
+<<<<<<< HEAD
 }
 
 /* Remove certification styles */
 .certification,
 .safety-certifications {
   display: none;
+=======
+>>>>>>> parent of 4fb365b (go)
 =======
 >>>>>>> parent of 4fb365b (go)
 }
