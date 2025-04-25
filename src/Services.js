@@ -153,7 +153,11 @@ const Services = () => {
         {/* Footer Info Section */}
         <section className="footer-info" role="contentinfo">
           <div className="container">
-            <div className="footer-item" data-aos="fade-up" data-aos-delay="100">
+            <div 
+              className="footer-item"
+              data-aos="fade-up"
+              data-aos-delay="100"
+            >
               <h2>Send Us a Message</h2>
               <p>
                 If you have any questions or need a quote, feel free to contact
@@ -167,7 +171,11 @@ const Services = () => {
                 Email Us
               </a>
             </div>
-            <div className="footer-item" data-aos="fade-up" data-aos-delay="200">
+            <div 
+              className="footer-item"
+              data-aos="fade-up"
+              data-aos-delay="200"
+            >
               <h2>Our Location</h2>
               <p>
                 <i className="fas fa-map-marker-alt"></i> 320 Sta Rosa Tagaytay
@@ -186,7 +194,11 @@ const Services = () => {
                 ></iframe>
               </div>
             </div>
-            <div className="footer-item" data-aos="fade-up" data-aos-delay="300">
+            <div 
+              className="footer-item"
+              data-aos="fade-up"
+              data-aos-delay="300"
+            >
               <h2>Certifications</h2>
               <img
                 src="/Uploads/certification1.jpg"
