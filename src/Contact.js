@@ -373,17 +373,17 @@ const Contact = () => {
       />
       <section className="contact" role="main">
         <div className="container">
-          <h1>Contact Us</h1>
+          <h1 data-aos="fade-up">Contact Us</h1>
           <div className="contact-content">
-            <div className="contact-form">
+            <div className="contact-form" data-aos="fade-right" data-aos-delay="100">
               <h2>Send Us a Message</h2>
               {submitStatus && (
-                <div className={`alert ${submitStatus.type === 'success' ? 'alert-success' : 'alert-error'}`}>
+                <div className={`alert ${submitStatus.type === 'success' ? 'alert-success' : 'alert-error'}`} data-aos="fade-up">
                   {submitStatus.message}
                 </div>
               )}
               <form onSubmit={handleSubmit} noValidate>
-                <div className="form-group">
+                <div className="form-group" data-aos="fade-up" data-aos-delay="200">
                   <label htmlFor="name">Name</label>
                   <input
                     type="text"
@@ -397,7 +397,7 @@ const Contact = () => {
                   />
                   {errors.name && <span id="name-error" className="error">{errors.name}</span>}
                 </div>
-                <div className="form-group">
+                <div className="form-group" data-aos="fade-up" data-aos-delay="300">
                   <label htmlFor="email">Email</label>
                   <input
                     type="email"
@@ -411,7 +411,7 @@ const Contact = () => {
                   />
                   {errors.email && <span id="email-error" className="error">{errors.email}</span>}
                 </div>
-                <div className="form-group">
+                <div className="form-group" data-aos="fade-up" data-aos-delay="400">
                   <label htmlFor="phone">Phone Number (Optional)</label>
                   <input
                     type="tel"
@@ -425,7 +425,7 @@ const Contact = () => {
                   />
                   {errors.phone && <span id="phone-error" className="error">{errors.phone}</span>}
                 </div>
-                <div className="form-group">
+                <div className="form-group" data-aos="fade-up" data-aos-delay="500">
                   <label htmlFor="message">Message</label>
                   <textarea
                     id="message"
@@ -440,7 +440,7 @@ const Contact = () => {
                   {errors.message && <span id="message-error" className="error">{errors.message}</span>}
                 </div>
                 
-                <div className="form-group captcha-group">
+                <div className="form-group captcha-group" data-aos="fade-up" data-aos-delay="600">
                   {RECAPTCHA_SITE_KEY ? (
                     <div 
                       role="region" 
@@ -480,11 +480,11 @@ const Contact = () => {
                 </div>
 
                 {timeUntilReset ? (
-                  <div className="attempts-info">
+                  <div className="attempts-info" data-aos="fade-up" data-aos-delay="700">
                     <p className="error">Please wait {timeUntilReset} minutes before trying again.</p>
                   </div>
                 ) : (
-                  <div className="attempts-info">
+                  <div className="attempts-info" data-aos="fade-up" data-aos-delay="700">
                     <p>Attempts remaining: {attemptsRemaining}</p>
                   </div>
                 )}
@@ -493,22 +493,24 @@ const Contact = () => {
                   type="submit" 
                   className="btn" 
                   disabled={isSubmitting || timeUntilReset !== null}
+                  data-aos="fade-up" 
+                  data-aos-delay="800"
                 >
                   {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
               </form>
             </div>
-            <div className="contact-info">
+            <div className="contact-info" data-aos="fade-left" data-aos-delay="100">
               <h2>Contact Information</h2>
-              <div className="info-group">
+              <div className="info-group" data-aos="fade-up" data-aos-delay="200">
                 <h3><i className="fas fa-building"></i> Office Address</h3>
                 <p>320 Sta Rosa Tagaytay Road Purok 4,<br />Brgy. Pasong Langka,<br />Silang Cavite 4118</p>
               </div>
-              <div className="info-group">
+              <div className="info-group" data-aos="fade-up" data-aos-delay="300">
                 <h3><i className="fas fa-clock"></i> Office Hours</h3>
                 <p>Monday - Friday: 8:00 AM - 5:00 PM<br />Saturday: 8:00 AM - 12:00 PM<br />Sunday: Closed</p>
               </div>
-              <div className="info-group">
+              <div className="info-group" data-aos="fade-up" data-aos-delay="400">
                 <h3><i className="fas fa-phone-alt"></i> Phone & Email</h3>
                 <p>
                   <a href="tel:+63465139424">(046) 513 9424</a><br />
@@ -518,7 +520,7 @@ const Contact = () => {
                   <a href="mailto:inquiry@mastertech.com.ph">inquiry@mastertech.com.ph</a>
                 </p>
               </div>
-              <div className="map-container">
+              <div className="map-container" data-aos="fade-up" data-aos-delay="500">
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d244.93515605421877!2d120.9966971517091!3d14.16017202394409!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7b0053a0280d%3A0x99434f55287e9a94!2sRestaurant!5e1!3m2!1sen!2sph!4v1743742491118!5m2!1sen!2sph"
                   width="100%"
@@ -540,6 +542,7 @@ const Contact = () => {
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         aria-label="Back to top"
         style={{ display: showBackToTop ? 'block' : 'none' }}
+        data-aos="fade-up"
       >
         ↑
       </button>
