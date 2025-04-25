@@ -12,49 +12,62 @@
     <priority>1.0</priority>
     <image:image>
       <image:loc>https://mastertech-app.vercel.app/logo.png</image:loc>
-      <image:title>Mastertech Intergrouppe Inc. Logo</image:title>
+      <image:title>Mastertech Intergrouppe Inc. - Construction Company in Silang Cavite</image:title>
+      <image:caption>Leading construction and engineering company serving Silang Cavite and surrounding areas</image:caption>
     </image:image>
   </url>
   <url>
     <loc>https://mastertech-app.vercel.app/about</loc>
     <lastmod>2024-03-20</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://mastertech-app.vercel.app/about-image.jpg</image:loc>
+      <image:title>About Mastertech Intergrouppe Inc. - Silang Cavite Construction Experts</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://mastertech-app.vercel.app/services</loc>
     <lastmod>2024-03-20</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://mastertech-app.vercel.app/services-image.jpg</image:loc>
+      <image:title>Construction Services in Silang Cavite - Mastertech Intergrouppe Inc.</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://mastertech-app.vercel.app/projects</loc>
     <lastmod>2024-03-20</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://mastertech-app.vercel.app/projects-image.jpg</image:loc>
+      <image:title>Construction Projects in Silang Cavite - Mastertech Intergrouppe Inc.</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://mastertech-app.vercel.app/contact</loc>
     <lastmod>2024-03-20</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://mastertech-app.vercel.app/vision-mission</loc>
     <lastmod>2024-03-20</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://mastertech-app.vercel.app/core-values</loc>
     <lastmod>2024-03-20</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://mastertech-app.vercel.app/safety</loc>
     <lastmod>2024-03-20</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
   </url>
 </urlset> 
