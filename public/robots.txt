@@ -1,21 +1,3 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Allow: /
-Allow: /about
-Allow: /services
-Allow: /projects
-Allow: /contact
-Allow: /vision-mission
-Allow: /core-values
-Allow: /safety
-
-# Disallow admin and private areas
-Disallow: /admin
-Disallow: /private
-Disallow: /uploads/private
-
-# Sitemap location
-Sitemap: https://mastertech-app.vercel.app/sitemap.xml
-
-# Crawl-delay
-Crawl-delay: 10
+Disallow:
