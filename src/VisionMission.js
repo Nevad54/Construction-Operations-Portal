@@ -24,33 +24,6 @@ const VisionMission = () => {
     });
   }, []);
 
-  // Add Organization Schema
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    script.text = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Mastertech Intergrouppe Inc.",
-      "url": "https://mastertech-app.vercel.app",
-      "description": "Leading construction and engineering company in Silang Cavite, Philippines",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Sta Rosa Tagaytay Road Purok 4",
-        "addressLocality": "Brgy. Pasong Langka",
-        "addressRegion": "Silang",
-        "postalCode": "4118",
-        "addressCountry": "PH"
-      },
-      "mission": "To deliver exceptional construction and engineering services while maintaining the highest standards of quality, safety, and environmental responsibility.",
-      "vision": "To be the leading construction and engineering company in Silang Cavite, recognized for innovation, reliability, and sustainable practices."
-    });
-    document.head.appendChild(script);
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, []);
-
   const getActivePage = () => {
     const path = location.pathname;
     console.log('Current path:', path); // Debug log
@@ -118,48 +91,26 @@ const VisionMission = () => {
         setIsNavLinksActive={setIsNavLinksActive}
         activePage={activePage}
       />
-      <main>
-        <section className="vision-mission" role="main">
-          <div className="container">
-            <h1>Vision & Mission of Mastertech Intergrouppe Inc.</h1>
-            <div className="vision-mission-content">
-              <div className="vision-section">
-                <h2>Our Vision</h2>
-                <p>To be the leading construction and engineering company in Silang Cavite, recognized for innovation, reliability, and sustainable practices.</p>
-                <div className="vision-details">
-                  <h3>Key Aspirations</h3>
-                  <ul>
-                    <li>Industry leadership in construction and engineering</li>
-                    <li>Innovation in sustainable building practices</li>
-                    <li>Excellence in project delivery</li>
-                    <li>Strong community partnerships</li>
-                  </ul>
-                </div>
-              </div>
-              <div className="mission-section">
-                <h2>Our Mission</h2>
-                <p>To deliver exceptional construction and engineering services while maintaining the highest standards of quality, safety, and environmental responsibility.</p>
-                <div className="mission-details">
-                  <h3>Core Commitments</h3>
-                  <ul>
-                    <li>Quality excellence in every project</li>
-                    <li>Safety as our top priority</li>
-                    <li>Environmental sustainability</li>
-                    <li>Customer satisfaction</li>
-                    <li>Employee development</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+      <section className="vision-mission" role="main">
+        <div className="container">
+          <h1 data-aos="fade-up">Vision & Mission</h1>
+          <div className="vision" data-aos="fade-right" data-aos-delay="100">
+            <h2>Our Vision</h2>
+            <p>To be the leading construction and industrial solutions provider, recognized for innovation, quality, and sustainability.</p>
           </div>
-        </section>
-      </main>
+          <div className="mission" data-aos="fade-left" data-aos-delay="200">
+            <h2>Our Mission</h2>
+            <p>We are committed to delivering exceptional projects through technical expertise, client collaboration, and a focus on safety and environmental responsibility.</p>
+          </div>
+        </div>
+      </section>
       <Footer />
       <button
         id="backToTop"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         aria-label="Back to top"
         style={{ display: showBackToTop ? 'block' : 'none' }}
+        data-aos="fade-up"
       >
         ↑
       </button>

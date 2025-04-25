@@ -15,39 +15,10 @@ const Home = () => {
 
   return (
     <div className="home">
-      {/* Add Organization Schema */}
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Organization",
-          "name": "Mastertech Intergrouppe Inc.",
-          "url": "https://mastertech-app.vercel.app",
-          "logo": "https://mastertech-app.vercel.app/Uploads/logo.png",
-          "description": "Leading construction and engineering company in Silang Cavite, Philippines",
-          "address": {
-            "@type": "PostalAddress",
-            "streetAddress": "Sta Rosa Tagaytay Road Purok 4",
-            "addressLocality": "Brgy. Pasong Langka",
-            "addressRegion": "Silang",
-            "postalCode": "4118",
-            "addressCountry": "PH"
-          },
-          "contactPoint": {
-            "@type": "ContactPoint",
-            "telephone": "+63",
-            "contactType": "customer service",
-            "email": "inquiry@mastertech.com.ph",
-            "areaServed": "PH",
-            "availableLanguage": ["English", "Filipino"]
-          }
-        })}
-      </script>
-
       <section className="hero">
         <div className="hero-content" data-aos="fade-up">
           <h1>Welcome to Mastertech Intergrouppe Inc.</h1>
-          <p className="hero-subtitle">Your Trusted Construction Partner in Silang Cavite</p>
-          <p className="hero-description">With over 15 years of experience, we specialize in industrial, commercial, and residential construction projects across the Philippines.</p>
+          <p className="hero-subtitle">Your Partner in Engineering Excellence</p>
           <a href="/contact" className="btn">Get Started</a>
         </div>
       </section>
@@ -56,16 +27,16 @@ const Home = () => {
         <h2 data-aos="fade-up">Our Services</h2>
         <div className="service-list">
           <div className="service-item" data-aos="fade-up" data-aos-delay="100">
-            <h3>Industrial Construction</h3>
-            <p>Specialized in clean room & painting processes improvements, including automation for manufacturing plants.</p>
+            <h3>Engineering Solutions</h3>
+            <p>Comprehensive engineering services tailored to your needs.</p>
           </div>
           <div className="service-item" data-aos="fade-up" data-aos-delay="200">
-            <h3>Commercial Projects</h3>
-            <p>Expert management of commercial construction projects with focus on quality and efficiency.</p>
+            <h3>Construction Management</h3>
+            <p>Expert management of construction projects from start to finish.</p>
           </div>
           <div className="service-item" data-aos="fade-up" data-aos-delay="300">
-            <h3>Residential Development</h3>
-            <p>Building quality homes and residential complexes with attention to detail and customer satisfaction.</p>
+            <h3>Technical Consulting</h3>
+            <p>Professional guidance and technical expertise.</p>
           </div>
         </div>
       </section>
@@ -74,12 +45,12 @@ const Home = () => {
         <div className="container">
           <div className="about-content">
             <div className="about-text" data-aos="fade-right">
-              <h2>About Mastertech Intergrouppe Inc.</h2>
-              <p>Established in 2014, we are a leading construction company based in Silang Cavite, serving clients across the Philippines. Our expertise spans across industrial, commercial, and residential projects.</p>
+              <h2>About Us</h2>
+              <p>Mastertech Intergrouppe Inc. is your trusted partner in engineering and construction excellence.</p>
               <a href="/about" className="btn">Learn More</a>
             </div>
             <div className="about-image" data-aos="fade-left">
-              <img src="/Uploads/about-image.png" alt="Mastertech Intergrouppe Inc. Headquarters in Silang Cavite" loading="lazy" />
+              <img src="/images/about-preview.jpg" alt="About Us" loading="lazy" />
             </div>
           </div>
         </div>
@@ -88,20 +59,15 @@ const Home = () => {
       <section className="projects-preview">
         <h2 data-aos="fade-up">Featured Projects</h2>
         <div className="project-gallery">
+          {/* Add data-aos attributes to your project items */}
           <div className="project-item" data-aos="zoom-in" data-aos-delay="100">
-            <img src="/Uploads/industrial.jpg" alt="Industrial Project in Silang Cavite" loading="lazy" />
-            <h3>Industrial Projects</h3>
-            <p>Specialized manufacturing facilities and clean rooms</p>
+            {/* Project content */}
           </div>
           <div className="project-item" data-aos="zoom-in" data-aos-delay="200">
-            <img src="/Uploads/commercial.jpg" alt="Commercial Project in Silang Cavite" loading="lazy" />
-            <h3>Commercial Projects</h3>
-            <p>Office buildings and commercial spaces</p>
+            {/* Project content */}
           </div>
           <div className="project-item" data-aos="zoom-in" data-aos-delay="300">
-            <img src="/Uploads/residential.jpg" alt="Residential Project in Silang Cavite" loading="lazy" />
-            <h3>Residential Projects</h3>
-            <p>Quality homes and residential complexes</p>
+            {/* Project content */}
           </div>
         </div>
       </section>
@@ -109,7 +75,7 @@ const Home = () => {
       <section className="contact-preview">
         <div className="container" data-aos="fade-up">
           <h2>Ready to Start Your Project?</h2>
-          <p>Contact us today for a consultation in Silang Cavite</p>
+          <p>Contact us today for a consultation</p>
           <a href="/contact" className="btn">Contact Us</a>
         </div>
       </section>

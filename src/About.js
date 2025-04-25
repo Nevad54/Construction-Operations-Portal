@@ -12,44 +12,6 @@ const About = () => {
 
   const location = useLocation();
 
-  // Add LocalBusiness Schema
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    script.text = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      "name": "Mastertech Intergrouppe Inc.",
-      "image": "https://mastertech-app.vercel.app/Uploads/logo.png",
-      "description": "Leading construction and engineering company in Silang Cavite, Philippines",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Sta Rosa Tagaytay Road Purok 4",
-        "addressLocality": "Brgy. Pasong Langka",
-        "addressRegion": "Silang",
-        "postalCode": "4118",
-        "addressCountry": "PH"
-      },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": "14.160172",
-        "longitude": "120.996697"
-      },
-      "url": "https://mastertech-app.vercel.app",
-      "telephone": "+63",
-      "priceRange": "$$",
-      "openingHours": "Mo-Fr 08:00-17:00",
-      "sameAs": [
-        "https://www.facebook.com/mastertech",
-        "https://www.linkedin.com/company/mastertech"
-      ]
-    });
-    document.head.appendChild(script);
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, []);
-
   const getActivePage = () => {
     const path = location.pathname;
     console.log('Current path:', path); // Debug log
@@ -120,12 +82,11 @@ const About = () => {
       />
       <section className="about" role="main">
         <div className="container">
-          <h1>About Mastertech Intergrouppe Inc.</h1>
+          <h1>About Us</h1>
           <div className="about-content">
             <div className="about-text fade-in">
               <h2>Company Overview</h2>
               <p>Mastertech Intergrouppe Inc. was duly incorporated and registered with the Securities and Exchange Commission (SEC) on February 13, 2014, under SEC Certificate No. CS201402904.</p>
-              <p>Based in Silang Cavite, we are a leading construction company serving clients across the Philippines. Our expertise spans across various sectors, delivering quality projects with a focus on innovation and sustainability.</p>
               <p>The Company is primarily engaged in General Construction Services, including but not limited to:</p>
               <ul>
                 <li>Structural, Civil, and Architectural Works</li>
@@ -135,13 +96,7 @@ const About = () => {
               </ul>
             </div>
             <div className="about-image fade-in">
-              <img 
-                src="/Uploads/about-image.png" 
-                alt="Mastertech Intergrouppe Inc. Headquarters in Silang Cavite" 
-                loading="lazy"
-                width="600"
-                height="400"
-              />
+              <img src="/Uploads/about-image.png" alt="MASTERTECH Headquarters" loading="lazy" />
             </div>
           </div>
           <div className="about-services fade-in">
@@ -160,18 +115,6 @@ const About = () => {
           <div className="about-location fade-in">
             <h2>Office Location</h2>
             <p>Sta Rosa Tagaytay Road Purok 4, Brgy. Pasong Langka, Silang Cavite 4118</p>
-            <div className="map-container">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d244.93515605421877!2d120.9966971517091!3d14.16017202394409!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7b0053a0280d%3A0x99434f55287e9a94!2sRestaurant!5e1!3m2!1sen!2sph!4v1743742491118!5m2!1sen!2sph"
-                width="100%"
-                height="300"
-                style={{ border: 0 }}
-                allowFullScreen=""
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title="Mastertech Intergrouppe Inc. Location in Silang Cavite"
-              ></iframe>
-            </div>
           </div>
         </div>
       </section>

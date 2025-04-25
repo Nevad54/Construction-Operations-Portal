@@ -2,77 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import Footer from './Footer';
+import Footer from './Footer'; // Add Footer import
 import './styles.css';
 
 const Services = () => {
   const [isSidebarActive, setIsSidebarActive] = useState(false);
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
-
-  // Add Service Schema
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    script.text = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Service",
-      "provider": {
-        "@type": "LocalBusiness",
-        "name": "Mastertech Intergrouppe Inc.",
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": "Sta Rosa Tagaytay Road Purok 4",
-          "addressLocality": "Brgy. Pasong Langka",
-          "addressRegion": "Silang",
-          "postalCode": "4118",
-          "addressCountry": "PH"
-        }
-      },
-      "hasOfferCatalog": {
-        "@type": "OfferCatalog",
-        "name": "Construction Services",
-        "itemListElement": [
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "General Contracting",
-              "description": "Comprehensive project management from start to finish"
-            }
-          },
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "Design-Build",
-              "description": "Integrated design and construction services for seamless delivery"
-            }
-          },
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "Renovations",
-              "description": "Modernizing and upgrading existing structures"
-            }
-          },
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "Consulting",
-              "description": "Expert advice on project planning and execution"
-            }
-          }
-        ]
-      }
-    });
-    document.head.appendChild(script);
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, []);
 
   // Get the current location
   const location = useLocation();
@@ -197,7 +133,7 @@ const Services = () => {
       <main>
         <section className="services" role="main">
           <div className="container">
-            <h1>Our Services in Silang Cavite</h1>
+            <h1>Our Services</h1>
             <div className="service-list">
               {services.map((service, index) => (
                 <div key={index} className="service-item">
@@ -215,7 +151,8 @@ const Services = () => {
             <div className="footer-item">
               <h2>Send Us a Message</h2>
               <p>
-                If you have any questions or need a quote for your project in Silang Cavite, feel free to contact us!
+                If you have any questions or need a quote, feel free to contact
+                us!
               </p>
               <a
                 href="mailto:inquiry@mastertech.com.ph"
@@ -240,7 +177,7 @@ const Services = () => {
                   allowFullScreen=""
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  title="Mastertech Intergrouppe Inc. Location in Silang Cavite"
+                  title="MASTERTECH Location Map"
                 ></iframe>
               </div>
             </div>
@@ -248,13 +185,13 @@ const Services = () => {
               <h2>Certifications</h2>
               <img
                 src="/Uploads/certification1.jpg"
-                alt="ISO 9001 Certification for Mastertech Intergrouppe Inc."
+                alt="ISO 9001 Certification"
                 className="certification"
                 loading="lazy"
               />
               <img
                 src="/Uploads/certification2.jpg"
-                alt="Safety Compliance Certification for Mastertech Intergrouppe Inc."
+                alt="Safety Compliance Certification"
                 className="certification"
                 loading="lazy"
               />
@@ -263,7 +200,7 @@ const Services = () => {
         </section>
       </main>
 
-      <Footer />
+    
 
       {/* Back to Top Button */}
       <button
