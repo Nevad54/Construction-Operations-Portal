@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
@@ -11,6 +13,16 @@ const VisionMission = () => {
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   const location = useLocation();
+
+  // Initialize AOS
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      once: true,
+      offset: 100,
+      easing: 'ease-in-out'
+    });
+  }, []);
 
   const getActivePage = () => {
     const path = location.pathname;
@@ -81,12 +93,12 @@ const VisionMission = () => {
       />
       <section className="vision-mission" role="main">
         <div className="container">
-          <h1>Vision & Mission</h1>
-          <div className="vision fade-in">
+          <h1 data-aos="fade-up">Vision & Mission</h1>
+          <div className="vision" data-aos="fade-right" data-aos-delay="100">
             <h2>Our Vision</h2>
             <p>To be the leading construction and industrial solutions provider, recognized for innovation, quality, and sustainability.</p>
           </div>
-          <div className="mission fade-in">
+          <div className="mission" data-aos="fade-left" data-aos-delay="200">
             <h2>Our Mission</h2>
             <p>We are committed to delivering exceptional projects through technical expertise, client collaboration, and a focus on safety and environmental responsibility.</p>
           </div>
@@ -98,6 +110,7 @@ const VisionMission = () => {
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         aria-label="Back to top"
         style={{ display: showBackToTop ? 'block' : 'none' }}
+        data-aos="fade-up"
       >
         ↑
       </button>
