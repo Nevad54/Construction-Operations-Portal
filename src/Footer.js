@@ -2,6 +2,17 @@ import React from 'react';
 import './styles.css';
 
 const Footer = () => {
+  const placeholderStyle = {
+    backgroundColor: '#eee',
+    width: '100%',
+    height: '200px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#999',
+    fontSize: '14px'
+  };
+
   return (
     <>
       {/* Footer Info Section */}
@@ -30,26 +41,18 @@ const Footer = () => {
           </div>
           <div className="footer-item">
             <h2>Certifications</h2>
-            <img 
-              src="/Uploads/certification1.jpg" 
-              alt="ISO 9001 Certification" 
+            <div 
               className="certification" 
-              loading="lazy" 
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = '/assets/placeholder.jpg';
-              }}
-            />
-            <img 
-              src="/Uploads/certification2.jpg" 
-              alt="Safety Compliance Certification" 
+              style={placeholderStyle}
+            >
+              No Image Available
+            </div>
+            <div 
               className="certification" 
-              loading="lazy" 
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = '/assets/placeholder.jpg';
-              }}
-            />
+              style={placeholderStyle}
+            >
+              No Image Available
+            </div>
           </div>
         </div>
       </section>
