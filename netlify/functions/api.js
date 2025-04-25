@@ -10,17 +10,32 @@ const requestIp = require('request-ip');
 const app = express();
 const router = express.Router();
 
+// CORS configuration
+const corsOptions = {
+  origin: [
+    'https://mastertech2.netlify.app',
+    'https://mastertech3.netlify.app',
+    'http://localhost:3000'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(requestIp.mw());
 
 // Session configuration
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  secret: process.env.SESSION_SECRET || '70f1e04a35336b79732f2f034b101d4d',
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: true }
+  cookie: { 
+    secure: true,
+    sameSite: 'none'
+  }
 }));
 
 // Basic auth for admin routes
