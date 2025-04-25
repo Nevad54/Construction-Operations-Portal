@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
@@ -11,6 +13,16 @@ const CoreValues = () => {
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   const location = useLocation();
+
+  // Initialize AOS
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      once: true,
+      offset: 100,
+      easing: 'ease-in-out'
+    });
+  }, []);
 
   const getActivePage = () => {
     const path = location.pathname;
@@ -82,21 +94,21 @@ const CoreValues = () => {
       />
       <section className="core-values" role="main">
         <div className="container">
-          <h1>Our Core Values</h1>
+          <h1 data-aos="fade-up">Our Core Values</h1>
           <div className="values-list">
-            <div className="value-item fade-in">
+            <div className="value-item" data-aos="fade-up" data-aos-delay="100">
               <h2>Integrity</h2>
               <p>We uphold the highest standards of honesty and ethics in all our dealings.</p>
             </div>
-            <div className="value-item fade-in">
+            <div className="value-item" data-aos="fade-up" data-aos-delay="200">
               <h2>Excellence</h2>
               <p>We strive for perfection in every project, delivering superior quality and craftsmanship.</p>
             </div>
-            <div className="value-item fade-in">
+            <div className="value-item" data-aos="fade-up" data-aos-delay="300">
               <h2>Safety</h2>
               <p>We prioritize the safety of our team, clients, and communities in every endeavor.</p>
             </div>
-            <div className="value-item fade in">
+            <div className="value-item" data-aos="fade-up" data-aos-delay="400">
               <h2>Sustainability</h2>
               <p>We are committed to environmentally responsible practices that benefit future generations.</p>
             </div>
@@ -109,6 +121,7 @@ const CoreValues = () => {
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         aria-label="Back to top"
         style={{ display: showBackToTop ? 'block' : 'none' }}
+        data-aos="fade-up"
       >
         ↑
       </button>
