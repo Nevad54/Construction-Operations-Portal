@@ -19,10 +19,35 @@ const Projects = () => {
   const [exitingProject, setExitingProject] = useState(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const modalRef = useRef(null);
+  const modalContainerRef = useRef(null);
 
   useEffect(() => {
     loadProjects();
   }, []);
+
+  useEffect(() => {
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape' && selectedProject) {
+        handleCloseModal();
+      }
+    };
+
+    const handleClickOutside = (event) => {
+      if (modalContainerRef.current === event.target) {
+        handleCloseModal();
+      }
+    };
+
+    if (selectedProject) {
+      document.addEventListener('keydown', handleEscKey);
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [selectedProject]);
 
   const handleScroll = () => {
     setShowBackToTop(window.scrollY > 200);
@@ -239,7 +264,10 @@ const Projects = () => {
         </div>
 
         {selectedProject && (
-          <div className="project-modal animate-fade-in">
+          <div 
+            ref={modalContainerRef}
+            className="project-modal animate-fade-in"
+          >
             <div 
               ref={modalRef}
               className="modal-content animate-scale-in"
