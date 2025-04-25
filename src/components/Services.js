@@ -26,15 +26,15 @@ import './Services.css';
 const Services = () => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
-  // Initialize AOS with enhanced settings
+  // Initialize AOS with fresh settings
   useEffect(() => {
     AOS.init({
-      duration: 1000,
+      duration: 1200,
       once: false,
-      offset: 50,
-      easing: 'ease-out-cubic',
+      offset: 100,
+      easing: 'ease-out-back',
       mirror: true,
-      anchorPlacement: 'top-bottom'
+      anchorPlacement: 'top-center'
     });
   }, []);
 
@@ -123,9 +123,9 @@ const Services = () => {
         <section className="services">
           <div className="container">
             <h1 
-              data-aos="fade-down"
+              data-aos="zoom-in"
               data-aos-duration="1000"
-              data-aos-easing="ease-out-cubic"
+              data-aos-easing="ease-out-back"
             >
               Our Services
             </h1>
@@ -134,31 +134,30 @@ const Services = () => {
                 <div 
                   key={index} 
                   className="service-card"
-                  data-aos="fade-up"
-                  data-aos-duration="800"
+                  data-aos="flip-left"
+                  data-aos-duration="1000"
                   data-aos-delay={index * 200}
-                  data-aos-easing="ease-out-cubic"
-                  data-aos-anchor-placement="top-bottom"
+                  data-aos-easing="ease-out-back"
                 >
                   <div 
                     className="service-icon"
                     data-aos="zoom-in"
-                    data-aos-duration="600"
-                    data-aos-delay={index * 200 + 300}
+                    data-aos-duration="800"
+                    data-aos-delay={index * 200 + 400}
                   >
                     <FontAwesomeIcon icon={service.icon} />
                   </div>
                   <h3 
                     data-aos="fade-up"
-                    data-aos-duration="600"
-                    data-aos-delay={index * 200 + 400}
+                    data-aos-duration="800"
+                    data-aos-delay={index * 200 + 600}
                   >
                     {service.title}
                   </h3>
                   <p 
                     data-aos="fade-up"
-                    data-aos-duration="600"
-                    data-aos-delay={index * 200 + 500}
+                    data-aos-duration="800"
+                    data-aos-delay={index * 200 + 800}
                   >
                     {service.description}
                   </p>
@@ -166,8 +165,8 @@ const Services = () => {
                     href="/contact" 
                     className="btn"
                     data-aos="fade-up"
-                    data-aos-duration="600"
-                    data-aos-delay={index * 200 + 600}
+                    data-aos-duration="800"
+                    data-aos-delay={index * 200 + 1000}
                   >
                     Learn More
                   </a>
@@ -184,8 +183,7 @@ const Services = () => {
               className="footer-item" 
               data-aos="fade-right"
               data-aos-duration="1000"
-              data-aos-easing="ease-out-cubic"
-              data-aos-anchor-placement="top-bottom"
+              data-aos-easing="ease-out-back"
             >
               <h2>Send Us a Message</h2>
               <p>If you have any questions or need a quote, feel free to contact us!</p>
@@ -195,8 +193,7 @@ const Services = () => {
               className="footer-item" 
               data-aos="fade-up"
               data-aos-duration="1000"
-              data-aos-easing="ease-out-cubic"
-              data-aos-anchor-placement="top-bottom"
+              data-aos-easing="ease-out-back"
             >
               <h2>Our Location</h2>
               <p><FontAwesomeIcon icon={faMapMarkerAlt} /> 320 Sta Rosa Tagaytay Road Purok 4 Brgy. Pasong Langka, Silang Cavite 4118</p>
@@ -216,8 +213,7 @@ const Services = () => {
               className="footer-item" 
               data-aos="fade-left"
               data-aos-duration="1000"
-              data-aos-easing="ease-out-cubic"
-              data-aos-anchor-placement="top-bottom"
+              data-aos-easing="ease-out-back"
             >
               <h2>Certifications</h2>
               <div 
