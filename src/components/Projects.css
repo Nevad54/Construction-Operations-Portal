@@ -26,11 +26,11 @@
 @keyframes modalFadeIn {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(-50%) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(-50%) scale(1);
   }
 }
 
@@ -420,22 +420,20 @@ header {
   inset: 0;
   background-color: rgba(0, 0, 0, 0.7);
   z-index: 1000;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 5vh;
   overflow-y: auto;
 }
 
 .modal-content {
   background-color: white;
   border-radius: var(--radius-lg);
-  width: 100%;
+  width: 95%;
   max-width: 800px;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
-  margin: 0 20px;
+  margin: 20px auto;
+  top: 50%;
+  transform: translateY(-50%);
   animation: modalFadeIn 0.3s ease-out;
   box-shadow: var(--shadow-xl);
 }
