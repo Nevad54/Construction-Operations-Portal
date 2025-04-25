@@ -10,7 +10,6 @@ const Home = () => {
   const [isSidebarActive, setIsSidebarActive] = useState(false);
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [imageErrors, setImageErrors] = useState({});
 
   const location = useLocation();
 
@@ -67,11 +66,7 @@ const Home = () => {
   };
 
   const handleScroll = () => {
-    setShowBackToTop(window.scrollY > 200);
-  };
-
-  const handleImageError = (imageName) => {
-    setImageErrors(prev => ({ ...prev, [imageName]: true }));
+    setShowBackToTop(window.scrollY > 300);
   };
 
   useEffect(() => {
@@ -86,39 +81,8 @@ const Home = () => {
     };
   }, [isSidebarActive]);
 
-  const ProjectCategory = ({ title, description, image, onImageError }) => {
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [hasError, setHasError] = useState(false);
-
-    const handleImageError = () => {
-      setHasError(true);
-      onImageError();
-    };
-
-    return (
-      <div className="project-category">
-        <div className="image-container">
-          {!hasError ? (
-            <img
-              src={image}
-              alt={title}
-              loading="lazy"
-              className={isLoaded ? 'loaded' : ''}
-              onLoad={() => setIsLoaded(true)}
-              onError={handleImageError}
-            />
-          ) : null}
-          {(!isLoaded || hasError) && <div className="placeholder-image" />}
-          <div className="category-overlay">
-            <span>{title}</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div>
+    <div className="home">
       <Sidebar
         isSidebarActive={isSidebarActive}
         setIsSidebarActive={setIsSidebarActive}
@@ -134,17 +98,16 @@ const Home = () => {
       />
       <section className="hero" role="banner">
         <div className="hero-content">
-          <h1 className="fade-in" style={{ opacity: 1 }}>
+          <h1>
             Welcome to MASTERTECH INTERGROUPPE INC.
           </h1>
-          <p className="hero-subtitle fade-in" style={{ opacity: 1 }}>
+          <p className="hero-subtitle">
             Your Trusted Partner in Construction and Industrial Solutions
           </p>
           <Link
             to="/contact"
-            className="btn fade-in"
+            className="btn"
             aria-label="Contact us"
-            style={{ opacity: 1 }}
           >
             Get in Touch
           </Link>
@@ -152,51 +115,46 @@ const Home = () => {
       </section>
       <section className="project-categories" role="main">
         <div className="container">
-          <h2>Our Expertise</h2>
+          <h2>Our Project Categories</h2>
           <div className="categories-grid">
             <Link
-              to="/projects#industrial"
-              className="category-card fade-in"
-            >
-              <ProjectCategory
-                title="Industrial Projects"
-                description="Structural, Civil, Site Development, and Architectural Works"
-                image={imageErrors['industrial'] ? '/assets/placeholder.jpg' : `${IMAGE_BASE_URL}/uploads/industrial.jpg`}
-                onImageError={() => handleImageError('industrial')}
-              />
-            </Link>
-            <Link
               to="/projects#residential"
-              className="category-card fade-in"
+              className="category-card"
             >
-              <ProjectCategory
-                title="Residential Projects"
-                description="Structural, Civil, Site Development, and Architectural Works"
-                image={imageErrors['residential'] ? '/assets/placeholder.jpg' : `${IMAGE_BASE_URL}/uploads/residential.jpg`}
-                onImageError={() => handleImageError('residential')}
+              <img
+                src={`${IMAGE_BASE_URL}/uploads/residential.jpg`}
+                alt="Residential Projects"
+                loading="lazy"
               />
+              <div className="category-overlay">
+                <span>Residential</span>
+              </div>
             </Link>
             <Link
               to="/projects#commercial"
-              className="category-card fade-in"
+              className="category-card"
             >
-              <ProjectCategory
-                title="Commercial Projects"
-                description="Structural, Civil, Site Development, and Architectural Works"
-                image={imageErrors['commercial'] ? '/assets/placeholder.jpg' : `${IMAGE_BASE_URL}/uploads/commercial.jpg`}
-                onImageError={() => handleImageError('commercial')}
+              <img
+                src={`${IMAGE_BASE_URL}/uploads/commercial.jpg`}
+                alt="Commercial Projects"
+                loading="lazy"
               />
+              <div className="category-overlay">
+                <span>Commercial</span>
+              </div>
             </Link>
             <Link
               to="/projects#renovation"
-              className="category-card fade-in"
+              className="category-card"
             >
-              <ProjectCategory
-                title="Renovation Projects"
-                description="Structural, Civil, Site Development, and Architectural Works"
-                image={imageErrors['renovation'] ? '/assets/placeholder.jpg' : `${IMAGE_BASE_URL}/uploads/renovation.jpg`}
-                onImageError={() => handleImageError('renovation')}
+              <img
+                src={`${IMAGE_BASE_URL}/uploads/renovation.jpg`}
+                alt="Renovation Projects"
+                loading="lazy"
               />
+              <div className="category-overlay">
+                <span>Renovation</span>
+              </div>
             </Link>
           </div>
         </div>

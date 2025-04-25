@@ -1,0 +1,67 @@
+.safety-page {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.safety-hero {
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+    url('/public/Uploads/safety-bg.jpg') center/cover no-repeat;
+  height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: white;
+  padding: 0 20px;
+}
+
+.safety-hero h1 {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.safety-hero p {
+  font-size: 1.5rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.safety-content {
+  padding: 60px 0;
+}
+
+.safety-statement {
+  background: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.safety-statement p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .safety-hero {
+    height: 40vh;
+  }
+
+  .safety-hero h1 {
+    font-size: 2.5rem;
+  }
+
+  .safety-hero p {
+    font-size: 1.2rem;
+  }
+
+  .safety-statement {
+    padding: 20px;
+  }
+
+  .safety-statement p {
+    font-size: 1rem;
+  }
+} 
