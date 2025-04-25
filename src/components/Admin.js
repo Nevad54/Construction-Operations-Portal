@@ -386,6 +386,13 @@ const Admin = () => {
                                 data-aos="fade-up"
                                 data-aos-delay={300 + (index * 100)}
                             >
+                                {project.image && (
+                                    <img 
+                                        src={`${IMAGE_BASE_URL}${project.image}`} 
+                                        alt={project.title} 
+                                        className="project-image"
+                                    />
+                                )}
                                 <div className="project-content">
                                     <h3>{project.title}</h3>
                                     <p>{project.description}</p>
@@ -423,6 +430,13 @@ const Admin = () => {
                                 data-aos="fade-up"
                                 data-aos-delay={300 + (index * 100)}
                             >
+                                {project.image && (
+                                    <img 
+                                        src={`${IMAGE_BASE_URL}${project.image}`} 
+                                        alt={project.title} 
+                                        className="project-image"
+                                    />
+                                )}
                                 <div className="project-content">
                                     <h3>{project.title}</h3>
                                     <p>{project.description}</p>
