@@ -1,8 +1,32 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 
+const handleResponse = async (response) => {
+  console.log('API Response:', {
+    status: response.status,
+    statusText: response.statusText,
+    headers: Object.fromEntries(response.headers.entries())
+  });
+
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    const text = await response.text();
+    console.error('Non-JSON response:', text);
+    throw new Error(`Expected JSON response but got ${contentType}`);
+  }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error('Error response:', errorData);
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+};
+
 export const api = {
     // Projects
     getProjects: async () => {
+        console.log('Fetching projects from:', `${API_BASE_URL}/.netlify/functions/api/projects`);
         const response = await fetch(`${API_BASE_URL}/.netlify/functions/api/projects`, {
             method: 'GET',
             credentials: 'include',
@@ -12,13 +36,11 @@ export const api = {
             },
             mode: 'cors'
         });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
+        return handleResponse(response);
     },
 
     createProject: async (projectData) => {
+        console.log('Creating project with data:', projectData);
         let response;
         
         // Check if projectData is FormData or a regular object
@@ -44,15 +66,11 @@ export const api = {
             });
         }
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('Error response:', errorData);
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
+        return handleResponse(response);
     },
 
     updateProject: async (id, projectData) => {
+        console.log(`Updating project ${id} with data:`, projectData);
         const response = await fetch(`${API_BASE_URL}/.netlify/functions/api/projects/${id}`, {
             method: 'PUT',
             credentials: 'include',
@@ -63,13 +81,11 @@ export const api = {
             body: JSON.stringify(projectData),
             mode: 'cors'
         });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
+        return handleResponse(response);
     },
 
     deleteProject: async (id) => {
+        console.log(`Deleting project ${id}`);
         const response = await fetch(`${API_BASE_URL}/.netlify/functions/api/projects/${id}`, {
             method: 'DELETE',
             credentials: 'include',
@@ -79,10 +95,7 @@ export const api = {
             },
             mode: 'cors'
         });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
+        return handleResponse(response);
     },
 
     // Contact Form

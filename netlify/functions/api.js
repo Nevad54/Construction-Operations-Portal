@@ -24,34 +24,15 @@ const corsHeaders = {
   'Content-Type': 'application/json'
 };
 
-// Connect to MongoDB
-let db;
-const connectDB = async () => {
-  if (db) return db;
-  try {
-    await mongoose.connect(MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
-    console.log('MongoDB connected successfully');
-    db = mongoose.connection;
-    return db;
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    throw error;
-  }
-};
-
 // Export the handler for Netlify Functions
 exports.handler = async (event, context) => {
-  console.log('Received request:', {
-    path: event.path,
-    method: event.httpMethod,
-    headers: event.headers
-  });
+  console.log('Function started');
+  console.log('Event:', JSON.stringify(event, null, 2));
+  console.log('Context:', JSON.stringify(context, null, 2));
 
   // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
+    console.log('Handling OPTIONS request');
     return {
       statusCode: 204,
       headers: corsHeaders
@@ -59,28 +40,40 @@ exports.handler = async (event, context) => {
   }
 
   // Handle GET /projects
-  if (event.httpMethod === 'GET' && event.path.endsWith('/projects')) {
+  if (event.httpMethod === 'GET' && event.path.includes('/projects')) {
+    console.log('Handling GET /projects request');
     try {
-      await connectDB();
-      const projects = await Project.find();
-      console.log('Projects found:', projects.length);
-      
+      console.log('Connecting to MongoDB...');
+      await mongoose.connect(MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+      });
+      console.log('MongoDB connected successfully');
+
+      console.log('Fetching projects...');
+      const projects = await mongoose.model('Project').find();
+      console.log(`Found ${projects.length} projects`);
+
       return {
         statusCode: 200,
         headers: corsHeaders,
         body: JSON.stringify(projects)
       };
     } catch (error) {
-      console.error('Error fetching projects:', error);
+      console.error('Error in GET /projects:', error);
       return {
         statusCode: 500,
         headers: corsHeaders,
-        body: JSON.stringify({ error: 'Failed to fetch projects' })
+        body: JSON.stringify({ 
+          error: 'Failed to fetch projects',
+          details: error.message 
+        })
       };
     }
   }
 
   // Handle other routes
+  console.log('Route not found:', event.path);
   return {
     statusCode: 404,
     headers: corsHeaders,
