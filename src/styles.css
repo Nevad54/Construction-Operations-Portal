@@ -204,54 +204,121 @@ header .container {
 
 /* Hero Section */
 .hero {
-    position: relative;
+    background: url('/public/Uploads/background1.png') no-repeat center center/cover;
+    background-color: #333;
     height: 100vh;
-    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
-        url('/uploads/hero-bg.jpg') center/cover no-repeat;
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     text-align: center;
-    color: white;
+    color: #fff;
+    position: relative;
+}
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
 }
 
 .hero-content {
+    position: relative;
+    text-align: center;
+    padding: 20px;
     max-width: 800px;
-    padding: 0 20px;
-    z-index: 1;
+    margin: 0 auto;
+    animation: fadeIn 1s ease-out;
 }
 
-.hero h1 {
-    font-size: 3.5rem;
-    margin-bottom: 1rem;
-    opacity: 1;
-    transform: none;
-    transition: none;
+.hero-content h1 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    animation: slideIn 0.8s ease-out;
 }
 
-.hero-subtitle {
+.hero-content .hero-subtitle {
     font-size: 1.5rem;
-    margin-bottom: 2rem;
-    opacity: 1;
-    transform: none;
-    transition: none;
+    color: #fff;
+    margin: 15px 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 1.2s ease-out 0.2s both;
 }
 
+/* Button Styles */
 .btn {
     display: inline-block;
-    padding: 1rem 2rem;
-    background-color: #007bff;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
-    opacity: 1;
-    transform: none;
+    padding: 14px 28px;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: 0.5s;
 }
 
 .btn:hover {
-    background-color: #0056b3;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 12px rgba(76, 175, 80, 0.2);
+    background: linear-gradient(135deg, #45a049 0%, #388e3c 100%);
+}
+
+.btn:hover::before {
+    left: 100%;
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Form Submit Button */
+.contact-form .btn {
+    width: 100%;
+    margin-top: 20px;
+    font-size: 1.1rem;
+    padding: 12px 24px;
+}
+
+.contact-form .btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Hero Button */
+.hero-content .btn {
+    font-size: 1.2rem;
+    padding: 16px 32px;
+    margin-top: 20px;
+    background: linear-gradient(135deg, #4CAF50 0%, #388e3c 100%);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Projects Section */
