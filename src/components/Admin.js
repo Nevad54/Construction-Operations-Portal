@@ -334,11 +334,11 @@ const Admin = () => {
     };
 
     // Handle click outside modal
-    const handleClickOutside = (event) => {
-        if (modalRef.current && !modalRef.current.contains(event.target)) {
-            setShowModal(false);
-        }
-    };
+        const handleClickOutside = (event) => {
+            if (modalRef.current && !modalRef.current.contains(event.target)) {
+                setShowModal(false);
+            }
+        };
 
     // Close modal when clicking outside
     useEffect(() => {
@@ -449,7 +449,7 @@ const Admin = () => {
                                     </button>
                                     <button onClick={() => handleDelete(project._id)}>
                                         <i className="fas fa-trash-alt"></i> Delete
-                                    </button>
+            </button>
                                 </div>
                             </div>
                         ))}
@@ -461,59 +461,59 @@ const Admin = () => {
             {showModal && (
                 <div className="modal-overlay" onClick={handleClickOutside}>
                     <div className="modal" ref={modalRef} data-aos="zoom-in">
-                        <h2>{editingProject ? 'Edit Project' : 'Add New Project'}</h2>
+                    <h2>{editingProject ? 'Edit Project' : 'Add New Project'}</h2>
                         <form onSubmit={editingProject ? handleEditSubmit : handleSubmit}>
-                            <input
-                                type="text"
-                                name="title"
-                                placeholder="Project Title"
-                                value={editingProject ? editingProject.title : formData.title}
-                                onChange={editingProject ? e => setEditingProject({ ...editingProject, title: e.target.value }) : handleInputChange}
-                                required
-                            />
-                            <textarea
-                                name="description"
-                                placeholder="Project Description"
-                                value={editingProject ? editingProject.description : formData.description}
-                                onChange={editingProject ? e => setEditingProject({ ...editingProject, description: e.target.value }) : handleInputChange}
-                                required
-                            ></textarea>
-                            <input
-                                type="text"
-                                name="location"
-                                placeholder="Location"
-                                value={editingProject ? editingProject.location : formData.location}
-                                onChange={editingProject ? e => setEditingProject({ ...editingProject, location: e.target.value }) : handleInputChange}
-                            />
-                            <input
-                                type="date"
-                                name="date"
-                                value={editingProject ? editingProject.date : formData.date}
-                                onChange={editingProject ? e => setEditingProject({ ...editingProject, date: e.target.value }) : handleInputChange}
-                            />
-                            <input
-                                type="file"
-                                name="image"
-                                accept="image/*"
-                                onChange={e => editingProject ? handleImageChange(e, true) : handleImageChange(e)}
-                            />
-                            {(editingProject ? editImagePreview : imagePreview) && (
-                                <img src={editingProject ? `${IMAGE_BASE_URL}${editImagePreview}` : imagePreview} alt="Preview" className="image-preview" />
-                            )}
-                            <select
-                                name="status"
-                                value={editingProject ? editingProject.status : formData.status}
-                                onChange={editingProject ? e => setEditingProject({ ...editingProject, status: e.target.value }) : handleInputChange}
-                            >
-                                <option value="ongoing">Ongoing</option>
-                                <option value="completed">Completed</option>
-                            </select>
-                            <div className="modal-actions">
-                                <button type="button" className="cancel-btn" onClick={() => { setShowModal(false); setEditingProject(null); setImagePreview(null); setEditImagePreview(null); }}>Cancel</button>
-                                <button type="submit" className="submit-btn">{editingProject ? 'Save Changes' : 'Add Project'}</button>
-                            </div>
-                        </form>
-                    </div>
+                      <input
+                        type="text"
+                        name="title"
+                        placeholder="Project Title"
+                        value={editingProject ? editingProject.title : formData.title}
+                        onChange={editingProject ? e => setEditingProject({ ...editingProject, title: e.target.value }) : handleInputChange}
+                        required
+                      />
+                      <textarea
+                        name="description"
+                        placeholder="Project Description"
+                        value={editingProject ? editingProject.description : formData.description}
+                        onChange={editingProject ? e => setEditingProject({ ...editingProject, description: e.target.value }) : handleInputChange}
+                        required
+                      ></textarea>
+                      <input
+                        type="text"
+                        name="location"
+                        placeholder="Location"
+                        value={editingProject ? editingProject.location : formData.location}
+                        onChange={editingProject ? e => setEditingProject({ ...editingProject, location: e.target.value }) : handleInputChange}
+                      />
+                      <input
+                        type="date"
+                        name="date"
+                        value={editingProject ? editingProject.date : formData.date}
+                        onChange={editingProject ? e => setEditingProject({ ...editingProject, date: e.target.value }) : handleInputChange}
+                      />
+                      <input
+                        type="file"
+                        name="image"
+                        accept="image/*"
+                        onChange={e => editingProject ? handleImageChange(e, true) : handleImageChange(e)}
+                      />
+                      {(editingProject ? editImagePreview : imagePreview) && (
+                        <img src={editingProject ? `${IMAGE_BASE_URL}${editImagePreview}` : imagePreview} alt="Preview" className="image-preview" />
+                      )}
+                      <select
+                        name="status"
+                        value={editingProject ? editingProject.status : formData.status}
+                        onChange={editingProject ? e => setEditingProject({ ...editingProject, status: e.target.value }) : handleInputChange}
+                      >
+                        <option value="ongoing">Ongoing</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                      <div className="modal-actions">
+                        <button type="button" className="cancel-btn" onClick={() => { setShowModal(false); setEditingProject(null); setImagePreview(null); setEditImagePreview(null); }}>Cancel</button>
+                        <button type="submit" className="submit-btn">{editingProject ? 'Save Changes' : 'Add Project'}</button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
             )}
 
