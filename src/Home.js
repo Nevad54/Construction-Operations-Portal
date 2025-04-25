@@ -10,7 +10,6 @@ const Home = () => {
   const [isSidebarActive, setIsSidebarActive] = useState(false);
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(true);
 
   const location = useLocation();
 
@@ -35,14 +34,6 @@ const Home = () => {
     console.log('Updating activePage to:', newActivePage);
     setActivePage(newActivePage);
   }, [location.pathname]); // Recompute activePage when the path changes
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowWelcome(false);
-    }, 3000); // Welcome message will disappear after 3 seconds
-
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleOutsideClick = (event) => {
     const sidebar = document.getElementById('sidebar');
@@ -107,17 +98,15 @@ const Home = () => {
       />
       <section className="hero" role="banner">
         <div className="hero-content">
-          {showWelcome && (
-            <h1 className="fade-in">
-              Welcome to MASTERTECH INTERGROUPPE INC.
-            </h1>
-          )}
-          <p className="hero-subtitle fade-in">
+          <h1>
+            Welcome to MASTERTECH INTERGROUPPE INC.
+          </h1>
+          <p className="hero-subtitle">
             Your Trusted Partner in Construction and Industrial Solutions
           </p>
           <Link
             to="/contact"
-            className="btn fade-in"
+            className="btn"
             aria-label="Contact us"
           >
             Get in Touch
