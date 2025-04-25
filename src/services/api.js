@@ -4,7 +4,13 @@ export const api = {
     // Projects
     getProjects: async () => {
         const response = await fetch(`${API_BASE_URL}/api/projects`, {
-            credentials: 'include'
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            mode: 'cors'
         });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -21,6 +27,7 @@ export const api = {
             response = await fetch(`${API_BASE_URL}/api/projects`, {
                 method: 'POST',
                 credentials: 'include',
+                mode: 'cors',
                 body: projectData,
             });
         } else {
@@ -28,7 +35,9 @@ export const api = {
             response = await fetch(`${API_BASE_URL}/api/projects`, {
                 method: 'POST',
                 credentials: 'include',
+                mode: 'cors',
                 headers: {
+                    'Accept': 'application/json',
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(projectData),
@@ -48,18 +57,19 @@ export const api = {
         
         // Check if projectData is FormData or a regular object
         if (projectData instanceof FormData) {
-            // If it's FormData, send it directly
             response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
                 method: 'PUT',
                 credentials: 'include',
+                mode: 'cors',
                 body: projectData,
             });
         } else {
-            // If it's a regular object, send as JSON
             response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
                 method: 'PUT',
                 credentials: 'include',
+                mode: 'cors',
                 headers: {
+                    'Accept': 'application/json',
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(projectData),
@@ -67,8 +77,6 @@ export const api = {
         }
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('Error response:', errorData);
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
@@ -77,7 +85,12 @@ export const api = {
     deleteProject: async (id) => {
         const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
             method: 'DELETE',
-            credentials: 'include'
+            credentials: 'include',
+            mode: 'cors',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
         });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
