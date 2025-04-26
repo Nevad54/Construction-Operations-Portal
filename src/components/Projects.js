@@ -7,11 +7,11 @@ import { faSearch, faSort, faFilter, faTimes } from '@fortawesome/free-solid-svg
 import Header from '../Header';
 import Sidebar from '../Sidebar';
 import Footer from '../Footer';
+import { useProjects } from '../context/ProjectContext';
 
 const Projects = () => {
   const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
-  const [projects, setProjects] = useState([]);
-  const [error, setError] = useState(null);
+  const { projects, loading, error } = useProjects();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState(null);
   const [sortOrder, setSortOrder] = useState('desc');
@@ -24,7 +24,6 @@ const Projects = () => {
   const modalContainerRef = useRef(null);
 
   useEffect(() => {
-    loadProjects();
     // Initialize AOS
     AOS.init({
       duration: 800,
@@ -68,20 +67,6 @@ const Projects = () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
-
-  const loadProjects = async () => {
-    try {
-      setError(null);
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/projects`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch projects');
-      }
-      const data = await response.json();
-      setProjects(data);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
 
   const filteredProjects = projects
     .filter(project => {
@@ -158,7 +143,7 @@ const Projects = () => {
       <div className="error-container">
         <h3>Error loading projects</h3>
         <p>{error}</p>
-        <button className="retry-button" onClick={loadProjects}>
+        <button className="retry-button" onClick={() => {}}>
           Retry
         </button>
       </div>
