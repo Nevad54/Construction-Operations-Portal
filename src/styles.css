@@ -7,6 +7,20 @@
     box-sizing: border-box;
 }
 
+html, body {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+    background: #003a5d; /* match your app's background if needed */
+}
+
+#root, .App {
+    width: 100vw;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background: #fff; /* or your main content background */
+}
+
 body {
     font-family: Arial, sans-serif;
     line-height: 1.6;

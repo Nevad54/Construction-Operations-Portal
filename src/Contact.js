@@ -119,49 +119,6 @@ const Contact = () => {
     };
   }, [isSidebarActive]);
 
-  // Add reCAPTCHA script loading
-  useEffect(() => {
-    const loadRecaptcha = () => {
-      if (!window.grecaptcha) {
-        const script = document.createElement('script');
-        script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-          console.log('reCAPTCHA script loaded successfully');
-          if (recaptchaRef.current) {
-            recaptchaRef.current.reset();
-          }
-        };
-        script.onerror = (error) => {
-          console.error('Error loading reCAPTCHA script:', error);
-          setErrors(prev => ({
-            ...prev,
-            captcha: 'Error loading reCAPTCHA. Please refresh the page.'
-          }));
-        };
-        document.head.appendChild(script);
-      } else if (recaptchaRef.current) {
-        recaptchaRef.current.reset();
-      }
-    };
-
-    // Only load reCAPTCHA if we're on the contact page
-    if (location.pathname === '/contact') {
-      loadRecaptcha();
-    }
-
-    return () => {
-      if (window.grecaptcha && recaptchaRef.current) {
-        try {
-          recaptchaRef.current.reset();
-        } catch (error) {
-          console.error('Error cleaning up reCAPTCHA:', error);
-        }
-      }
-    };
-  }, [RECAPTCHA_SITE_KEY, location.pathname]);
-
   const handleRecaptchaChange = (token) => {
     console.log('reCAPTCHA token received');
     if (!token) {
