@@ -154,7 +154,38 @@ exports.handler = async (event, context) => {
         // Handle POST /projects
         if (event.httpMethod === 'POST' && event.path.includes('/projects')) {
             console.log('Handling POST /projects request');
-            const projectData = JSON.parse(event.body);
+            console.log('Content-Type:', event.headers['content-type']);
+            
+            let projectData;
+            try {
+                if (event.headers['content-type'] && event.headers['content-type'].includes('multipart/form-data')) {
+                    // Parse FormData
+                    const formData = new FormData();
+                    const buffer = Buffer.from(event.body, 'base64');
+                    const text = buffer.toString('utf8');
+                    const parts = text.split('\r\n');
+                    
+                    // Extract form fields
+                    projectData = {};
+                    for (let i = 0; i < parts.length; i++) {
+                        if (parts[i].includes('name="')) {
+                            const fieldName = parts[i].match(/name="([^"]+)"/)[1];
+                            i += 2; // Skip the empty line
+                            projectData[fieldName] = parts[i];
+                        }
+                    }
+                } else {
+                    // Parse JSON
+                    projectData = JSON.parse(event.body);
+                }
+            } catch (error) {
+                console.error('Error parsing request body:', error);
+                return {
+                    statusCode: 400,
+                    headers: responseHeaders,
+                    body: JSON.stringify({ error: 'Invalid request body' })
+                };
+            }
             
             // Validate required fields
             if (!projectData.title || !projectData.description) {
@@ -175,14 +206,23 @@ exports.handler = async (event, context) => {
                 status: projectData.status || 'ongoing'
             });
 
-            const savedProject = await project.save();
-            console.log('Created new project:', savedProject);
+            try {
+                const savedProject = await project.save();
+                console.log('Created new project:', savedProject);
 
-            return {
-                statusCode: 201,
-                headers: responseHeaders,
-                body: JSON.stringify(savedProject)
-            };
+                return {
+                    statusCode: 201,
+                    headers: responseHeaders,
+                    body: JSON.stringify(savedProject)
+                };
+            } catch (error) {
+                console.error('Error saving project:', error);
+                return {
+                    statusCode: 500,
+                    headers: responseHeaders,
+                    body: JSON.stringify({ error: 'Failed to save project' })
+                };
+            }
         }
 
         // Handle PUT /projects/:id

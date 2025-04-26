@@ -83,25 +83,25 @@ export const api = {
         
         try {
             let response;
-        if (projectData instanceof FormData) {
+            if (projectData instanceof FormData) {
                 response = await fetch(url, {
-                method: 'POST',
-                credentials: 'include',
+                    method: 'POST',
+                    credentials: 'include',
                     mode: 'cors',
-                body: projectData,
-            });
-        } else {
+                    body: projectData
+                });
+            } else {
                 response = await fetch(url, {
-                method: 'POST',
-                credentials: 'include',
+                    method: 'POST',
+                    credentials: 'include',
                     mode: 'cors',
-                headers: {
+                    headers: {
                         'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(projectData),
-            });
-        }
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(projectData)
+                });
+            }
             return handleResponse(response);
         } catch (error) {
             console.error('Error in createProject:', error);

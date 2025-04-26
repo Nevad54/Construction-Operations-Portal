@@ -167,29 +167,33 @@ const Admin = () => {
                 throw new Error('Please fill in all required fields');
             }
 
-            const formDataToSend = new FormData();
-            
-            // Handle each field separately to ensure proper formatting
-            Object.keys(formData).forEach(key => {
-                if (formData[key] !== null && key !== 'featured') {
-                    if (key === 'date' && formData[key]) {
-                        // Ensure date is properly formatted
-                        const date = new Date(formData[key]);
-                        if (isNaN(date.getTime())) {
-                            throw new Error('Invalid date format');
-                        }
-                        formDataToSend.append(key, date.toISOString());
-                    } else {
-                        formDataToSend.append(key, formData[key]);
+            // Create a regular object for JSON submission
+            const projectDataObj = {
+                title: formData.title,
+                description: formData.description,
+                location: formData.location || '',
+                date: formData.date ? new Date(formData.date).toISOString() : null,
+                status: formData.status || 'ongoing'
+            };
+
+            // If there's an image, use FormData, otherwise use JSON
+            let dataToSend;
+            if (formData.image) {
+                dataToSend = new FormData();
+                Object.keys(projectDataObj).forEach(key => {
+                    if (projectDataObj[key] !== null && projectDataObj[key] !== undefined) {
+                        dataToSend.append(key, projectDataObj[key]);
                     }
-                }
-            });
+                });
+                dataToSend.append('image', formData.image);
+            } else {
+                dataToSend = projectDataObj;
+            }
 
             // Log the data being sent
-            const formDataObj = Object.fromEntries(formDataToSend);
-            console.log('Creating project with data:', formDataObj);
+            console.log('Creating project with data:', formData.image ? 'FormData with image' : projectDataObj);
             
-            const response = await addProject(formDataToSend);
+            const response = await addProject(dataToSend);
             console.log('Project created successfully:', response);
 
             // Refresh the projects list after creation
