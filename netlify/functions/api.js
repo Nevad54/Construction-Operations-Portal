@@ -4,8 +4,9 @@ const cors = require('cors');
 const app = express();
 
 // CORS headers
+const allowedOrigins = ['https://mastertech2.netlify.app', 'https://mastertech3.netlify.app'];
+
 const corsHeaders = {
-    'Access-Control-Allow-Origin': 'https://mastertech3.netlify.app',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
     'Access-Control-Allow-Credentials': 'true',
@@ -31,7 +32,7 @@ const Project = mongoose.model('Project', projectSchema);
 
 // Configure CORS
 const corsOptions = {
-    origin: 'https://mastertech3.netlify.app',
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     credentials: true,
@@ -44,7 +45,10 @@ app.use(cors(corsOptions));
 
 // Add headers middleware
 app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', 'https://mastertech3.netlify.app');
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -104,13 +108,19 @@ app.use((err, req, res, next) => {
 exports.handler = async (event, context) => {
     console.log('API function called with path:', event.path);
     console.log('Event:', JSON.stringify(event, null, 2));
+    console.log('Origin:', event.headers.origin);
 
     // Handle preflight requests
     if (event.httpMethod === 'OPTIONS') {
         console.log('Handling preflight request');
+        const origin = event.headers.origin;
+        const headers = {
+            ...corsHeaders,
+            'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+        };
         return {
             statusCode: 204,
-            headers: corsHeaders
+            headers
         };
     }
 
@@ -122,6 +132,12 @@ exports.handler = async (event, context) => {
         });
         console.log('Connected to MongoDB');
 
+        const origin = event.headers.origin;
+        const responseHeaders = {
+            ...corsHeaders,
+            'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+        };
+
         // Handle GET /projects
         if (event.httpMethod === 'GET' && event.path.includes('/projects')) {
             console.log('Handling GET /projects request');
@@ -130,7 +146,7 @@ exports.handler = async (event, context) => {
             
             return {
                 statusCode: 200,
-                headers: corsHeaders,
+                headers: responseHeaders,
                 body: JSON.stringify(projects)
             };
         }
@@ -153,14 +169,14 @@ exports.handler = async (event, context) => {
             if (!updatedProject) {
                 return {
                     statusCode: 404,
-                    headers: corsHeaders,
+                    headers: responseHeaders,
                     body: JSON.stringify({ error: 'Project not found' })
                 };
             }
 
             return {
                 statusCode: 200,
-                headers: corsHeaders,
+                headers: responseHeaders,
                 body: JSON.stringify(updatedProject)
             };
         }
@@ -169,14 +185,18 @@ exports.handler = async (event, context) => {
         console.log('Route not found:', event.path);
         return {
             statusCode: 404,
-            headers: corsHeaders,
+            headers: responseHeaders,
             body: JSON.stringify({ error: 'Not Found' })
         };
     } catch (error) {
         console.error('Error:', error);
+        const origin = event.headers.origin;
         return {
             statusCode: 500,
-            headers: corsHeaders,
+            headers: {
+                ...corsHeaders,
+                'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+            },
             body: JSON.stringify({ error: 'Internal Server Error' })
         };
     } finally {
