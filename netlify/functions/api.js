@@ -255,6 +255,39 @@ exports.handler = async (event, context) => {
             };
         }
 
+        // Handle DELETE /projects/:id
+        if (event.httpMethod === 'DELETE' && event.path.match(/\/projects\/[^\/]+$/)) {
+            console.log('Handling DELETE /projects/:id request');
+            const id = event.path.split('/').pop();
+            
+            console.log('Deleting project:', id);
+
+            try {
+                const deletedProject = await Project.findByIdAndDelete(id);
+                
+                if (!deletedProject) {
+                    return {
+                        statusCode: 404,
+                        headers: responseHeaders,
+                        body: JSON.stringify({ error: 'Project not found' })
+                    };
+                }
+
+                return {
+                    statusCode: 200,
+                    headers: responseHeaders,
+                    body: JSON.stringify({ message: 'Project deleted successfully' })
+                };
+            } catch (error) {
+                console.error('Error deleting project:', error);
+                return {
+                    statusCode: 500,
+                    headers: responseHeaders,
+                    body: JSON.stringify({ error: 'Failed to delete project' })
+                };
+            }
+        }
+
         // Handle other routes
         console.log('Route not found:', event.path);
         return {

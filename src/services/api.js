@@ -161,13 +161,14 @@ export const api = {
         
         try {
             const response = await fetch(url, {
-            method: 'DELETE',
+                method: 'DELETE',
                 credentials: 'include',
                 headers: {
                     'Accept': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 mode: 'cors'
-        });
+            });
             return handleResponse(response);
         } catch (error) {
             console.error('Error in deleteProject:', error);
