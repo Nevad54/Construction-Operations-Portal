@@ -288,6 +288,17 @@ exports.handler = async (event, context) => {
             }
         }
 
+        // Handle POST /contact
+        if (event.httpMethod === 'POST' && event.path.includes('/contact')) {
+            const body = JSON.parse(event.body);
+            // You can add email sending, validation, etc. here
+            return {
+                statusCode: 200,
+                headers: responseHeaders,
+                body: JSON.stringify({ message: 'Contact form received!' })
+            };
+        }
+
         // Handle other routes
         console.log('Route not found:', event.path);
         return {
