@@ -151,6 +151,40 @@ exports.handler = async (event, context) => {
             };
         }
 
+        // Handle POST /projects
+        if (event.httpMethod === 'POST' && event.path.includes('/projects')) {
+            console.log('Handling POST /projects request');
+            const projectData = JSON.parse(event.body);
+            
+            // Validate required fields
+            if (!projectData.title || !projectData.description) {
+                return {
+                    statusCode: 400,
+                    headers: responseHeaders,
+                    body: JSON.stringify({ error: 'Title and description are required' })
+                };
+            }
+
+            // Create new project
+            const project = new Project({
+                title: projectData.title,
+                description: projectData.description,
+                location: projectData.location,
+                owner: projectData.owner,
+                date: projectData.date ? new Date(projectData.date) : null,
+                status: projectData.status || 'ongoing'
+            });
+
+            const savedProject = await project.save();
+            console.log('Created new project:', savedProject);
+
+            return {
+                statusCode: 201,
+                headers: responseHeaders,
+                body: JSON.stringify(savedProject)
+            };
+        }
+
         // Handle PUT /projects/:id
         if (event.httpMethod === 'PUT' && event.path.match(/\/projects\/[^\/]+$/)) {
             console.log('Handling PUT /projects/:id request');
