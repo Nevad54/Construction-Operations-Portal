@@ -279,11 +279,13 @@
 
 /* Loading and Error States */
 .loading,
-.error {
+.error,
+.success {
     text-align: center;
     padding: 1rem;
     margin: 1rem 0;
     border-radius: 4px;
+    animation: fadeIn 0.3s ease-in;
 }
 
 .loading {
@@ -294,6 +296,23 @@
 .error {
     background-color: #ffebee;
     color: #e74c3c;
+}
+
+.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #81c784;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Responsive Design */

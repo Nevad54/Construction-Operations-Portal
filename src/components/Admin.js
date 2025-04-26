@@ -12,6 +12,7 @@ const Admin = () => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
     const [selectedProjects, setSelectedProjects] = useState({ ongoing: [], completed: [] });
     const [showModal, setShowModal] = useState(false);
     const [editingProject, setEditingProject] = useState(null);
@@ -222,7 +223,12 @@ const Admin = () => {
         if (window.confirm('Are you sure you want to delete this project?')) {
             try {
                 setLoading(true);
+                setError(null);
+                setSuccess(null);
                 await deleteProject(id);
+                setSuccess('Project deleted successfully');
+                // Refresh the projects list after deletion
+                await refreshProjects();
             } catch (error) {
                 setError('Error deleting project: ' + error.message);
             } finally {
@@ -328,8 +334,13 @@ const Admin = () => {
         if (window.confirm(`Are you sure you want to delete ${selectedProjects[section].length} project(s)?`)) {
             try {
                 setLoading(true);
+                setError(null);
+                setSuccess(null);
                 await Promise.all(selectedProjects[section].map(id => deleteProject(id)));
                 setSelectedProjects(prev => ({ ...prev, [section]: [] }));
+                setSuccess(`${selectedProjects[section].length} project(s) deleted successfully`);
+                // Refresh the projects list after deletion
+                await refreshProjects();
             } catch (error) {
                 setError('Error during bulk delete: ' + error.message);
             } finally {
@@ -356,6 +367,16 @@ const Admin = () => {
     // Filter projects by status
     const ongoingProjects = projects.filter(p => p.status === 'ongoing');
     const completedProjects = projects.filter(p => p.status === 'completed');
+
+    // Add useEffect to clear success message after 3 seconds
+    useEffect(() => {
+        if (success) {
+            const timer = setTimeout(() => {
+                setSuccess(null);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [success]);
 
     return (
         <div className="admin-container">
@@ -540,9 +561,10 @@ const Admin = () => {
                 </div>
             )}
 
-            {/* Loading and Error States */}
+            {/* Loading, Error, and Success States */}
             {loading && <div className="loading">Loading...</div>}
             {error && <div className="error">{error}</div>}
+            {success && <div className="success">{success}</div>}
         </div>
     );
 };

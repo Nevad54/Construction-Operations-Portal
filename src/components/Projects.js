@@ -46,14 +46,28 @@ const Projects = () => {
       }
     };
 
+    const handlePopState = () => {
+      if (selectedProject) {
+        handleCloseModal();
+      }
+    };
+
     if (selectedProject) {
       document.addEventListener('keydown', handleEscKey);
       document.addEventListener('click', handleClickOutside);
+      window.addEventListener('popstate', handlePopState);
+      // Push a new state when modal opens
+      window.history.pushState({ modalOpen: true }, '');
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscKey);
       document.removeEventListener('click', handleClickOutside);
+      window.removeEventListener('popstate', handlePopState);
+      // Pop the state when modal closes
+      if (selectedProject) {
+        window.history.back();
+      }
     };
   }, [selectedProject]);
 
