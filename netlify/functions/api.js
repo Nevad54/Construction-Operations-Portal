@@ -222,54 +222,60 @@ exports.handler = async (event, context) => {
 
     try {
         // Connect to MongoDB
+        console.log('Attempting to connect to MongoDB...');
         await mongoose.connect(MONGODB_URI, {
             useNewUrlParser: true,
-            useUnifiedTopology: true
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000
         });
-        console.log('Connected to MongoDB');
+        console.log('Successfully connected to MongoDB');
 
         // Handle GET /projects
         if (event.httpMethod === 'GET' && event.path.includes('/projects')) {
             console.log('Handling GET /projects request');
-            const projects = await Project.find({});
-            console.log('Found projects:', projects);
-            
-            return {
-                statusCode: 200,
-                headers: {
-                    ...corsHeaders,
-                    'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
-                    'Access-Control-Allow-Credentials': 'true'
-                },
-                body: JSON.stringify(projects)
-            };
+            try {
+                const projects = await Project.find({});
+                console.log('Successfully fetched projects:', projects);
+                
+                return {
+                    statusCode: 200,
+                    headers: corsHeaders,
+                    body: JSON.stringify(projects)
+                };
+            } catch (dbError) {
+                console.error('Database error:', dbError);
+                return {
+                    statusCode: 500,
+                    headers: corsHeaders,
+                    body: JSON.stringify({ error: 'Database error', details: dbError.message })
+                };
+            }
         }
 
         // Handle other routes
         console.log('Route not found:', event.path);
         return {
             statusCode: 404,
-            headers: {
-                ...corsHeaders,
-                'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
-                'Access-Control-Allow-Credentials': 'true'
-            },
+            headers: corsHeaders,
             body: JSON.stringify({ error: 'Not Found' })
         };
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Critical error:', error);
         return {
             statusCode: 500,
-            headers: {
-                ...corsHeaders,
-                'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
-                'Access-Control-Allow-Credentials': 'true'
-            },
-            body: JSON.stringify({ error: 'Internal Server Error' })
+            headers: corsHeaders,
+            body: JSON.stringify({ 
+                error: 'Internal Server Error',
+                details: error.message,
+                stack: error.stack
+            })
         };
     } finally {
-        // Close MongoDB connection
-        await mongoose.connection.close();
-        console.log('Disconnected from MongoDB');
+        try {
+            await mongoose.connection.close();
+            console.log('Disconnected from MongoDB');
+        } catch (closeError) {
+            console.error('Error closing MongoDB connection:', closeError);
+        }
     }
 }; 
