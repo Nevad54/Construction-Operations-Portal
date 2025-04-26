@@ -22,11 +22,24 @@ const Project = mongoose.model('Project', projectSchema);
 const corsOptions = {
     origin: 'https://mastertech2.netlify.app',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 };
 
+// Apply CORS middleware
 app.use(cors(corsOptions));
+
+// Add headers middleware
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', 'https://mastertech2.netlify.app');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    next();
+});
+
 app.use(express.json());
 
 // Test projects data
@@ -56,24 +69,12 @@ app.get('/projects', (req, res) => {
     console.log('Projects endpoint called');
     console.log('Request headers:', req.headers);
     
-    // Set explicit headers
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Access-Control-Allow-Origin', 'https://mastertech2.netlify.app');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    
-    console.log('Response headers:', res.getHeaders());
     res.status(200).json(testProjects);
 });
 
 // Handle preflight requests
 app.options('*', (req, res) => {
     console.log('Preflight request received');
-    res.setHeader('Access-Control-Allow-Origin', 'https://mastertech2.netlify.app');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.status(204).end();
 });
 
