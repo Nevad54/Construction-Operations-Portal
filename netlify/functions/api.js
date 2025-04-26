@@ -236,7 +236,11 @@ exports.handler = async (event, context) => {
             
             return {
                 statusCode: 200,
-                headers: corsHeaders,
+                headers: {
+                    ...corsHeaders,
+                    'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
+                    'Access-Control-Allow-Credentials': 'true'
+                },
                 body: JSON.stringify(projects)
             };
         }
@@ -245,14 +249,22 @@ exports.handler = async (event, context) => {
         console.log('Route not found:', event.path);
         return {
             statusCode: 404,
-            headers: corsHeaders,
+            headers: {
+                ...corsHeaders,
+                'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
+                'Access-Control-Allow-Credentials': 'true'
+            },
             body: JSON.stringify({ error: 'Not Found' })
         };
     } catch (error) {
         console.error('Error:', error);
         return {
             statusCode: 500,
-            headers: corsHeaders,
+            headers: {
+                ...corsHeaders,
+                'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
+                'Access-Control-Allow-Credentials': 'true'
+            },
             body: JSON.stringify({ error: 'Internal Server Error' })
         };
     } finally {
