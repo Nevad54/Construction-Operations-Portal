@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../services/api';
+import api from '../services/api';
 
 const ProjectContext = createContext();
 
@@ -11,22 +11,26 @@ export const ProjectProvider = ({ children }) => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchProjects = async () => {
+        const initialize = async () => {
             try {
+                // First test the Netlify Function
+                console.log('Testing Netlify Function...');
+                await api.test();
+                console.log('Netlify Function test successful');
+
+                // Then fetch projects
                 console.log('Fetching projects...');
-                const allProjects = await api.getProjects();
-                console.log('Projects fetched successfully:', allProjects);
-                setProjects(allProjects);
-                setError(null);
+                const data = await api.getProjects();
+                setProjects(data);
+                setLoading(false);
             } catch (err) {
-                console.error('Error fetching projects:', err);
-                setError('Failed to fetch projects');
-            } finally {
+                console.error('Error in ProjectContext:', err);
+                setError(err.message);
                 setLoading(false);
             }
         };
 
-        fetchProjects();
+        initialize();
     }, []);
 
     const addProject = async (projectData) => {
@@ -63,15 +67,18 @@ export const ProjectProvider = ({ children }) => {
         }
     };
 
+    const value = {
+        projects,
+        loading,
+        error,
+        addProject,
+        updateProject,
+        deleteProject,
+        setProjects
+    };
+
     return (
-        <ProjectContext.Provider value={{
-            projects,
-            loading,
-            error,
-            addProject,
-            updateProject,
-            deleteProject
-        }}>
+        <ProjectContext.Provider value={value}>
             {children}
         </ProjectContext.Provider>
     );

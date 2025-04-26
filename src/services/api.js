@@ -35,22 +35,29 @@ const handleResponse = async (response) => {
 export const api = {
     // Test function
     test: async () => {
-        const url = `${API_BASE_URL}/.netlify/functions/test`;
-        console.log('Testing function at:', url);
-        
         try {
-            const response = await fetch(url, {
+            console.log('Testing Netlify Function...');
+            const response = await fetch(`${API_BASE_URL}/.netlify/functions/test`, {
                 method: 'GET',
-                credentials: 'include',
                 headers: {
-                    'Accept': 'application/json',
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
-                mode: 'cors'
+                credentials: 'include'
             });
-            return handleResponse(response);
+
+            console.log('Test response status:', response.status);
+            console.log('Test response headers:', response.headers);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Test response data:', data);
+            return data;
         } catch (error) {
-            console.error('Error in test:', error);
+            console.error('Error in test function:', error);
             throw error;
         }
     },
