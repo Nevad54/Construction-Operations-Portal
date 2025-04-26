@@ -211,6 +211,14 @@ exports.handler = async (event, context) => {
     console.log('API function called with path:', event.path);
     console.log('Event:', JSON.stringify(event, null, 2));
 
+    const corsHeaders = {
+        'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+        'Access-Control-Allow-Credentials': 'true',
+        'Content-Type': 'application/json'
+    };
+
     // Handle preflight requests
     if (event.httpMethod === 'OPTIONS') {
         console.log('Handling preflight request');
@@ -220,62 +228,40 @@ exports.handler = async (event, context) => {
         };
     }
 
-    try {
-        // Connect to MongoDB
-        console.log('Attempting to connect to MongoDB...');
-        await mongoose.connect(MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            serverSelectionTimeoutMS: 5000
-        });
-        console.log('Successfully connected to MongoDB');
-
-        // Handle GET /projects
-        if (event.httpMethod === 'GET' && event.path.includes('/projects')) {
-            console.log('Handling GET /projects request');
-            try {
-                const projects = await Project.find({});
-                console.log('Successfully fetched projects:', projects);
-                
-                return {
-                    statusCode: 200,
-                    headers: corsHeaders,
-                    body: JSON.stringify(projects)
-                };
-            } catch (dbError) {
-                console.error('Database error:', dbError);
-                return {
-                    statusCode: 500,
-                    headers: corsHeaders,
-                    body: JSON.stringify({ error: 'Database error', details: dbError.message })
-                };
-            }
-        }
-
-        // Handle other routes
-        console.log('Route not found:', event.path);
+    // Return a static test response
+    if (event.httpMethod === 'GET' && event.path.includes('/projects')) {
+        console.log('Returning test projects');
         return {
-            statusCode: 404,
+            statusCode: 200,
             headers: corsHeaders,
-            body: JSON.stringify({ error: 'Not Found' })
+            body: JSON.stringify([
+                {
+                    _id: '1',
+                    title: 'Test Project 1',
+                    description: 'This is a test project',
+                    image: 'https://via.placeholder.com/150',
+                    category: 'test',
+                    date: new Date().toISOString(),
+                    status: 'active'
+                },
+                {
+                    _id: '2',
+                    title: 'Test Project 2',
+                    description: 'This is another test project',
+                    image: 'https://via.placeholder.com/150',
+                    category: 'test',
+                    date: new Date().toISOString(),
+                    status: 'active'
+                }
+            ])
         };
-    } catch (error) {
-        console.error('Critical error:', error);
-        return {
-            statusCode: 500,
-            headers: corsHeaders,
-            body: JSON.stringify({ 
-                error: 'Internal Server Error',
-                details: error.message,
-                stack: error.stack
-            })
-        };
-    } finally {
-        try {
-            await mongoose.connection.close();
-            console.log('Disconnected from MongoDB');
-        } catch (closeError) {
-            console.error('Error closing MongoDB connection:', closeError);
-        }
     }
+
+    // Handle other routes
+    console.log('Route not found:', event.path);
+    return {
+        statusCode: 404,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Not Found' })
+    };
 }; 
