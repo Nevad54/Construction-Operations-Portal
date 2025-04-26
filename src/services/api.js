@@ -113,8 +113,24 @@ export const api = {
         const url = `${API_BASE_URL}/.netlify/functions/api/projects/${id}`;
         console.log('Updating project at:', url);
         console.log('Project data:', projectData);
+        console.log('Project ID:', id);
         
         try {
+            // First verify the project exists
+            const checkResponse = await fetch(`${API_BASE_URL}/.netlify/functions/api/projects/${id}`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                },
+                mode: 'cors'
+            });
+
+            if (!checkResponse.ok) {
+                console.error('Project not found:', id);
+                throw new Error(`Project with ID ${id} not found`);
+            }
+
             const response = await fetch(url, {
                 method: 'PUT',
                 credentials: 'include',
@@ -125,6 +141,13 @@ export const api = {
                 body: JSON.stringify(projectData),
                 mode: 'cors'
             });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Update failed:', errorText);
+                throw new Error(`Failed to update project: ${response.status} ${response.statusText}`);
+            }
+
             return handleResponse(response);
         } catch (error) {
             console.error('Error in updateProject:', error);
