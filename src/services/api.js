@@ -4,98 +4,145 @@ const handleResponse = async (response) => {
   console.log('API Response:', {
     status: response.status,
     statusText: response.statusText,
-    headers: Object.fromEntries(response.headers.entries())
+    headers: Object.fromEntries(response.headers.entries()),
+    url: response.url
   });
 
-  const contentType = response.headers.get('content-type');
-  if (!contentType || !contentType.includes('application/json')) {
-    const text = await response.text();
-    console.error('Non-JSON response:', text);
-    throw new Error(`Expected JSON response but got ${contentType}`);
-  }
+  // Log the raw response text for debugging
+  const text = await response.text();
+  console.log('Raw response:', text);
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    console.error('Error response:', errorData);
-    throw new Error(`HTTP error! status: ${response.status}`);
+  try {
+    // Try to parse the response as JSON
+    const json = JSON.parse(text);
+    return json;
+  } catch (error) {
+    console.error('Failed to parse JSON:', error);
+    console.error('Response text:', text);
+    throw new Error(`Failed to parse JSON response: ${text.substring(0, 100)}...`);
   }
-
-  return response.json();
 };
 
 export const api = {
+    // Test function
+    test: async () => {
+        const url = `${API_BASE_URL}/.netlify/functions/test`;
+        console.log('Testing function at:', url);
+        
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                mode: 'cors'
+            });
+            return handleResponse(response);
+        } catch (error) {
+            console.error('Error in test:', error);
+            throw error;
+        }
+    },
+
     // Projects
     getProjects: async () => {
-        console.log('Fetching projects from:', `${API_BASE_URL}/.netlify/functions/api/projects`);
-        const response = await fetch(`${API_BASE_URL}/.netlify/functions/api/projects`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-            mode: 'cors'
-        });
-        return handleResponse(response);
+        const url = `${API_BASE_URL}/.netlify/functions/api/projects`;
+        console.log('Fetching projects from:', url);
+        
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                mode: 'cors'
+            });
+            return handleResponse(response);
+        } catch (error) {
+            console.error('Error in getProjects:', error);
+            throw error;
+        }
     },
 
     createProject: async (projectData) => {
-        console.log('Creating project with data:', projectData);
-        let response;
+        const url = `${API_BASE_URL}/.netlify/functions/api/projects`;
+        console.log('Creating project at:', url);
+        console.log('Project data:', projectData);
         
-        // Check if projectData is FormData or a regular object
-        if (projectData instanceof FormData) {
-            // If it's FormData, send it directly
-            response = await fetch(`${API_BASE_URL}/.netlify/functions/api/projects`, {
-                method: 'POST',
+        try {
+            let response;
+            if (projectData instanceof FormData) {
+                response = await fetch(url, {
+                    method: 'POST',
+                    credentials: 'include',
+                    mode: 'cors',
+                    body: projectData,
+                });
+            } else {
+                response = await fetch(url, {
+                    method: 'POST',
+                    credentials: 'include',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(projectData),
+                });
+            }
+            return handleResponse(response);
+        } catch (error) {
+            console.error('Error in createProject:', error);
+            throw error;
+        }
+    },
+
+    updateProject: async (id, projectData) => {
+        const url = `${API_BASE_URL}/.netlify/functions/api/projects/${id}`;
+        console.log('Updating project at:', url);
+        console.log('Project data:', projectData);
+        
+        try {
+            const response = await fetch(url, {
+                method: 'PUT',
                 credentials: 'include',
-                mode: 'cors',
-                body: projectData,
-            });
-        } else {
-            // If it's a regular object, send as JSON
-            response = await fetch(`${API_BASE_URL}/.netlify/functions/api/projects`, {
-                method: 'POST',
-                credentials: 'include',
-                mode: 'cors',
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(projectData),
+                mode: 'cors'
             });
+            return handleResponse(response);
+        } catch (error) {
+            console.error('Error in updateProject:', error);
+            throw error;
         }
-
-        return handleResponse(response);
-    },
-
-    updateProject: async (id, projectData) => {
-        console.log(`Updating project ${id} with data:`, projectData);
-        const response = await fetch(`${API_BASE_URL}/.netlify/functions/api/projects/${id}`, {
-            method: 'PUT',
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(projectData),
-            mode: 'cors'
-        });
-        return handleResponse(response);
     },
 
     deleteProject: async (id) => {
-        console.log(`Deleting project ${id}`);
-        const response = await fetch(`${API_BASE_URL}/.netlify/functions/api/projects/${id}`, {
-            method: 'DELETE',
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-            mode: 'cors'
-        });
-        return handleResponse(response);
+        const url = `${API_BASE_URL}/.netlify/functions/api/projects/${id}`;
+        console.log('Deleting project at:', url);
+        
+        try {
+            const response = await fetch(url, {
+                method: 'DELETE',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                mode: 'cors'
+            });
+            return handleResponse(response);
+        } catch (error) {
+            console.error('Error in deleteProject:', error);
+            throw error;
+        }
     },
 
     // Contact Form

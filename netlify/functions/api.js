@@ -42,34 +42,32 @@ exports.handler = async (event, context) => {
   // Handle GET /projects
   if (event.httpMethod === 'GET' && event.path.includes('/projects')) {
     console.log('Handling GET /projects request');
-    try {
-      console.log('Connecting to MongoDB...');
-      await mongoose.connect(MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      });
-      console.log('MongoDB connected successfully');
-
-      console.log('Fetching projects...');
-      const projects = await mongoose.model('Project').find();
-      console.log(`Found ${projects.length} projects`);
-
-      return {
-        statusCode: 200,
-        headers: corsHeaders,
-        body: JSON.stringify(projects)
-      };
-    } catch (error) {
-      console.error('Error in GET /projects:', error);
-      return {
-        statusCode: 500,
-        headers: corsHeaders,
-        body: JSON.stringify({ 
-          error: 'Failed to fetch projects',
-          details: error.message 
-        })
-      };
-    }
+    
+    // Return a test response first
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: JSON.stringify([
+        {
+          _id: 'test1',
+          title: 'Test Project 1',
+          description: 'This is a test project',
+          image: 'https://via.placeholder.com/150',
+          category: 'test',
+          date: new Date().toISOString(),
+          status: 'active'
+        },
+        {
+          _id: 'test2',
+          title: 'Test Project 2',
+          description: 'This is another test project',
+          image: 'https://via.placeholder.com/150',
+          category: 'test',
+          date: new Date().toISOString(),
+          status: 'active'
+        }
+      ])
+    };
   }
 
   // Handle other routes

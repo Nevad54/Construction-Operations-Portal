@@ -10,19 +10,29 @@ export const ProjectProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const fetchProjects = async () => {
-        try {
-            setLoading(true);
-            const allProjects = await api.getProjects();
-            setProjects(allProjects);
-            setError(null);
-        } catch (err) {
-            setError('Failed to fetch projects');
-            console.error('Error fetching projects:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    useEffect(() => {
+        const initialize = async () => {
+            try {
+                // Test the function first
+                console.log('Testing API connection...');
+                const testResult = await api.test();
+                console.log('Test result:', testResult);
+
+                // If test succeeds, fetch projects
+                console.log('Fetching projects...');
+                const allProjects = await api.getProjects();
+                setProjects(allProjects);
+                setError(null);
+            } catch (err) {
+                setError('Failed to fetch projects');
+                console.error('Error:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initialize();
+    }, []);
 
     const addProject = async (projectData) => {
         try {
@@ -58,22 +68,15 @@ export const ProjectProvider = ({ children }) => {
         }
     };
 
-    useEffect(() => {
-        fetchProjects();
-    }, []);
-
-    const value = {
-        projects,
-        loading,
-        error,
-        addProject,
-        updateProject,
-        deleteProject,
-        refreshProjects: fetchProjects
-    };
-
     return (
-        <ProjectContext.Provider value={value}>
+        <ProjectContext.Provider value={{
+            projects,
+            loading,
+            error,
+            addProject,
+            updateProject,
+            deleteProject
+        }}>
             {children}
         </ProjectContext.Provider>
     );
