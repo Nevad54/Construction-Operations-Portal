@@ -119,6 +119,46 @@ const Contact = () => {
     };
   }, [isSidebarActive]);
 
+  // Add reCAPTCHA script loading
+  useEffect(() => {
+    const loadRecaptcha = () => {
+      if (!window.grecaptcha) {
+        const script = document.createElement('script');
+        script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+          console.log('reCAPTCHA script loaded successfully');
+          if (recaptchaRef.current) {
+            recaptchaRef.current.reset();
+          }
+        };
+        script.onerror = (error) => {
+          console.error('Error loading reCAPTCHA script:', error);
+          setErrors(prev => ({
+            ...prev,
+            captcha: 'Error loading reCAPTCHA. Please refresh the page.'
+          }));
+        };
+        document.head.appendChild(script);
+      } else if (recaptchaRef.current) {
+        recaptchaRef.current.reset();
+      }
+    };
+
+    loadRecaptcha();
+
+    return () => {
+      if (window.grecaptcha && recaptchaRef.current) {
+        try {
+          recaptchaRef.current.reset();
+        } catch (error) {
+          console.error('Error cleaning up reCAPTCHA:', error);
+        }
+      }
+    };
+  }, [RECAPTCHA_SITE_KEY]);
+
   const handleRecaptchaChange = (token) => {
     console.log('reCAPTCHA token received');
     if (!token) {
@@ -150,9 +190,7 @@ const Contact = () => {
       ...prev,
       captcha: 'Error loading reCAPTCHA. Please refresh the page and try again.'
     }));
-    if (recaptchaRef.current) {
-      recaptchaRef.current.reset();
-    }
+    // Don't reset the reCAPTCHA on error as it might cause an infinite loop
   };
 
   const handleChange = (e) => {
@@ -305,62 +343,6 @@ const Contact = () => {
       }));
     }
   }, [RECAPTCHA_SITE_KEY]);
-
-  // Modify the reCAPTCHA initialization
-  useEffect(() => {
-    const loadRecaptcha = () => {
-      console.log('Loading reCAPTCHA with site key:', RECAPTCHA_SITE_KEY);
-      
-      if (!RECAPTCHA_SITE_KEY) {
-        console.error('Cannot load reCAPTCHA: site key is missing');
-        return;
-      }
-
-      if (window.grecaptcha && recaptchaRef.current) {
-        try {
-          console.log('Resetting reCAPTCHA');
-          recaptchaRef.current.reset();
-        } catch (error) {
-          console.error('Error resetting reCAPTCHA:', error);
-        }
-      }
-    };
-
-    // Load reCAPTCHA script if not already loaded
-    if (!window.grecaptcha) {
-      console.log('Loading reCAPTCHA script');
-      const script = document.createElement('script');
-      script.src = 'https://www.google.com/recaptcha/api.js';
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        console.log('reCAPTCHA script loaded successfully');
-        loadRecaptcha();
-      };
-      script.onerror = (error) => {
-        console.error('Error loading reCAPTCHA script:', error);
-        setErrors(prev => ({
-          ...prev,
-          captcha: 'Error loading reCAPTCHA. Please refresh the page.'
-        }));
-      };
-      document.head.appendChild(script);
-    } else {
-      console.log('reCAPTCHA already loaded, initializing');
-      loadRecaptcha();
-    }
-
-    return () => {
-      if (window.grecaptcha && recaptchaRef.current) {
-        try {
-          console.log('Cleaning up reCAPTCHA');
-          recaptchaRef.current.reset();
-        } catch (error) {
-          console.error('Error cleaning up reCAPTCHA:', error);
-        }
-      }
-    };
-  }, [RECAPTCHA_SITE_KEY]); // Add RECAPTCHA_SITE_KEY as dependency
 
   return (
     <div>

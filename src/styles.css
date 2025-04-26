@@ -27,6 +27,7 @@ ul {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
+    width: 100%;
 }
 
 /* Header and Navigation */
@@ -799,17 +800,36 @@ header .container {
 }
 
 @media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    
     .contact {
         padding: 100px 0 40px;
     }
     
     .contact-form,
     .contact-info {
-        padding: 20px;
+        padding: 15px;
     }
     
     .info-group {
-        padding: 12px;
+        padding: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 0 10px;
+    }
+    
+    .contact-form,
+    .contact-info {
+        padding: 10px;
+    }
+    
+    .info-group {
+        padding: 8px;
     }
 }
 
