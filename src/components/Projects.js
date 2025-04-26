@@ -47,7 +47,7 @@ const Projects = () => {
     };
 
     const handleBackButton = () => {
-      if (selectedProject) {
+      if (selectedProject && window.location.hash === '') {
         handleCloseModal();
       }
     };
@@ -56,15 +56,19 @@ const Projects = () => {
       document.addEventListener('keydown', handleEscKey);
       document.addEventListener('click', handleClickOutside);
       window.addEventListener('hashchange', handleBackButton);
-      // Add a hash to the URL when modal opens
-      window.location.hash = 'modal';
+      
+      // Only add hash if it's not already there
+      if (window.location.hash !== '#modal') {
+        window.location.hash = 'modal';
+      }
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscKey);
       document.removeEventListener('click', handleClickOutside);
       window.removeEventListener('hashchange', handleBackButton);
-      // Remove the hash when modal closes
+      
+      // Only remove hash if it's there
       if (window.location.hash === '#modal') {
         window.history.back();
       }
