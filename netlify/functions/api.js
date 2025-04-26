@@ -5,7 +5,7 @@ const app = express();
 
 // CORS headers
 const corsHeaders = {
-    'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
+    'Access-Control-Allow-Origin': 'https://mastertech3.netlify.app',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
     'Access-Control-Allow-Credentials': 'true',
@@ -22,14 +22,16 @@ const projectSchema = new mongoose.Schema({
     image: String,
     category: String,
     date: Date,
-    status: String
+    status: String,
+    location: String,
+    owner: String
 });
 
 const Project = mongoose.model('Project', projectSchema);
 
 // Configure CORS
 const corsOptions = {
-    origin: 'https://mastertech2.netlify.app',
+    origin: 'https://mastertech3.netlify.app',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     credentials: true,
@@ -42,7 +44,7 @@ app.use(cors(corsOptions));
 
 // Add headers middleware
 app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', 'https://mastertech2.netlify.app');
+    res.setHeader('Access-Control-Allow-Origin', 'https://mastertech3.netlify.app');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
