@@ -99,6 +99,114 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
+// Basic authentication middleware
+const basicAuth = (req, res, next) => {
+  const auth = basicAuth.parse(req.headers.authorization);
+  
+  if (!auth) {
+    console.log('No authorization header provided');
+    res.setHeader('WWW-Authenticate', 'Basic realm="Admin Area"');
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const { name, pass } = auth;
+  const adminUsername = process.env.ADMIN_USERNAME;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminUsername || !adminPassword) {
+    console.error('Admin credentials not configured');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+
+  if (name === adminUsername && pass === adminPassword) {
+    console.log('Admin authentication successful');
+    return next();
+  }
+
+  console.log('Invalid admin credentials provided');
+  res.setHeader('WWW-Authenticate', 'Basic realm="Admin Area"');
+  return res.status(401).json({ error: 'Invalid credentials' });
+};
+
+// Admin routes
+app.post('/admin/projects', basicAuth, upload.single('image'), async (req, res) => {
+  try {
+    console.log('Creating new project');
+    const { title, description, location, category, status } = req.body;
+    const image = req.file ? `/uploads/${req.file.filename}` : null;
+    
+    const project = new Project({
+      title,
+      description,
+      location,
+      category,
+      status,
+      image,
+      date: new Date()
+    });
+
+    await project.save();
+    console.log('Project created successfully');
+    res.status(201).json(project);
+  } catch (error) {
+    console.error('Error creating project:', error);
+    res.status(500).json({ error: 'Failed to create project' });
+  }
+});
+
+app.put('/admin/projects/:id', basicAuth, upload.single('image'), async (req, res) => {
+  try {
+    console.log('Updating project:', req.params.id);
+    const { title, description, location, category, status } = req.body;
+    const updateData = {
+      title,
+      description,
+      location,
+      category,
+      status
+    };
+
+    if (req.file) {
+      updateData.image = `/uploads/${req.file.filename}`;
+    }
+
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
+    if (!project) {
+      console.log('Project not found:', req.params.id);
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    console.log('Project updated successfully');
+    res.json(project);
+  } catch (error) {
+    console.error('Error updating project:', error);
+    res.status(500).json({ error: 'Failed to update project' });
+  }
+});
+
+app.delete('/admin/projects/:id', basicAuth, async (req, res) => {
+  try {
+    console.log('Deleting project:', req.params.id);
+    const project = await Project.findByIdAndDelete(req.params.id);
+    
+    if (!project) {
+      console.log('Project not found:', req.params.id);
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    console.log('Project deleted successfully');
+    res.json({ message: 'Project deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting project:', error);
+    res.status(500).json({ error: 'Failed to delete project' });
+  }
+});
+
 exports.handler = async (event, context) => {
     console.log('API function called with path:', event.path);
     console.log('Event:', JSON.stringify(event, null, 2));
