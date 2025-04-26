@@ -3,17 +3,26 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
+// CORS headers
+const corsHeaders = {
+    'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+};
+
 // MongoDB connection
 const MONGODB_URI = 'mongodb://mtiuser:MtiPass123!@ac-thlzd0c-shard-00-00.ayq9k3f.mongodb.net:27017,ac-thlzd0c-shard-00-01.ayq9k3f.mongodb.net:27017,ac-thlzd0c-shard-00-02.ayq9k3f.mongodb.net:27017/mti-projects?ssl=true&replicaSet=atlas-s9yn0c-shard-0&authSource=admin&retryWrites=true&w=majority&appName=mti-cluster';
 
 // Project Schema
 const projectSchema = new mongoose.Schema({
-  title: String,
-  description: String,
-  image: String,
-  category: String,
-  date: Date,
-  status: String
+    title: String,
+    description: String,
+    image: String,
+    category: String,
+    date: Date,
+    status: String
 });
 
 const Project = mongoose.model('Project', projectSchema);
@@ -41,15 +50,6 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
-
-// CORS headers
-const corsHeaders = {
-    'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
-    'Access-Control-Allow-Credentials': 'true',
-    'Content-Type': 'application/json'
-};
 
 // Test projects data
 const testProjects = [
@@ -112,21 +112,44 @@ exports.handler = async (event, context) => {
         };
     }
 
-    // Handle GET /projects
-    if (event.httpMethod === 'GET' && event.path.includes('/projects')) {
-        console.log('Handling GET /projects request');
-        return {
-            statusCode: 200,
-            headers: corsHeaders,
-            body: JSON.stringify(testProjects)
-        };
-    }
+    try {
+        // Connect to MongoDB
+        await mongoose.connect(MONGODB_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        });
+        console.log('Connected to MongoDB');
 
-    // Handle other routes
-    console.log('Route not found:', event.path);
-    return {
-        statusCode: 404,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: 'Not Found' })
-    };
+        // Handle GET /projects
+        if (event.httpMethod === 'GET' && event.path.includes('/projects')) {
+            console.log('Handling GET /projects request');
+            const projects = await Project.find({});
+            console.log('Found projects:', projects);
+            
+            return {
+                statusCode: 200,
+                headers: corsHeaders,
+                body: JSON.stringify(projects)
+            };
+        }
+
+        // Handle other routes
+        console.log('Route not found:', event.path);
+        return {
+            statusCode: 404,
+            headers: corsHeaders,
+            body: JSON.stringify({ error: 'Not Found' })
+        };
+    } catch (error) {
+        console.error('Error:', error);
+        return {
+            statusCode: 500,
+            headers: corsHeaders,
+            body: JSON.stringify({ error: 'Internal Server Error' })
+        };
+    } finally {
+        // Close MongoDB connection
+        await mongoose.connection.close();
+        console.log('Disconnected from MongoDB');
+    }
 }; 
