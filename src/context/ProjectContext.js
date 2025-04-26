@@ -11,27 +11,22 @@ export const ProjectProvider = ({ children }) => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const initialize = async () => {
+        const fetchProjects = async () => {
             try {
-                // Test the function first
-                console.log('Testing API connection...');
-                const testResult = await api.test();
-                console.log('Test result:', testResult);
-
-                // If test succeeds, fetch projects
                 console.log('Fetching projects...');
                 const allProjects = await api.getProjects();
+                console.log('Projects fetched successfully:', allProjects);
                 setProjects(allProjects);
                 setError(null);
             } catch (err) {
+                console.error('Error fetching projects:', err);
                 setError('Failed to fetch projects');
-                console.error('Error:', err);
             } finally {
                 setLoading(false);
             }
         };
 
-        initialize();
+        fetchProjects();
     }, []);
 
     const addProject = async (projectData) => {
