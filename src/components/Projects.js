@@ -23,10 +23,6 @@ const Projects = () => {
   const modalRef = useRef(null);
   const modalContainerRef = useRef(null);
 
-  // Add debug panel
-  const [showDebug, setShowDebug] = useState(false);
-  const toggleDebug = () => setShowDebug(!showDebug);
-
   useEffect(() => {
     // Initialize AOS
     AOS.init({
@@ -39,45 +35,40 @@ const Projects = () => {
 
   useEffect(() => {
     const handleEscKey = (event) => {
-      console.log('Escape key pressed');
       if (event.key === 'Escape' && selectedProject) {
         handleCloseModal();
       }
     };
 
     const handleClickOutside = (event) => {
-      console.log('Click outside modal detected');
       if (modalContainerRef.current === event.target) {
         handleCloseModal();
       }
     };
 
     const handlePopState = (event) => {
-      console.log('Popstate event triggered', {
-        state: event.state,
-        selectedProject: selectedProject,
-        modalOpen: !!selectedProject
-      });
       if (selectedProject) {
         handleCloseModal();
       }
     };
 
     if (selectedProject) {
-      console.log('Modal opened, pushing state to history');
       document.addEventListener('keydown', handleEscKey);
       document.addEventListener('click', handleClickOutside);
       window.addEventListener('popstate', handlePopState);
-      window.history.pushState({ modalOpen: true }, '');
+      
+      // Add a new history entry when modal opens
+      const currentPath = window.location.pathname;
+      window.history.pushState({ modalOpen: true }, '', currentPath);
     }
 
     return () => {
-      console.log('Cleaning up modal event listeners');
       document.removeEventListener('keydown', handleEscKey);
       document.removeEventListener('click', handleClickOutside);
       window.removeEventListener('popstate', handlePopState);
+      
+      // Only go back if we're closing the modal
       if (selectedProject) {
-        console.log('Modal closing, popping history state');
         window.history.back();
       }
     };
@@ -346,49 +337,6 @@ const Projects = () => {
       >
         ↑
       </button>
-
-      {/* Debug Panel */}
-      <button 
-        onClick={toggleDebug}
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          zIndex: 1000,
-          padding: '10px',
-          background: '#333',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer'
-        }}
-      >
-        {showDebug ? 'Hide Debug' : 'Show Debug'}
-      </button>
-
-      {showDebug && (
-        <div style={{
-          position: 'fixed',
-          bottom: '70px',
-          right: '20px',
-          background: 'rgba(0,0,0,0.8)',
-          color: 'white',
-          padding: '15px',
-          borderRadius: '5px',
-          maxWidth: '300px',
-          zIndex: 1000
-        }}>
-          <h3>Debug Info</h3>
-          <pre style={{ margin: 0 }}>
-            {JSON.stringify({
-              selectedProject: !!selectedProject,
-              historyLength: window.history.length,
-              currentState: window.history.state,
-              modalOpen: !!selectedProject
-            }, null, 2)}
-          </pre>
-        </div>
-      )}
     </div>
   );
 };
