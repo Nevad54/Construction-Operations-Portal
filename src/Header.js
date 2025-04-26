@@ -32,7 +32,7 @@ const Header = ({ isSidebarActive, setIsSidebarActive, isNavLinksActive, setIsNa
           <i className="fas fa-bars"></i>
         </div>
         <Link to="/" className="logo-link">
-          <img src="/Uploads/logo.png" alt="MASTERTECH INTERGROUPPE INC. Logo" className="logo" loading="lazy" />
+        <img src="/Uploads/logo.png" alt="MASTERTECH INTERGROUPPE INC. Logo" className="logo" loading="lazy" />
         </Link>
         <nav aria-label="Main menu">
           <ul className={`nav-links ${isNavLinksActive ? 'active' : ''}`}>

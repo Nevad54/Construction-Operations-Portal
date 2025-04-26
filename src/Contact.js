@@ -447,12 +447,12 @@ const Contact = () => {
                 </div>
                 
                 <div className="form-group captcha-group" data-aos="fade-up" data-aos-delay="600">
-                  <ReCAPTCHA
-                    ref={recaptchaRef}
-                    sitekey={RECAPTCHA_SITE_KEY}
-                    onChange={handleRecaptchaChange}
-                    onExpired={handleRecaptchaExpired}
-                    onErrored={handleRecaptchaError}
+                      <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={RECAPTCHA_SITE_KEY}
+                        onChange={handleRecaptchaChange}
+                        onExpired={handleRecaptchaExpired}
+                        onErrored={handleRecaptchaError}
                     className="recaptcha-container"
                   />
                   {errors.captcha && (

@@ -10,22 +10,25 @@ export const ProjectProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchProjects = async () => {
-            try {
-                console.log('Fetching projects...');
-                const allProjects = await api.getProjects();
-                console.log('Projects fetched successfully:', allProjects);
-                setProjects(allProjects);
-                setError(null);
-            } catch (err) {
-                console.error('Error fetching projects:', err);
-                setError('Failed to fetch projects');
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchProjects = async () => {
+        try {
+            console.log('Fetching projects...');
+            setLoading(true);
+            const allProjects = await api.getProjects();
+            console.log('Projects fetched successfully:', allProjects);
+            setProjects(allProjects);
+            setError(null);
+            return allProjects;
+        } catch (err) {
+            console.error('Error fetching projects:', err);
+            setError('Failed to fetch projects');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchProjects();
     }, []);
 
@@ -65,12 +68,13 @@ export const ProjectProvider = ({ children }) => {
 
     return (
         <ProjectContext.Provider value={{
-            projects,
-            loading,
-            error,
-            addProject,
-            updateProject,
-            deleteProject
+        projects,
+        loading,
+        error,
+        addProject,
+        updateProject,
+        deleteProject,
+        refreshProjects: fetchProjects
         }}>
             {children}
         </ProjectContext.Provider>
