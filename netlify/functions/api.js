@@ -42,6 +42,15 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+// CORS headers
+const corsHeaders = {
+    'Access-Control-Allow-Origin': 'https://mastertech2.netlify.app',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
+};
+
 // Test projects data
 const testProjects = [
     {
@@ -93,16 +102,31 @@ app.use((err, req, res, next) => {
 exports.handler = async (event, context) => {
     console.log('API function called with path:', event.path);
     console.log('Event:', JSON.stringify(event, null, 2));
-    
-    return new Promise((resolve, reject) => {
-        app.handle(event, context, (err, result) => {
-            if (err) {
-                console.error('Error in handler:', err);
-                reject(err);
-            } else {
-                console.log('Handler result:', result);
-                resolve(result);
-            }
-        });
-    });
+
+    // Handle preflight requests
+    if (event.httpMethod === 'OPTIONS') {
+        console.log('Handling preflight request');
+        return {
+            statusCode: 204,
+            headers: corsHeaders
+        };
+    }
+
+    // Handle GET /projects
+    if (event.httpMethod === 'GET' && event.path.includes('/projects')) {
+        console.log('Handling GET /projects request');
+        return {
+            statusCode: 200,
+            headers: corsHeaders,
+            body: JSON.stringify(testProjects)
+        };
+    }
+
+    // Handle other routes
+    console.log('Route not found:', event.path);
+    return {
+        statusCode: 404,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Not Found' })
+    };
 }; 
