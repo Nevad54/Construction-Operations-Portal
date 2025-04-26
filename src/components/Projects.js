@@ -46,7 +46,7 @@ const Projects = () => {
       }
     };
 
-    const handlePopState = (event) => {
+    const handleBackButton = () => {
       if (selectedProject) {
         handleCloseModal();
       }
@@ -55,20 +55,17 @@ const Projects = () => {
     if (selectedProject) {
       document.addEventListener('keydown', handleEscKey);
       document.addEventListener('click', handleClickOutside);
-      window.addEventListener('popstate', handlePopState);
-      
-      // Add a new history entry when modal opens
-      const currentPath = window.location.pathname;
-      window.history.pushState({ modalOpen: true }, '', currentPath);
+      window.addEventListener('hashchange', handleBackButton);
+      // Add a hash to the URL when modal opens
+      window.location.hash = 'modal';
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscKey);
       document.removeEventListener('click', handleClickOutside);
-      window.removeEventListener('popstate', handlePopState);
-      
-      // Only go back if we're closing the modal
-      if (selectedProject) {
+      window.removeEventListener('hashchange', handleBackButton);
+      // Remove the hash when modal closes
+      if (window.location.hash === '#modal') {
         window.history.back();
       }
     };
