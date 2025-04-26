@@ -390,7 +390,7 @@ app.delete('/api/projects/:id', async (req, res) => {
 
 // Contact Form Route
 app.options('/api/contact', (req, res) => {
-  res.header('Access-Control-Allow-Origin', 'https://mastertech-frontend-yqjb.onrender.com');
+  res.header('Access-Control-Allow-Origin', 'https://mastertech2.netlify.app');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
@@ -399,7 +399,7 @@ app.options('/api/contact', (req, res) => {
 
 app.post('/api/contact', async (req, res) => {
   // Set CORS headers
-  res.header('Access-Control-Allow-Origin', 'https://mastertech-frontend-yqjb.onrender.com');
+  res.header('Access-Control-Allow-Origin', 'https://mastertech2.netlify.app');
   res.header('Access-Control-Allow-Credentials', 'true');
   
   try {
