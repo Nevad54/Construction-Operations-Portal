@@ -146,7 +146,10 @@ const Contact = () => {
       }
     };
 
-    loadRecaptcha();
+    // Only load reCAPTCHA if we're on the contact page
+    if (location.pathname === '/contact') {
+      loadRecaptcha();
+    }
 
     return () => {
       if (window.grecaptcha && recaptchaRef.current) {
@@ -157,7 +160,7 @@ const Contact = () => {
         }
       }
     };
-  }, [RECAPTCHA_SITE_KEY]);
+  }, [RECAPTCHA_SITE_KEY, location.pathname]);
 
   const handleRecaptchaChange = (token) => {
     console.log('reCAPTCHA token received');
@@ -190,7 +193,6 @@ const Contact = () => {
       ...prev,
       captcha: 'Error loading reCAPTCHA. Please refresh the page and try again.'
     }));
-    // Don't reset the reCAPTCHA on error as it might cause an infinite loop
   };
 
   const handleChange = (e) => {
