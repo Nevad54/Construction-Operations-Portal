@@ -291,12 +291,38 @@ exports.handler = async (event, context) => {
         // Handle POST /contact
         if (event.httpMethod === 'POST' && event.path.includes('/contact')) {
             const body = JSON.parse(event.body);
-            // You can add email sending, validation, etc. here
-            return {
-                statusCode: 200,
-                headers: responseHeaders,
-                body: JSON.stringify({ message: 'Contact form received!' })
+            // Send email using nodemailer
+            const nodemailer = require('nodemailer');
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS
+                }
+            });
+
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: process.env.CONTACT_EMAIL || process.env.EMAIL_USER,
+                subject: 'New Contact Form Submission',
+                text: `\nName: ${body.name}\nEmail: ${body.email}\nPhone: ${body.phone}\nMessage: ${body.message}`
             };
+
+            try {
+                await transporter.sendMail(mailOptions);
+                return {
+                    statusCode: 200,
+                    headers: responseHeaders,
+                    body: JSON.stringify({ message: 'Message sent successfully' })
+                };
+            } catch (error) {
+                console.error('Error sending email:', error);
+                return {
+                    statusCode: 500,
+                    headers: responseHeaders,
+                    body: JSON.stringify({ error: 'Failed to send message' })
+                };
+            }
         }
 
         // Handle other routes
