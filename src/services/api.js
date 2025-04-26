@@ -8,18 +8,27 @@ const handleResponse = async (response) => {
     url: response.url
   });
 
-  // Log the raw response text for debugging
-  const text = await response.text();
-  console.log('Raw response:', text);
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Error response:', errorText);
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
 
   try {
-    // Try to parse the response as JSON
-    const json = JSON.parse(text);
-    return json;
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const json = await response.json();
+      console.log('Parsed JSON response:', json);
+      return json;
+    } else {
+      const text = await response.text();
+      console.error('Unexpected content type:', contentType);
+      console.error('Response text:', text);
+      throw new Error(`Expected JSON but got ${contentType}`);
+    }
   } catch (error) {
-    console.error('Failed to parse JSON:', error);
-    console.error('Response text:', text);
-    throw new Error(`Failed to parse JSON response: ${text.substring(0, 100)}...`);
+    console.error('Error parsing response:', error);
+    throw error;
   }
 };
 
@@ -57,7 +66,6 @@ export const api = {
                 credentials: 'include',
                 headers: {
                     'Accept': 'application/json',
-                    'Content-Type': 'application/json',
                 },
                 mode: 'cors'
             });
@@ -134,7 +142,6 @@ export const api = {
                 credentials: 'include',
                 headers: {
                     'Accept': 'application/json',
-                    'Content-Type': 'application/json',
                 },
                 mode: 'cors'
             });
