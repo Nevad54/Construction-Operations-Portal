@@ -133,6 +133,36 @@ exports.handler = async (event, context) => {
             };
         }
 
+        // Handle PUT /projects/:id
+        if (event.httpMethod === 'PUT' && event.path.match(/\/projects\/[^\/]+$/)) {
+            console.log('Handling PUT /projects/:id request');
+            const id = event.path.split('/').pop();
+            const updateData = JSON.parse(event.body);
+            
+            console.log('Updating project:', id);
+            console.log('Update data:', updateData);
+
+            const updatedProject = await Project.findByIdAndUpdate(
+                id,
+                updateData,
+                { new: true, runValidators: true }
+            );
+
+            if (!updatedProject) {
+                return {
+                    statusCode: 404,
+                    headers: corsHeaders,
+                    body: JSON.stringify({ error: 'Project not found' })
+                };
+            }
+
+            return {
+                statusCode: 200,
+                headers: corsHeaders,
+                body: JSON.stringify(updatedProject)
+            };
+        }
+
         // Handle other routes
         console.log('Route not found:', event.path);
         return {
