@@ -1,72 +1,128 @@
+/* ============================================
+   MASTERTECH - Corporate Green/Gray Design System
+   Trustworthy, clean, SaaS-like
+   ============================================ */
+
 :root {
-  /* Primary Colors */
-  --primary-100: #E3F2FD;  /* Lightest */
-  --primary-200: #90CAF9;
-  --primary-300: #42A5F5;
-  --primary-400: #1E88E5;
-  --primary-500: #1976D2;  /* Main Brand Color */
-  --primary-600: #1565C0;
-  --primary-700: #0D47A1;  /* Darkest */
+  /* Primary - Muted corporate green */
+  --primary-50: #e6f0e9;
+  --primary-100: #d7e7dc;
+  --primary-200: #b5d0bf;
+  --primary-300: #94b9a2;
+  --primary-400: #5f8c6d;
+  --primary-500: #2f6b3f;
+  --primary-600: #285a35;
+  --primary-700: #214c2c;
+  --primary-800: #183820;
+  --primary-900: #122a18;
+  --primary: var(--primary-500);
+  --primary-dark: var(--primary-700);
 
-  /* Accent Colors */
-  --accent-100: #E8F5E9;
-  --accent-300: #66BB6A;
-  --accent-500: #43A047;  /* Success/Positive */
-  --accent-700: #2E7D32;
+  /* Accent - Soft green (subtle only) */
+  --accent-100: #f3faee;
+  --accent-200: #e9f7df;
+  --accent-300: #d4efbf;
+  --accent-400: #9fdd70;
+  --accent-500: #6bcf2c;
+  --accent-600: #59b125;
+  --accent-700: #478c1e;
+  --accent-800: #356817;
+  --accent: var(--accent-500);
+  --accent-hover: var(--accent-600);
 
-  /* Neutral Colors */
-  --neutral-50: #FAFAFA;   /* Background */
-  --neutral-100: #F5F5F5;  /* Cards */
-  --neutral-200: #EEEEEE;  /* Borders */
-  --neutral-300: #E0E0E0;
-  --neutral-400: #BDBDBD;
-  --neutral-500: #9E9E9E;  /* Disabled text */
-  --neutral-600: #757575;  /* Secondary text */
-  --neutral-700: #616161;
-  --neutral-800: #424242;  /* Primary text */
-  --neutral-900: #212121;  /* Headings */
+  /* Neutrals */
+  --neutral-50: #f4f6f8;
+  --neutral-100: #edf1f4;
+  --neutral-200: #dde3e9;
+  --neutral-300: #c7ced6;
+  --neutral-400: #aab4bf;
+  --neutral-500: #8c8c96;
+  --neutral-600: #5b6672;
+  --neutral-700: #3e4c59;
+  --neutral-800: #2f3c48;
+  --neutral-900: #1f2933;
+  --white: #ffffff;
+  --black: #1f2933;
 
-  /* Feedback Colors */
-  --error: #D32F2F;
-  --warning: #FFA000;
-  --success: #43A047;
-  --info: #1976D2;
+  /* Semantic */
+  --bg-page: var(--neutral-50);
+  --bg-section: var(--white);
+  --text-primary: #1f2933;
+  --text-secondary: #8c8c96;
+  --text-muted: var(--neutral-500);
+  --border-color: var(--neutral-200);
+  --error: #b91c1c;
+  --warning: #b45309;
+  --success: #15803d;
+  --info: var(--primary-600);
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.12);
 
-  /* Spacing */
-  --spacing-xs: 0.25rem;   /* 4px */
-  --spacing-sm: 0.5rem;    /* 8px */
-  --spacing-md: 1rem;      /* 16px */
-  --spacing-lg: 1.5rem;    /* 24px */
-  --spacing-xl: 2rem;      /* 32px */
-  --spacing-2xl: 3rem;     /* 48px */
+  /* Spacing scale */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --spacing-xs: var(--space-1);
+  --spacing-sm: var(--space-2);
+  --spacing-md: var(--space-4);
+  --spacing-lg: var(--space-6);
+  --spacing-xl: var(--space-8);
+  --spacing-2xl: var(--space-12);
 
-  /* Border Radius */
-  --radius-sm: 0.25rem;    /* 4px */
-  --radius-md: 0.5rem;     /* 8px */
-  --radius-lg: 1rem;       /* 16px */
-  --radius-full: 9999px;   /* For pills and circles */
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+  --radius: var(--radius-md);
 
   /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: 'Poppins', var(--font-sans);
-  
-  /* Font Sizes */
-  --text-xs: 0.75rem;      /* 12px */
-  --text-sm: 0.875rem;     /* 14px */
-  --text-base: 1rem;       /* 16px */
-  --text-lg: 1.125rem;     /* 18px */
-  --text-xl: 1.25rem;      /* 20px */
-  --text-2xl: 1.5rem;      /* 24px */
-  --text-3xl: 1.875rem;    /* 30px */
-  --text-4xl: 2.25rem;     /* 36px */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-heading: var(--font-sans);
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Layout */
+  --header-height: 72px;
+  --container-max: 1200px;
+  --section-padding-y: var(--space-20);
+  --section-padding-y-mobile: var(--space-16);
 
   /* Transitions */
-  --transition-fast: 150ms ease;
-  --transition-normal: 250ms ease;
-  --transition-slow: 350ms ease;
-} 
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+  --transition-fast: 150ms var(--ease-out);
+  --transition-normal: 250ms var(--ease-out);
+  --transition-slow: 350ms var(--ease-out);
+  --transition-fast-legacy: 150ms ease;
+  --transition-normal-legacy: 250ms ease;
+  --transition-slow-legacy: 350ms ease;
+}

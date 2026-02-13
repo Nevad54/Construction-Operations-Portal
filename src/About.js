@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
 import './styles.css';
 
-const About = () => {
+const About = memo(() => {
   const [isSidebarActive, setIsSidebarActive] = useState(false);
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -16,13 +16,13 @@ const About = () => {
     const path = location.pathname;
     console.log('Current path:', path); // Debug log
     if (path === '/') return 'home';
-    if (path === '/pages/about') return 'about';
-    if (path === '/pages/services') return 'services';
-    if (path === '/pages/vision-mission') return 'vision-mission';
-    if (path === '/pages/core-values') return 'core-values';
-    if (path === '/pages/safety') return 'safety';
-    if (path === '/pages/projects') return 'projects';
-    if (path === '/pages/contact') return 'contact';
+    if (path === '/about') return 'about';
+    if (path === '/services') return 'services';
+    if (path === '/vision-mission') return 'vision-mission';
+    if (path === '/core-values') return 'core-values';
+    if (path === '/safety') return 'safety';
+    if (path === '/projects') return 'projects';
+    if (path === '/contact') return 'contact';
     return 'home';
   };
 
@@ -124,11 +124,9 @@ const About = () => {
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         aria-label="Back to top"
         style={{ display: showBackToTop ? 'block' : 'none' }}
-      >
-        ↑
-      </button>
+      />
     </div>
   );
-};
+});
 
 export default About;

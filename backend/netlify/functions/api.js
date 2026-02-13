@@ -6,6 +6,7 @@ const session = require('express-session');
 const multer = require('multer');
 const mongoose = require('mongoose');
 const requestIp = require('request-ip');
+require('dotenv').config();
 
 const app = express();
 const router = express.Router();
@@ -38,10 +39,16 @@ const adminAuth = basicAuth({
 });
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/mastertech', {
+const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/mastertech';
+mongoose.connect(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true
-});
+})
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => {
+    console.error('MongoDB connection error:', err && err.message ? err.message : err);
+    // Do not throw to keep the server running in development when DB is unreachable
+  });
 
 // Contact form submission
 router.post('/contact', async (req, res) => {

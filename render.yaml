@@ -20,6 +20,14 @@ services:
         value: ${EMAIL_PASS}
       - key: CONTACT_EMAIL
         value: ${CONTACT_EMAIL}
+      - key: CORS_ORIGINS
+        value: ${CORS_ORIGINS}
+      - key: CLOUDINARY_CLOUD_NAME
+        value: ${CLOUDINARY_CLOUD_NAME}
+      - key: CLOUDINARY_API_KEY
+        value: ${CLOUDINARY_API_KEY}
+      - key: CLOUDINARY_API_SECRET
+        value: ${CLOUDINARY_API_SECRET}
 
   - type: web
     name: mastertech-frontend
@@ -29,3 +37,5 @@ services:
     envVars:
       - key: REACT_APP_API_URL
         value: ${REACT_APP_API_URL}
+      - key: REACT_APP_RECAPTCHA_SITE_KEY
+        value: ${REACT_APP_RECAPTCHA_SITE_KEY}

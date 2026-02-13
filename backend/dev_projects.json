@@ -1,0 +1,211 @@
+[
+  {
+    "_id": "67f47ee6cfd195043f8aa9ac",
+    "title": "CONSTRUCTION OF CKD PHASE 2 WAREHOUSE PATHWAY AND EMPTY RACK CANOPY",
+    "description": "DESIGN INCLUDING THE SUPPLY OF LABOR AND MATERIAL FOR THE CONSTRUCTION OF DUCT LEVELER AND CANOPY",
+    "location": "First Philippine Industrial Park, Tanauan City",
+    "owner": "HONDA PHILIPPINES INC",
+    "image": "/uploads/1744077161296.png",
+    "date": "2025-07-01T00:00:00.000Z",
+    "status": "ongoing",
+    "featured": false
+  },
+  {
+    "_id": "67f4822fcfd195043f8aa9b3",
+    "title": "Site Development and Water Line System",
+    "description": "DESIGN,SUPPLY OF LABOR,TOOLS, MATERIALS, CONSUMABLES, AND TECHNICAL SUPERVISION",
+    "location": "Tuguegarao City",
+    "owner": "WHITEPORT INC.",
+    "image": "/uploads/1744077359695.png",
+    "date": "2025-07-01T00:00:00.000Z",
+    "status": "ongoing",
+    "featured": false
+  },
+  {
+    "_id": "67f48da581d95b18b77446aa",
+    "title": "TOTAL SITE DEVELOPMENT AND CONSTRUCTION OF MANCAMP",
+    "description": "DESIGN, SUPPLY, INSTALLATION TESTING AND COMMISSIONING OF MANCAMP AMENITIES",
+    "location": "Clark Pampanga",
+    "owner": "ACCIONA-EEI JV",
+    "date": "2023-12-31T00:00:00.000Z",
+    "image": "/uploads/1744080293122.png",
+    "status": "completed",
+    "featured": true
+  },
+  {
+    "_id": "67f495f881d95b18b77446b2",
+    "title": "Embedded pipes",
+    "description": "SUPPLY AND INSTALLATION OF EMBEDDED ITEMS FOR PLATFORM LEVEL-CIA STATION",
+    "location": "Clark Pampanga",
+    "owner": "ACCIONA EEI-JV for Malolos - Clark Railway Project (MCRP) - Package 4",
+    "date": "2023-12-31T00:00:00.000Z",
+    "image": "/uploads/1744082424394.png",
+    "status": "completed",
+    "featured": false
+  },
+  {
+    "_id": "67f496b881d95b18b77446b7",
+    "title": "REFURBISHMENT COVERED WALKWAY",
+    "description": "DESIGN, SUPPLY OF LABOR, TOOLS MATERIALS CONSUMABLES AND TECHNICAL SUPER",
+    "location": "Autopark, Greenfield PEZA, Sta Rosa City, Laguna",
+    "owner": "Mitsubishi Motors Phils. Corp.",
+    "date": "2025-03-31T00:00:00.000Z",
+    "image": "/uploads/1744082626975.png",
+    "status": "completed",
+    "featured": true
+  },
+  {
+    "_id": "67f49d0681d95b18b77446be",
+    "title": "CONVERSION OF PRETREATMENT RINSING TANK FROM DIPPING TO SPRAY RINSE",
+    "description": "SUPPLY OF MATERIALS, LABOR TOOLS AND EQUIPMENT INCLUDING DESIGN, TECHNICAL EXPERTISE, TESTING AND COMMISIONING",
+    "location": "Autopark, Greenfield PEZA, Sta Rosa City, Laguna",
+    "owner": "MITSUBISHI MOTORS PHILS CORP",
+    "date": "2025-01-25T00:00:00.000Z",
+    "image": "/uploads/1744084230304.png",
+    "status": "completed",
+    "featured": true
+  },
+  {
+    "_id": "67f49d8181d95b18b77446c1",
+    "title": "Supply and Installation of 425 Units Process Lines Ventilating Fans",
+    "description": "SUPPLY OF BLOWER, MATERIALS, LABOR, CONSUMABLES TOOLS AND EQUIPMENT INCLUDING SUPERVISION AND COMMISSIONING",
+    "location": "Autopark, Greenfield PEZA, Sta Rosa City, Laguna",
+    "owner": "Mitsubishi Motors Phils. Corp.",
+    "date": "2025-01-03T00:00:00.000Z",
+    "image": "/uploads/1744085193927.png",
+    "status": "completed",
+    "featured": false
+  },
+  {
+    "_id": "67f49e3f81d95b18b77446c4",
+    "title": "ED Sanding Line Air Change and Ventilation System Improvement",
+    "description": "SUPPLY OF BLOWER, MATERIALS, LABOR, CONSUMABLES TOOLS AND EQUIPMENT INCLUDING SUPERVISION AND COMMISSIONING",
+    "location": "Autopark, Greenfield PEZA, Sta Rosa City, Laguna",
+    "owner": "MITSUBISHI MOTORS PHILS CORP",
+    "date": "2025-01-03T00:00:00.000Z",
+    "image": "/uploads/1744085012914.png",
+    "status": "completed",
+    "featured": true
+  },
+  {
+    "_id": "67f49f4f81d95b18b77446cc",
+    "title": "Security Enhancement Project",
+    "description": "SUPPLY OF MATERIALS, LABOR, TOOLS AND EQUIPMENT INCLUDING CONSUMABLES AT AREA 1 TO AREA 7",
+    "location": "Autopark, Greenfield PEZA, Sta Rosa City, Laguna",
+    "owner": "MITSUBISHI MOTORS PHILS CORP",
+    "date": "2024-03-31T00:00:00.000Z",
+    "image": "/uploads/1744084815400.png",
+    "status": "completed",
+    "featured": true
+  },
+  {
+    "_id": "67f4a18881d95b18b77446e2",
+    "title": "Sealing of Gaps at Body Paintshop",
+    "description": "SUPPLY OF MATERIALS, LABOR, TOOLS AND EQUIPMENT INCLUDING TECHNICAL EXPERTISE, SAFETY, TESTING AND COMMISSIONING",
+    "location": "Autopark, Greenfield PEZA, Sta Rosa City, Laguna",
+    "owner": "MITSUBISHI MOTORS PHILS CORP",
+    "date": "2024-03-31T00:00:00.000Z",
+    "image": "/uploads/1744085384659.png",
+    "status": "completed",
+    "featured": false
+  },
+  {
+    "_id": "67f4a22881d95b18b77446e5",
+    "title": "Clear Painting Booth Automation",
+    "description": "SUPPLY AND INSTALLATION OF MATERIALS, LABOR AND EQUIPMENT INCLUDING SAFETY, SUPERVISION AND COMMISIONING.",
+    "location": "Km. 23 East Service Road, Bo. Cupang, City of Muntinlupa",
+    "owner": "Kawasaki Motors Phils. Corp.",
+    "date": "2023-07-31T00:00:00.000Z",
+    "image": "/uploads/1744085544248.png",
+    "status": "completed",
+    "featured": true
+  },
+  {
+    "_id": "67f4a35081d95b18b77446ec",
+    "title": "Installation of Cooling System",
+    "description": "SUPPLY OF MATERIALS, LABOR, EQUIPMENT, TOOLS AND CONSUMABLE INCLUDING TESTING AND COMMISSIONING",
+    "location": "Autopark, Greenfield PEZA, Sta Rosa City, Laguna",
+    "owner": "MITSUBISHI MOTORS PHILS CORP",
+    "date": "2019-07-31T00:00:00.000Z",
+    "image": "/uploads/1744085840617.png",
+    "status": "completed",
+    "featured": true
+  },
+  {
+    "_id": "67f4a3e081d95b18b77446ef",
+    "title": "CONSTRUCTION OF OIL STORAGE AT STAMPING SHOP",
+    "description": "SUPPLY OF MATERIALS, LABOR, EQUIPMENT, TOOLS AND CONSUMABLE INCLUDING TECHNICAL SUPERVISION",
+    "location": "Autopark, Greenfield PEZA, Sta Rosa City, Laguna",
+    "owner": "MITSUBISHI MOTORS PHILS CORP",
+    "date": "2019-04-30T00:00:00.000Z",
+    "image": "/uploads/1744086041973.png",
+    "status": "completed",
+    "featured": false
+  },
+  {
+    "_id": "67f4a65d81d95b18b77446f9",
+    "title": "INSTALLATION OF ABS LINE WATER PROMER SPRAY SYSTEM",
+    "description": "SUPPLY OF MATERIALS, LABOR, EQUIPMENT, TOOLS AND CONSUMABLE INCLUDING TECHNICAL SUPERVISION AND COMMISSIONING",
+    "location": "First   Philippine Industrial Park, Tanauan City",
+    "owner": "Honda Phils.   Inc",
+    "date": "2019-04-30T00:00:00.000Z",
+    "image": "/uploads/1744086621813.png",
+    "status": "completed",
+    "featured": true
+  },
+  {
+    "_id": "67f4a77081d95b18b77446ff",
+    "title": "CONSTRUCTION OF SKID AND TROLLEY JIGS CLEANING FACILITY",
+    "description": "SUPPLY OF MATERIALS, LABOR, EQUIPMENT, TOOLS AND CONSUMABLE INCLUDING TECHNICAL SUPERVISION AND COMMISSIONING",
+    "location": "Autopark, Greenfield PEZA, Sta Rosa City, Laguna",
+    "owner": "Mitsubishi Motors Phils. Corp.",
+    "date": "2019-03-31T00:00:00.000Z",
+    "image": "/uploads/1744086896698.png",
+    "status": "completed",
+    "featured": false
+  },
+  {
+    "_id": "67f4a7ef81d95b18b7744702",
+    "title": "ABS LINE PAINTING BOOTH MODIFICATION",
+    "description": "ABS LINE PAINTING BOOTH MODIFICATION",
+    "location": "First Philippine Industrial Park, Tanauan City",
+    "owner": "Honda Phils.   Inc",
+    "date": "2018-12-31T00:00:00.000Z",
+    "image": "/uploads/1744087023216.png",
+    "status": "completed",
+    "featured": false
+  },
+  {
+    "_id": "67f4a84781d95b18b7744705",
+    "title": "SUPPLY AND INSTALLATION OF ROTATING CONVEYOR INCLUDING CARRIER MODIFICATION",
+    "description": "SUPPLY OF MATERIALS, LABOR, EQUIPMENT, TOOLS AND CONSUMABLE INCLUDING TECHNICAL SUPERVISION, SAFETY, PROGRAMMING AND COMMISSIONING",
+    "location": "First Philippine Industrial Park, Tanauan City",
+    "owner": "Honda Phils.   Inc",
+    "date": "2018-12-08T00:00:00.000Z",
+    "image": "/uploads/1744087111712.png",
+    "status": "completed",
+    "featured": false
+  },
+  {
+    "_id": "67f4a89781d95b18b7744708",
+    "title": "REPLACEMENT OF 50TR AIRCONDITIONING UNIT AT PAINTSHOP",
+    "description": "SUPPLY OF MATERIALS, LABOR, EQUIPMENT, TOOLS AND CONSUMABLE INCLUDING TECHNICAL SUPERVISION AND COMMISSIONING",
+    "location": "Autopark, Greenfield PEZA, Sta Rosa City, Laguna",
+    "owner": "Mitsubishi Motors Phils. Corp.",
+    "date": "2018-10-31T00:00:00.000Z",
+    "image": "/uploads/1744087191359.png",
+    "status": "completed",
+    "featured": false
+  },
+  {
+    "_id": "67f4a97d81d95b18b774470f",
+    "title": "INSTALLATION OF NEW 120TR CHILLER UNIT",
+    "description": "SUPPLY OF MATERIALS, LABOR, EQUIPMENT, TOOLS AND CONSUMABLE INCLUDING TECHNICAL SUPERVISION AND COMMISSIONING",
+    "location": "Autopark, Greenfield PEZA, Sta Rosa City, Laguna",
+    "owner": "Mitsubishi Motors Phils. Corp.",
+    "date": "2018-11-30T00:00:00.000Z",
+    "image": "/uploads/1744087421514.png",
+    "status": "completed",
+    "featured": true
+  }
+]

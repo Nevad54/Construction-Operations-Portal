@@ -13,7 +13,15 @@ const Sidebar = ({ isSidebarActive, setIsSidebarActive, setIsNavLinksActive, act
   };
 
   return (
-    <div className={`sidebar ${isSidebarActive ? 'active' : ''}`} id="sidebar" role="navigation" aria-label="Main navigation">
+    <>
+      <div
+        className={`sidebar-overlay ${isSidebarActive ? 'active' : ''}`}
+        onClick={closeSidebar}
+        onKeyDown={(e) => e.key === 'Escape' && closeSidebar()}
+        aria-hidden="true"
+        role="presentation"
+      />
+      <div className={`sidebar ${isSidebarActive ? 'active' : ''}`} id="sidebar" role="navigation" aria-label="Main navigation">
       <ul>
         <li>
           <Link to="/" onClick={closeSidebar} className={activePage === 'home' ? 'active' : ''}>
@@ -47,6 +55,7 @@ const Sidebar = ({ isSidebarActive, setIsSidebarActive, setIsNavLinksActive, act
         </li>
       </ul>
     </div>
+    </>
   );
 };
 

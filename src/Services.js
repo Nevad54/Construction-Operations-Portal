@@ -18,13 +18,13 @@ const Services = () => {
     const path = location.pathname;
     console.log('Current path:', path);
     if (path === '/') return 'home';
-    if (path === '/pages/about') return 'about';
-    if (path === '/pages/services') return 'services';
-    if (path === '/pages/vision-mission') return 'vision-mission';
-    if (path === '/pages/core-values') return 'core-values';
-    if (path === '/pages/safety') return 'safety';
-    if (path === '/pages/projects') return 'projects';
-    if (path === '/pages/contact') return 'contact';
+    if (path === '/about') return 'about';
+    if (path === '/services') return 'services';
+    if (path === '/vision-mission') return 'vision-mission';
+    if (path === '/core-values') return 'core-values';
+    if (path === '/safety') return 'safety';
+    if (path === '/projects') return 'projects';
+    if (path === '/contact') return 'contact';
     return 'home'; // Default to 'home' if no match
   };
 

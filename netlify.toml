@@ -1,31 +1,14 @@
 [build]
   command = "npm install && npm run build"
   publish = "build"
-  functions = "netlify/functions"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
-  status = 200
-  force = true
-
-[[headers]]
-  for = "/api/*"
-  [headers.values]
-    Access-Control-Allow-Origin = "https://mastertech2.netlify.app"
-    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type, Authorization, Accept"
-    Access-Control-Allow-Credentials = "true"
-
 [build.environment]
   NODE_VERSION = "18"
   NPM_VERSION = "9"
   NODE_ENV = "production"
   CI = "false"
-  REACT_APP_API_URL = "https://mastertech3.netlify.app"
-  REACT_APP_RECAPTCHA_SITE_KEY = "6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa"

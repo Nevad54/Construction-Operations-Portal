@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
 import './styles.css';
 
-const Home = () => {
+const Home = memo(() => {
   const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
   const [isSidebarActive, setIsSidebarActive] = useState(false);
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
@@ -220,6 +220,6 @@ const Home = () => {
       </button>
     </div>
   );
-};
+});
 
 export default Home;

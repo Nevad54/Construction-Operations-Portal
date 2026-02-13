@@ -21,7 +21,8 @@ export const ProjectProvider = ({ children }) => {
             return allProjects;
         } catch (err) {
             console.error('Error fetching projects:', err);
-            setError('Failed to fetch projects');
+            setError('Could not load projects. Make sure the backend is running (npm run start:backend) and reachable at ' + (process.env.REACT_APP_API_URL || 'the API URL') + '.');
+            setProjects([]);
             throw err;
         } finally {
             setLoading(false);

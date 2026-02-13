@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Projects.css';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faSort, faFilter, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faSort } from '@fortawesome/free-solid-svg-icons';
 import Header from '../Header';
 import Sidebar from '../Sidebar';
 import Footer from '../Footer';
@@ -11,17 +11,13 @@ import { useProjects } from '../context/ProjectContext';
 
 const Projects = () => {
   const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
-  const { projects, loading, error } = useProjects();
+  const { projects, error, refreshProjects } = useProjects();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedProject, setSelectedProject] = useState(null);
   const [sortOrder, setSortOrder] = useState('desc');
   const [filterStatus, setFilterStatus] = useState('all');
   const [isSidebarActive, setIsSidebarActive] = useState(false);
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
-  const [exitingProject, setExitingProject] = useState(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const modalRef = useRef(null);
-  const modalContainerRef = useRef(null);
 
   useEffect(() => {
     // Initialize AOS
@@ -32,48 +28,6 @@ const Projects = () => {
       easing: 'ease-in-out'
     });
   }, []);
-
-  useEffect(() => {
-    const handleEscKey = (event) => {
-      if (event.key === 'Escape' && selectedProject) {
-        handleCloseModal();
-      }
-    };
-
-    const handleClickOutside = (event) => {
-      if (modalContainerRef.current === event.target) {
-        handleCloseModal();
-      }
-    };
-
-    const handleBackButton = () => {
-      if (selectedProject && window.location.hash === '') {
-        handleCloseModal();
-      }
-    };
-
-    if (selectedProject) {
-      document.addEventListener('keydown', handleEscKey);
-      document.addEventListener('click', handleClickOutside);
-      window.addEventListener('hashchange', handleBackButton);
-      
-      // Only add hash if it's not already there
-      if (window.location.hash !== '#modal') {
-        window.location.hash = 'modal';
-      }
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscKey);
-      document.removeEventListener('click', handleClickOutside);
-      window.removeEventListener('hashchange', handleBackButton);
-      
-      // Only remove hash if it's there
-      if (window.location.hash === '#modal') {
-        window.history.back();
-      }
-    };
-  }, [selectedProject]);
 
   const handleScroll = () => {
     setShowBackToTop(window.scrollY > 200);
@@ -106,62 +60,12 @@ const Projects = () => {
   const ongoingProjects = filteredProjects.filter(p => p.status === 'ongoing');
   const completedProjects = filteredProjects.filter(p => p.status === 'completed');
 
-  const handleProjectClick = (project, event) => {
-    setSelectedProject(project);
-    
-    // Calculate the ideal position for the modal
-    const clickY = event.clientY;
-    const scrollY = window.scrollY;
-    const viewportHeight = window.innerHeight;
-    
-    // After modal is rendered, position it appropriately
-    setTimeout(() => {
-      if (modalRef.current) {
-        const modalHeight = modalRef.current.offsetHeight;
-        let topPosition;
-
-        // If clicked in the upper half of viewport
-        if (clickY < viewportHeight / 2) {
-          topPosition = scrollY + clickY;
-        } else {
-          // If clicked in the lower half, position modal above click
-          topPosition = scrollY + clickY - modalHeight;
-        }
-
-        // Ensure modal stays within viewport
-        const maxTop = scrollY + viewportHeight - modalHeight - 20; // 20px padding
-        const minTop = scrollY + 20; // 20px padding
-        topPosition = Math.min(Math.max(topPosition, minTop), maxTop);
-
-        // Apply the position
-        modalRef.current.style.top = `${topPosition}px`;
-        
-        console.log('Modal positioned at:', {
-          clickY,
-          scrollY,
-          topPosition,
-          modalHeight,
-          viewportHeight,
-          windowWidth: window.innerWidth
-        });
-      }
-    }, 0);
-  };
-
-  const handleCloseModal = () => {
-    setExitingProject(selectedProject);
-    setTimeout(() => {
-      setSelectedProject(null);
-      setExitingProject(null);
-    }, 300);
-  };
-
   if (error) {
     return (
       <div className="error-container">
         <h3>Error loading projects</h3>
         <p>{error}</p>
-        <button className="retry-button" onClick={() => {}}>
+        <button className="retry-button" onClick={() => refreshProjects()}>
           Retry
         </button>
       </div>
@@ -220,6 +124,11 @@ const Projects = () => {
           </select>
         </div>
 
+        {(ongoingProjects.length === 0 && completedProjects.length === 0) && (
+          <p className="projects-empty-message" data-aos="fade-up">
+            No projects to show yet. Connect the database or add projects from the admin panel.
+          </p>
+        )}
         <div className="projects-sections">
           <div className="projects-section">
             <div className="section-header" data-aos="fade-up" data-aos-delay="200">
@@ -233,7 +142,6 @@ const Projects = () => {
                   className="project-card hover-lift"
                   data-aos="fade-up"
                   data-aos-delay={500 + (index * 100)}
-                  onClick={(e) => handleProjectClick(project, e)}
                 >
                   {project.image && (
                     <img 
@@ -245,6 +153,10 @@ const Projects = () => {
                   <div className="project-content">
                     <h3 className="project-title">{project.title}</h3>
                     <p className="project-location">{project.location}</p>
+                    {project.date && (
+                      <p className="project-date">{new Date(project.date).toLocaleDateString()}</p>
+                    )}
+                    <p className="project-description">{project.description}</p>
                     <span className="status-badge status-ongoing">Ongoing</span>
                   </div>
                 </div>
@@ -264,7 +176,6 @@ const Projects = () => {
                   className="project-card hover-lift"
                   data-aos="fade-up"
                   data-aos-delay={500 + (index * 100)}
-                  onClick={(e) => handleProjectClick(project, e)}
                 >
                   {project.image && (
                     <img 
@@ -276,6 +187,10 @@ const Projects = () => {
                   <div className="project-content">
                     <h3 className="project-title">{project.title}</h3>
                     <p className="project-location">{project.location}</p>
+                    {project.date && (
+                      <p className="project-date">{new Date(project.date).toLocaleDateString()}</p>
+                    )}
+                    <p className="project-description">{project.description}</p>
                     <span className="status-badge status-completed">Completed</span>
                   </div>
                 </div>
@@ -283,49 +198,6 @@ const Projects = () => {
             </div>
           </div>
         </div>
-
-        {selectedProject && (
-          <div 
-            ref={modalContainerRef}
-            className="project-modal"
-            data-aos="fade-in"
-          >
-            <div 
-              ref={modalRef}
-              className="modal-content"
-              data-aos="zoom-in"
-            >
-              <div className="modal-header">
-                <h2>{selectedProject.title}</h2>
-                <button
-                  className="modal-close hover-rotate"
-                  onClick={handleCloseModal}
-                >
-                  <FontAwesomeIcon icon={faTimes} />
-                </button>
-              </div>
-              {selectedProject.image && (
-                <img 
-                  src={`${IMAGE_BASE_URL}${selectedProject.image}`} 
-                  alt={selectedProject.title} 
-                  className="modal-image"
-                />
-              )}
-              <div className="modal-details">
-                <p><strong>Location:</strong> {selectedProject.location || 'N/A'}</p>
-                <p><strong>Status:</strong> 
-                  <span className={`modal-status ${selectedProject.status}`}>
-                    {selectedProject.status === 'completed' ? 'Completed' : 'Ongoing'}
-                  </span>
-                </p>
-                {selectedProject.date && (
-                  <p><strong>Date:</strong> {new Date(selectedProject.date).toLocaleDateString()}</p>
-                )}
-                <p><strong>Description:</strong> {selectedProject.description}</p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
       <Footer />
       <button

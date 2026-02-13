@@ -1,0 +1,20 @@
+[
+  {
+    "_id": "folder-1770970467360",
+    "path": "Test/Docs",
+    "ownerId": "admin-1",
+    "createdAt": "2026-02-13T08:14:27.360Z"
+  },
+  {
+    "_id": "folder-1770970568769",
+    "path": "pdf",
+    "ownerId": "admin-1",
+    "createdAt": "2026-02-13T08:16:08.769Z"
+  },
+  {
+    "_id": "folder-1770970833150",
+    "path": "Drive/NewFolder",
+    "ownerId": "admin-1",
+    "createdAt": "2026-02-13T08:20:33.150Z"
+  }
+]
