@@ -644,6 +644,48 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     setUploadForm((prev) => ({ ...prev, file: dropped }));
   };
 
+  const handleDriveDragOver = (event) => {
+    if (!canManage) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    setDragActive(true);
+  };
+
+  const handleDriveDragLeave = (event) => {
+    if (!canManage) return;
+    if (event.currentTarget.contains(event.relatedTarget)) return;
+    setDragActive(false);
+  };
+
+  const handleDriveDrop = async (event) => {
+    if (!canManage) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setDragActive(false);
+
+    const droppedFile = event.dataTransfer?.files?.[0];
+    if (droppedFile) {
+      const destinationFolder = folderFilter === 'all' ? '' : folderFilter;
+      setUploadForm((prev) => ({ ...prev, file: droppedFile, folder: destinationFolder }));
+      setShowUploadModal(true);
+      return;
+    }
+
+    const draggedFileId = event.dataTransfer?.getData('text/mti-file-id');
+    const draggedFolderPath = event.dataTransfer?.getData('text/mti-folder-path');
+    const destinationFolder = folderFilter === 'all' ? '' : folderFilter;
+
+    try {
+      if (draggedFileId) {
+        await executeFileMove([draggedFileId], destinationFolder);
+      } else if (draggedFolderPath) {
+        await executeFolderMove(draggedFolderPath, destinationFolder);
+      }
+    } catch (err) {
+      setError(err.message || 'Drag and drop failed');
+    }
+  };
+
   const openContextMenu = (event, file) => {
     event.preventDefault();
     event.stopPropagation();
@@ -1169,7 +1211,13 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
             </div>
           </div>
         </CardHeader>
-        <CardContent onContextMenu={(e) => openFolderContextMenu(e, folderFilter === 'all' ? '__root__' : folderFilter)}>
+        <CardContent
+          onContextMenu={(e) => openFolderContextMenu(e, folderFilter === 'all' ? '__root__' : folderFilter)}
+          onDragOver={handleDriveDragOver}
+          onDragLeave={handleDriveDragLeave}
+          onDrop={handleDriveDrop}
+          className={dragActive ? 'ring-2 ring-brand/30 rounded-xl' : ''}
+        >
           {filteredFiles.length === 0 && (viewMode !== 'grid' || folderCards.length === 0) ? (
             <p className="text-text-secondary dark:text-gray-400">No files found.</p>
           ) : viewMode === 'list' ? (

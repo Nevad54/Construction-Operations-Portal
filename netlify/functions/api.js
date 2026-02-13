@@ -6,6 +6,9 @@ const SESSION_MAX_AGE = 60 * 60; // 1 hour
 
 let cachedConnection = null;
 let ProjectModel = null;
+let fallbackProjects = [];
+let dbLastError = '';
+let dbConnected = false;
 
 const getBackendBaseUrl = () => (process.env.BACKEND_API_URL || '').trim().replace(/\/$/, '');
 
@@ -85,31 +88,77 @@ const parseBody = (event) => {
   }
 };
 
-const ensureDb = async () => {
-  if (cachedConnection && mongoose.connection.readyState === 1) return;
-  const uri = process.env.MONGO_URI || process.env.MONGODB_URI || '';
-  if (!uri) return;
-  cachedConnection = await mongoose.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 10000,
-  });
-  if (!ProjectModel) {
-    const schema = new mongoose.Schema(
-      {
-        title: String,
-        description: String,
-        image: String,
-        category: String,
-        date: Date,
-        status: String,
-        location: String,
-        owner: String,
-      },
-      { timestamps: true }
-    );
-    ProjectModel = mongoose.models.Project || mongoose.model('Project', schema);
+const buildMongoUriCandidates = (rawUri) => {
+  const uri = String(rawUri || '').trim();
+  if (!uri) return [];
+  const candidates = [uri];
+
+  // Retry with URL-encoded password for URIs like mongodb://user:pass@host/db
+  const match = uri.match(/^(mongodb(?:\+srv)?:\/\/)([^:\/@]+):([^@]+)@(.+)$/i);
+  if (match) {
+    const [, prefix, user, pass, rest] = match;
+    const encodedPass = encodeURIComponent(pass);
+    const rebuilt = `${prefix}${user}:${encodedPass}@${rest}`;
+    if (rebuilt !== uri) {
+      candidates.push(rebuilt);
+    }
   }
+  return Array.from(new Set(candidates));
+};
+
+const ensureDb = async () => {
+  if (cachedConnection && mongoose.connection.readyState === 1) {
+    dbConnected = true;
+    dbLastError = '';
+    return true;
+  }
+
+  const sourceUri = process.env.MONGO_URI || process.env.MONGODB_URI || '';
+  const uriCandidates = buildMongoUriCandidates(sourceUri);
+  if (!uriCandidates.length) {
+    dbConnected = false;
+    dbLastError = 'MONGO_URI is not configured';
+    return false;
+  }
+
+  let lastError = null;
+  for (const uri of uriCandidates) {
+    try {
+      if (mongoose.connection.readyState !== 0) {
+        try { await mongoose.disconnect(); } catch (_) {}
+      }
+      cachedConnection = await mongoose.connect(uri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 10000,
+      });
+      if (!ProjectModel) {
+        const schema = new mongoose.Schema(
+          {
+            title: String,
+            description: String,
+            image: String,
+            category: String,
+            date: Date,
+            status: String,
+            location: String,
+            owner: String,
+          },
+          { timestamps: true }
+        );
+        ProjectModel = mongoose.models.Project || mongoose.model('Project', schema);
+      }
+      dbConnected = true;
+      dbLastError = '';
+      return true;
+    } catch (e) {
+      lastError = e;
+    }
+  }
+
+  dbConnected = false;
+  dbLastError = lastError && lastError.message ? lastError.message : 'Unknown DB connection error';
+  return false;
 };
 
 const getAuthUsers = () => ([
@@ -196,7 +245,8 @@ exports.handler = async (event) => {
 
   try {
     if (path === 'status') {
-      return jsonResponse(200, { usingNetlifyFunction: true, backendProxy: false }, origin);
+      await ensureDb();
+      return jsonResponse(200, { usingNetlifyFunction: true, backendProxy: false, dbConnected, dbLastError }, origin);
     }
 
     if (path === 'auth/login' && method === 'POST') {
@@ -219,15 +269,14 @@ exports.handler = async (event) => {
     }
 
     if (path === 'projects' && method === 'GET') {
-      await ensureDb();
-      if (!ProjectModel) return jsonResponse(200, [], origin);
+      const hasDb = await ensureDb();
+      if (!hasDb || !ProjectModel) return jsonResponse(200, fallbackProjects, origin);
       const projects = await ProjectModel.find().sort({ createdAt: -1 }).lean();
       return jsonResponse(200, projects, origin);
     }
 
     if (path === 'projects' && method === 'POST') {
-      await ensureDb();
-      if (!ProjectModel) return jsonResponse(500, { error: 'Database is not configured' }, origin);
+      const hasDb = await ensureDb();
       const data = {
         title: body.title || '',
         description: body.description || '',
@@ -241,13 +290,17 @@ exports.handler = async (event) => {
       if (!data.title || !data.description) {
         return jsonResponse(400, { error: 'Title and description are required' }, origin);
       }
+      if (!hasDb || !ProjectModel) {
+        const created = { _id: `${Date.now()}-${Math.round(Math.random() * 1e6)}`, ...data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+        fallbackProjects.unshift(created);
+        return jsonResponse(201, created, origin);
+      }
       const created = await ProjectModel.create(data);
       return jsonResponse(201, created, origin);
     }
 
     if (path.startsWith('projects/') && method === 'PUT') {
-      await ensureDb();
-      if (!ProjectModel) return jsonResponse(500, { error: 'Database is not configured' }, origin);
+      const hasDb = await ensureDb();
       const id = path.split('/')[1];
       const updates = {
         title: body.title,
@@ -260,15 +313,26 @@ exports.handler = async (event) => {
         owner: body.owner,
       };
       Object.keys(updates).forEach((k) => updates[k] === undefined && delete updates[k]);
+      if (!hasDb || !ProjectModel) {
+        const idx = fallbackProjects.findIndex((p) => String(p._id) === String(id));
+        if (idx === -1) return jsonResponse(404, { error: 'Project not found' }, origin);
+        fallbackProjects[idx] = { ...fallbackProjects[idx], ...updates, updatedAt: new Date().toISOString() };
+        return jsonResponse(200, fallbackProjects[idx], origin);
+      }
       const updated = await ProjectModel.findByIdAndUpdate(id, { $set: updates }, { new: true });
       if (!updated) return jsonResponse(404, { error: 'Project not found' }, origin);
       return jsonResponse(200, updated, origin);
     }
 
     if (path.startsWith('projects/') && method === 'DELETE') {
-      await ensureDb();
-      if (!ProjectModel) return jsonResponse(500, { error: 'Database is not configured' }, origin);
+      const hasDb = await ensureDb();
       const id = path.split('/')[1];
+      if (!hasDb || !ProjectModel) {
+        const idx = fallbackProjects.findIndex((p) => String(p._id) === String(id));
+        if (idx === -1) return jsonResponse(404, { error: 'Project not found' }, origin);
+        fallbackProjects.splice(idx, 1);
+        return jsonResponse(200, { message: 'Project deleted' }, origin);
+      }
       const deleted = await ProjectModel.findByIdAndDelete(id);
       if (!deleted) return jsonResponse(404, { error: 'Project not found' }, origin);
       return jsonResponse(200, { message: 'Project deleted' }, origin);
@@ -279,4 +343,3 @@ exports.handler = async (event) => {
     return jsonResponse(500, { error: 'Internal Server Error', details: error.message || String(error) }, origin);
   }
 };
-
