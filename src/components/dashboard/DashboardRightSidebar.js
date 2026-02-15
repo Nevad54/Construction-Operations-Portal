@@ -10,6 +10,9 @@ export default function DashboardRightSidebar() {
   return (
     <aside className="hidden xl:flex xl:flex-col w-80 flex-shrink-0 px-4 py-8">
       <div className="sticky top-24 space-y-4">
+        {/* Slot for FileManager's inspector preview (portal target). */}
+        <div id="dashboard-right-sidebar-slot" className="space-y-4" />
+
         <div className="bg-surface-card dark:bg-gray-900 rounded-lg shadow-sm border border-stroke dark:border-gray-700 p-5 hover:shadow-md dark:hover:shadow-lg transition-shadow duration-fast">
           <h3 className="text-sm font-semibold text-text-primary dark:text-gray-100 mb-4 flex items-center gap-2">
             <svg className="w-4 h-4 text-brand dark:text-brand-400" fill="currentColor" viewBox="0 0 20 20">

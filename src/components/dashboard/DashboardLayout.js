@@ -12,6 +12,7 @@ export default function DashboardLayout({
   sidebarHomePath = '/admin/dashboard',
   sidebarProfileName = 'Admin',
   sidebarProfileEmail = 'admin@mastertech',
+  rightSidebar = null,
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -88,7 +89,7 @@ export default function DashboardLayout({
             {children}
           </div>
         </div>
-        {!isMobile && <DashboardRightSidebar />}
+        {!isMobile && (rightSidebar || <DashboardRightSidebar />)}
       </main>
     </div>
   );

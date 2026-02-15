@@ -82,6 +82,25 @@ const isOfficeFile = (file) => {
   return ['xls', 'xlsx', 'doc', 'docx', 'ppt', 'pptx'].includes(ext);
 };
 
+const initialsFromLabel = (value = '') => {
+  const raw = String(value || '').trim();
+  if (!raw) return '?';
+  const base = raw.includes('@') ? raw.split('@')[0] : raw;
+  const parts = base.replace(/[_.-]+/g, ' ').split(/\s+/).filter(Boolean);
+  const a = parts[0] ? parts[0][0] : base[0];
+  const b = parts.length > 1 ? parts[1][0] : (base.length > 1 ? base[1] : '');
+  return `${String(a || '').toUpperCase()}${String(b || '').toUpperCase()}`.trim() || '?';
+};
+
+const kindBadgeClasses = (file) => {
+  if (isPdfFile(file)) return 'bg-red-500/15 text-red-300 border-red-500/30';
+  if (isImageFile(file)) return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+  if (isVideoFile(file)) return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+  if (isOfficeFile(file)) return 'bg-blue-500/15 text-blue-300 border-blue-500/30';
+  if (isTextPreview(file)) return 'bg-slate-500/15 text-slate-200 border-slate-500/30';
+  return 'bg-surface-muted/40 text-text-secondary border-stroke dark:bg-gray-800/40 dark:text-gray-300 dark:border-gray-700';
+};
+
 const getFileKindLabel = (file) => {
   if (isPdfFile(file)) return 'PDF';
   if (isImageFile(file)) return 'Image';
@@ -248,6 +267,10 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const [inspectorActivity, setInspectorActivity] = useState([]);
   const [inspectorActivityLoading, setInspectorActivityLoading] = useState(false);
   const [inspectorActivityError, setInspectorActivityError] = useState('');
+  const [isXlUp, setIsXlUp] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth >= 1280;
+  });
   const [newFolderName, setNewFolderName] = useState('');
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
@@ -526,6 +549,14 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     } finally {
       setAuthLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onResize = () => setIsXlUp(window.innerWidth >= 1280);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   const loadFiles = useCallback(async () => {
@@ -1739,7 +1770,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className={`flex flex-col ${isXlUp ? '' : 'lg:flex-row'} gap-4`}>
             <div
               onContextMenu={(e) => openFolderContextMenu(e, folderFilter === 'all' ? '__root__' : folderFilter)}
               onTouchStart={(e) => {
@@ -1926,11 +1957,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
               </table>
             </div>
           ) : (
-            <div
-              className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 ${
-                inspectorFile ? 'xl:grid-cols-3 2xl:grid-cols-4' : 'xl:grid-cols-4 2xl:grid-cols-5'
-              }`}
-            >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
               {folderCards.map((folder, folderIndex) => (
                 <div
                   key={`folder-${folder.path}`}
@@ -2121,7 +2148,8 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
           )}
             </div>
 
-            <aside className="hidden lg:block w-[360px] shrink-0">
+            {/* Inline preview for lg screens; on xl+ we move preview into the dashboard right sidebar. */}
+            <aside className="hidden lg:block xl:hidden w-[360px] shrink-0">
               <div className="sticky top-24">
                 {!inspectorFile ? (
                   <div className="rounded-2xl border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 p-4">
@@ -2133,13 +2161,23 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                 ) : (
                   <div className="rounded-2xl border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 overflow-hidden">
                     <div className="p-4 border-b border-stroke dark:border-gray-700 flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-text-primary dark:text-gray-100 truncate">
-                          {inspectorFile.originalName}
-                        </p>
-                        <p className="text-xs text-text-secondary dark:text-gray-400 truncate">
-                          {inspectorFile.folder ? inspectorFile.folder : 'Root'}
-                        </p>
+                      <div className="min-w-0 flex items-start gap-3">
+                        <div
+                          className={`mt-0.5 h-10 w-10 rounded-xl border flex items-center justify-center ${kindBadgeClasses(inspectorFile)}`}
+                          title={getFileKindLabel(inspectorFile)}
+                        >
+                          <span className="text-[11px] font-extrabold tracking-wide">
+                            {getFileExt(inspectorFile.originalName || inspectorFile.path || '').toUpperCase() || getFileKindLabel(inspectorFile)}
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-text-primary dark:text-gray-100 truncate">
+                            {inspectorFile.originalName}
+                          </p>
+                          <p className="text-xs text-text-secondary dark:text-gray-400 truncate">
+                            {inspectorFile.folder ? inspectorFile.folder : 'Root'}
+                          </p>
+                        </div>
                       </div>
                       <button
                         type="button"
@@ -2241,14 +2279,14 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                                         onClick={async () => { await ensureOfficePreview(inspectorFile); }}
                                         disabled={officeLoading}
                                       >
-                                        {officeLoading ? 'Generating…' : 'Generate Preview'}
+                                        {officeLoading ? 'Generating...' : 'Generate Preview'}
                                       </Button>
                                     </div>
                                   );
                                 }
                                 if (isTextPreview(inspectorFile)) {
                                   if (inspectorText.loading) {
-                                    return <div className="h-full w-full flex items-center justify-center text-sm text-text-secondary dark:text-gray-300">Loading…</div>;
+                                    return <div className="h-full w-full flex items-center justify-center text-sm text-text-secondary dark:text-gray-300">Loading...</div>;
                                   }
                                   if (inspectorText.error) {
                                     return <div className="h-full w-full flex items-center justify-center text-sm text-text-secondary dark:text-gray-300">{inspectorText.error}</div>;
@@ -2297,29 +2335,121 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-3 text-sm">
-                            <div>
-                              <p className="text-xs text-text-secondary dark:text-gray-400">Type</p>
-                              <p className="text-text-primary dark:text-gray-100 break-words">{inspectorFile.mimeType || getFileKindLabel(inspectorFile)}</p>
+                          <div className="pt-2 border-t border-stroke/60 dark:border-gray-700/60">
+                            <p className="text-sm font-semibold text-text-primary dark:text-gray-100">Who has access</p>
+                            {(() => {
+                              const owner = inspectorFile.ownerId || authUser?.username || authUser?.id || 'Unknown';
+                              const vis = String(inspectorFile.visibility || 'private');
+                              const isPrivate = vis === 'private';
+                              const isTeam = vis === 'team';
+                              const isClient = vis === 'client';
+                              const headline = isPrivate
+                                ? 'Private to you'
+                                : isTeam
+                                  ? 'Shared with team'
+                                  : isClient
+                                    ? 'Shared with client'
+                                    : 'Shared';
+                              const sub = isClient && String(inspectorFile.projectId || '').trim()
+                                ? `Project: ${projectLabelForId(inspectorFile.projectId)}`
+                                : `Owned by ${owner}`;
+
+                              const avatars = [
+                                { key: 'owner', label: owner, className: 'bg-surface-muted dark:bg-gray-800 text-text-primary dark:text-gray-100' },
+                              ];
+                              if (isTeam) avatars.push({ key: 'team', label: 'Team', className: 'bg-blue-500/20 text-blue-200' });
+                              if (isClient) avatars.push({ key: 'client', label: 'Client', className: 'bg-emerald-500/20 text-emerald-200' });
+
+                              return (
+                                <div className="mt-2 flex items-center gap-3">
+                                  <div className="flex -space-x-2">
+                                    {avatars.slice(0, 3).map((a) => (
+                                      <div
+                                        key={a.key}
+                                        title={a.label}
+                                        className={`h-10 w-10 rounded-full border-2 border-surface-card dark:border-gray-900 flex items-center justify-center text-xs font-extrabold ${a.className}`}
+                                      >
+                                        {initialsFromLabel(a.label)}
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm text-text-primary dark:text-gray-100 truncate">{headline}</p>
+                                    <p className="text-xs text-text-secondary dark:text-gray-400 truncate">{sub}</p>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            <div className="mt-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={!canManage}
+                                onClick={() => { if (canManage) openEditModal(inspectorFile); }}
+                              >
+                                Manage access
+                              </Button>
+                              {!canManage ? (
+                                <p className="text-xs text-text-muted dark:text-gray-500 mt-1">
+                                  Only admins/employees can manage permissions.
+                                </p>
+                              ) : null}
                             </div>
-                            <div>
-                              <p className="text-xs text-text-secondary dark:text-gray-400">Size</p>
-                              <p className="text-text-primary dark:text-gray-100">{formatSize(inspectorFile.size)}</p>
+                          </div>
+
+                          <div className="pt-2 border-t border-stroke/60 dark:border-gray-700/60">
+                            <p className="text-sm font-semibold text-text-primary dark:text-gray-100">Security limitations</p>
+                            <div className="mt-2 rounded-xl border border-stroke/60 dark:border-gray-700/60 bg-surface-muted/30 dark:bg-gray-800/20 p-3">
+                              <p className="text-sm text-text-primary dark:text-gray-100">No limitations applied</p>
+                              <p className="text-xs text-text-secondary dark:text-gray-400 mt-1">
+                                If any are applied, they will appear here.
+                              </p>
                             </div>
-                            <div>
-                              <p className="text-xs text-text-secondary dark:text-gray-400">Visibility</p>
-                              <p className="text-text-primary dark:text-gray-100 capitalize">{inspectorFile.visibility || '-'}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-text-secondary dark:text-gray-400">Updated</p>
-                              <p className="text-text-primary dark:text-gray-100">{formatDate(inspectorFile.updatedAt || inspectorFile.createdAt)}</p>
-                            </div>
-                            {String(inspectorFile.projectId || '').trim() ? (
-                              <div className="col-span-2">
-                                <p className="text-xs text-text-secondary dark:text-gray-400">Project</p>
-                                <p className="text-text-primary dark:text-gray-100 break-words">{projectLabelForId(inspectorFile.projectId)}</p>
+                          </div>
+
+                          <div className="pt-2 border-t border-stroke/60 dark:border-gray-700/60">
+                            <p className="text-sm font-semibold text-text-primary dark:text-gray-100">File details</p>
+                            <dl className="mt-2 space-y-2 text-sm">
+                              <div className="flex items-start justify-between gap-3">
+                                <dt className="text-xs text-text-secondary dark:text-gray-400">Type</dt>
+                                <dd className="text-text-primary dark:text-gray-100 text-right break-words">
+                                  {inspectorFile.mimeType || getFileKindLabel(inspectorFile)}
+                                </dd>
                               </div>
-                            ) : null}
+                              <div className="flex items-start justify-between gap-3">
+                                <dt className="text-xs text-text-secondary dark:text-gray-400">Size</dt>
+                                <dd className="text-text-primary dark:text-gray-100 text-right">{formatSize(inspectorFile.size)}</dd>
+                              </div>
+                              <div className="flex items-start justify-between gap-3">
+                                <dt className="text-xs text-text-secondary dark:text-gray-400">Location</dt>
+                                <dd className="text-text-primary dark:text-gray-100 text-right break-words">{inspectorFile.folder || 'root'}</dd>
+                              </div>
+                              <div className="flex items-start justify-between gap-3">
+                                <dt className="text-xs text-text-secondary dark:text-gray-400">Visibility</dt>
+                                <dd className="text-text-primary dark:text-gray-100 text-right capitalize">{inspectorFile.visibility || '-'}</dd>
+                              </div>
+                              {String(inspectorFile.projectId || '').trim() ? (
+                                <div className="flex items-start justify-between gap-3">
+                                  <dt className="text-xs text-text-secondary dark:text-gray-400">Project</dt>
+                                  <dd className="text-text-primary dark:text-gray-100 text-right break-words">
+                                    {projectLabelForId(inspectorFile.projectId)}
+                                  </dd>
+                                </div>
+                              ) : null}
+                              <div className="flex items-start justify-between gap-3">
+                                <dt className="text-xs text-text-secondary dark:text-gray-400">Uploaded</dt>
+                                <dd className="text-text-primary dark:text-gray-100 text-right">{formatDate(inspectorFile.createdAt)}</dd>
+                              </div>
+                              <div className="flex items-start justify-between gap-3">
+                                <dt className="text-xs text-text-secondary dark:text-gray-400">Updated</dt>
+                                <dd className="text-text-primary dark:text-gray-100 text-right">{formatDate(inspectorFile.updatedAt || inspectorFile.createdAt)}</dd>
+                              </div>
+                              <div className="flex items-start justify-between gap-3">
+                                <dt className="text-xs text-text-secondary dark:text-gray-400">Owner</dt>
+                                <dd className="text-text-primary dark:text-gray-100 text-right break-words">{inspectorFile.ownerId || '-'}</dd>
+                              </div>
+                            </dl>
                           </div>
                         </>
                       ) : (
@@ -2327,7 +2457,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                           {authUser?.role !== 'admin' ? (
                             <p className="text-sm text-text-secondary dark:text-gray-300">Activity is available to admins only.</p>
                           ) : inspectorActivityLoading ? (
-                            <p className="text-sm text-text-secondary dark:text-gray-300">Loading activity…</p>
+                            <p className="text-sm text-text-secondary dark:text-gray-300">Loading activity...</p>
                           ) : inspectorActivityError ? (
                             <p className="text-sm text-red-600 dark:text-red-400">{inspectorActivityError}</p>
                           ) : inspectorActivity.length === 0 ? (
@@ -2914,6 +3044,340 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
         </div>,
         document.body
       )}
+
+      {/* Dashboard right-sidebar preview (xl+) */}
+      {isXlUp && inspectorFile ? (() => {
+        const slot = typeof document !== 'undefined'
+          ? document.getElementById('dashboard-right-sidebar-slot')
+          : null;
+        if (!slot) return null;
+
+        return createPortal(
+          <div className="rounded-lg shadow-sm border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 overflow-hidden">
+            <div className="p-4 border-b border-stroke dark:border-gray-700 flex items-start justify-between gap-3">
+              <div className="min-w-0 flex items-start gap-3">
+                <div
+                  className={`mt-0.5 h-10 w-10 rounded-xl border flex items-center justify-center ${kindBadgeClasses(inspectorFile)}`}
+                  title={getFileKindLabel(inspectorFile)}
+                >
+                  <span className="text-[11px] font-extrabold tracking-wide">
+                    {getFileExt(inspectorFile.originalName || inspectorFile.path || '').toUpperCase() || getFileKindLabel(inspectorFile)}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-text-primary dark:text-gray-100 truncate">
+                    {inspectorFile.originalName}
+                  </p>
+                  <p className="text-xs text-text-secondary dark:text-gray-400 truncate">
+                    {inspectorFile.folder ? inspectorFile.folder : 'Root'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="h-9 w-9 rounded-full border border-stroke dark:border-gray-700 hover:bg-surface-muted dark:hover:bg-gray-800 flex items-center justify-center"
+                aria-label="Close preview panel"
+                onClick={() => setInspectorFile(null)}
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <div className="inline-flex rounded-full border border-stroke dark:border-gray-700 overflow-hidden">
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 text-sm ${
+                    inspectorTab === 'details'
+                      ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300'
+                      : 'text-text-secondary dark:text-gray-300'
+                  }`}
+                  onClick={() => setInspectorTab('details')}
+                >
+                  Details
+                </button>
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 text-sm ${
+                    inspectorTab === 'activity'
+                      ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300'
+                      : 'text-text-secondary dark:text-gray-300'
+                  }`}
+                  onClick={() => setInspectorTab('activity')}
+                >
+                  Activity
+                </button>
+              </div>
+
+              {/* Reuse the same inspector body already rendered in the inline (lg) panel by rendering it again here. */}
+              {inspectorTab === 'details' ? (
+                <>
+                  <div className="rounded-xl border border-stroke dark:border-gray-700 bg-surface-muted/30 dark:bg-gray-800/20 overflow-hidden">
+                    <div className="h-56 w-full bg-white/70 dark:bg-black/20">
+                      {(() => {
+                        const url = resolveFileUrl(inspectorFile);
+                        if (isImageFile(inspectorFile)) {
+                          return (
+                            <img
+                              src={url}
+                              alt={inspectorFile.originalName || 'Preview'}
+                              className="h-full w-full object-contain"
+                              loading="lazy"
+                            />
+                          );
+                        }
+                        if (isPdfFile(inspectorFile)) {
+                          return (
+                            <iframe
+                              title={inspectorFile.originalName || 'PDF preview'}
+                              src={url}
+                              className="w-full h-full border-0 bg-white"
+                            />
+                          );
+                        }
+                        if (isVideoFile(inspectorFile)) {
+                          return (
+                            <video
+                              controls
+                              preload="metadata"
+                              className="w-full h-full object-contain bg-black"
+                              src={url}
+                            />
+                          );
+                        }
+                        if (isOfficeFile(inspectorFile)) {
+                          const officeUrl = officePreviewById[inspectorFile._id] || '';
+                          const officeLoading = Boolean(officePreviewLoadingById[inspectorFile._id]);
+                          const officeError = officePreviewErrorById[inspectorFile._id] || '';
+                          if (officeUrl) {
+                            return (
+                              <iframe
+                                title={`${inspectorFile.originalName || 'Office'} (PDF preview)`}
+                                src={officeUrl}
+                                className="w-full h-full border-0 bg-white"
+                              />
+                            );
+                          }
+                          return (
+                            <div className="h-full w-full flex flex-col items-center justify-center gap-2 p-4">
+                              <p className="text-sm text-text-secondary dark:text-gray-300 text-center">
+                                Office files preview as PDF.
+                              </p>
+                              {officeError ? (
+                                <p className="text-xs text-red-600 dark:text-red-400 text-center">{officeError}</p>
+                              ) : null}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => { await ensureOfficePreview(inspectorFile); }}
+                                disabled={officeLoading}
+                              >
+                                {officeLoading ? 'Generating...' : 'Generate Preview'}
+                              </Button>
+                            </div>
+                          );
+                        }
+                        if (isTextPreview(inspectorFile)) {
+                          if (inspectorText.loading) {
+                            return <div className="h-full w-full flex items-center justify-center text-sm text-text-secondary dark:text-gray-300">Loading...</div>;
+                          }
+                          if (inspectorText.error) {
+                            return <div className="h-full w-full flex items-center justify-center text-sm text-text-secondary dark:text-gray-300">{inspectorText.error}</div>;
+                          }
+                          return (
+                            <div className="h-full w-full overflow-auto p-3 bg-white dark:bg-gray-950">
+                              <pre className="text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">
+                                {(inspectorText.id === inspectorFile._id ? inspectorText.text : '') || ''}
+                              </pre>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="h-full w-full flex flex-col items-center justify-center gap-2 p-4">
+                            <p className="text-sm text-text-secondary dark:text-gray-300 text-center">
+                              No preview available.
+                            </p>
+                            <Button variant="outline" size="sm" onClick={() => openFile(inspectorFile)}>
+                              Open
+                            </Button>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 p-3 border-t border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900">
+                      <Button variant="outline" size="sm" onClick={() => openPreviewFor(inspectorFile, filteredFiles)}>
+                        Full preview
+                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => openFile(inspectorFile)}>
+                          Open
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => {
+                            const url = resolveFileUrl(inspectorFile, { download: true });
+                            if (!url) return;
+                            window.open(url, '_blank', 'noopener,noreferrer');
+                          }}
+                        >
+                          Download
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-stroke/60 dark:border-gray-700/60">
+                    <p className="text-sm font-semibold text-text-primary dark:text-gray-100">Who has access</p>
+                    {(() => {
+                      const owner = inspectorFile.ownerId || authUser?.username || authUser?.id || 'Unknown';
+                      const vis = String(inspectorFile.visibility || 'private');
+                      const isPrivate = vis === 'private';
+                      const isTeam = vis === 'team';
+                      const isClient = vis === 'client';
+                      const headline = isPrivate
+                        ? 'Private to you'
+                        : isTeam
+                          ? 'Shared with team'
+                          : isClient
+                            ? 'Shared with client'
+                            : 'Shared';
+                      const sub = isClient && String(inspectorFile.projectId || '').trim()
+                        ? `Project: ${projectLabelForId(inspectorFile.projectId)}`
+                        : `Owned by ${owner}`;
+
+                      const avatars = [
+                        { key: 'owner', label: owner, className: 'bg-surface-muted dark:bg-gray-800 text-text-primary dark:text-gray-100' },
+                      ];
+                      if (isTeam) avatars.push({ key: 'team', label: 'Team', className: 'bg-blue-500/20 text-blue-200' });
+                      if (isClient) avatars.push({ key: 'client', label: 'Client', className: 'bg-emerald-500/20 text-emerald-200' });
+
+                      return (
+                        <div className="mt-2 flex items-center gap-3">
+                          <div className="flex -space-x-2">
+                            {avatars.slice(0, 3).map((a) => (
+                              <div
+                                key={a.key}
+                                title={a.label}
+                                className={`h-10 w-10 rounded-full border-2 border-surface-card dark:border-gray-900 flex items-center justify-center text-xs font-extrabold ${a.className}`}
+                              >
+                                {initialsFromLabel(a.label)}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm text-text-primary dark:text-gray-100 truncate">{headline}</p>
+                            <p className="text-xs text-text-secondary dark:text-gray-400 truncate">{sub}</p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    <div className="mt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!canManage}
+                        onClick={() => { if (canManage) openEditModal(inspectorFile); }}
+                      >
+                        Manage access
+                      </Button>
+                      {!canManage ? (
+                        <p className="text-xs text-text-muted dark:text-gray-500 mt-1">
+                          Only admins/employees can manage permissions.
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-stroke/60 dark:border-gray-700/60">
+                    <p className="text-sm font-semibold text-text-primary dark:text-gray-100">Security limitations</p>
+                    <div className="mt-2 rounded-xl border border-stroke/60 dark:border-gray-700/60 bg-surface-muted/30 dark:bg-gray-800/20 p-3">
+                      <p className="text-sm text-text-primary dark:text-gray-100">No limitations applied</p>
+                      <p className="text-xs text-text-secondary dark:text-gray-400 mt-1">
+                        If any are applied, they will appear here.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-stroke/60 dark:border-gray-700/60">
+                    <p className="text-sm font-semibold text-text-primary dark:text-gray-100">File details</p>
+                    <dl className="mt-2 space-y-2 text-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <dt className="text-xs text-text-secondary dark:text-gray-400">Type</dt>
+                        <dd className="text-text-primary dark:text-gray-100 text-right break-words">
+                          {inspectorFile.mimeType || getFileKindLabel(inspectorFile)}
+                        </dd>
+                      </div>
+                      <div className="flex items-start justify-between gap-3">
+                        <dt className="text-xs text-text-secondary dark:text-gray-400">Size</dt>
+                        <dd className="text-text-primary dark:text-gray-100 text-right">{formatSize(inspectorFile.size)}</dd>
+                      </div>
+                      <div className="flex items-start justify-between gap-3">
+                        <dt className="text-xs text-text-secondary dark:text-gray-400">Location</dt>
+                        <dd className="text-text-primary dark:text-gray-100 text-right break-words">{inspectorFile.folder || 'root'}</dd>
+                      </div>
+                      <div className="flex items-start justify-between gap-3">
+                        <dt className="text-xs text-text-secondary dark:text-gray-400">Visibility</dt>
+                        <dd className="text-text-primary dark:text-gray-100 text-right capitalize">{inspectorFile.visibility || '-'}</dd>
+                      </div>
+                      {String(inspectorFile.projectId || '').trim() ? (
+                        <div className="flex items-start justify-between gap-3">
+                          <dt className="text-xs text-text-secondary dark:text-gray-400">Project</dt>
+                          <dd className="text-text-primary dark:text-gray-100 text-right break-words">
+                            {projectLabelForId(inspectorFile.projectId)}
+                          </dd>
+                        </div>
+                      ) : null}
+                      <div className="flex items-start justify-between gap-3">
+                        <dt className="text-xs text-text-secondary dark:text-gray-400">Uploaded</dt>
+                        <dd className="text-text-primary dark:text-gray-100 text-right">{formatDate(inspectorFile.createdAt)}</dd>
+                      </div>
+                      <div className="flex items-start justify-between gap-3">
+                        <dt className="text-xs text-text-secondary dark:text-gray-400">Updated</dt>
+                        <dd className="text-text-primary dark:text-gray-100 text-right">{formatDate(inspectorFile.updatedAt || inspectorFile.createdAt)}</dd>
+                      </div>
+                      <div className="flex items-start justify-between gap-3">
+                        <dt className="text-xs text-text-secondary dark:text-gray-400">Owner</dt>
+                        <dd className="text-text-primary dark:text-gray-100 text-right break-words">{inspectorFile.ownerId || '-'}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  {authUser?.role !== 'admin' ? (
+                    <p className="text-sm text-text-secondary dark:text-gray-300">Activity is available to admins only.</p>
+                  ) : inspectorActivityLoading ? (
+                    <p className="text-sm text-text-secondary dark:text-gray-300">Loading activity...</p>
+                  ) : inspectorActivityError ? (
+                    <p className="text-sm text-red-600 dark:text-red-400">{inspectorActivityError}</p>
+                  ) : inspectorActivity.length === 0 ? (
+                    <p className="text-sm text-text-secondary dark:text-gray-300">No activity yet.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {inspectorActivity.slice(0, 24).map((log) => (
+                        <li key={log._id} className="rounded-lg border border-stroke/60 dark:border-gray-700/60 p-3 bg-surface-card dark:bg-gray-900">
+                          <p className="text-sm text-text-primary dark:text-gray-100">
+                            <span className="font-semibold">{log.actorRole}</span> - {log.action}
+                          </p>
+                          <p className="text-xs text-text-secondary dark:text-gray-400">
+                            {log.details || log.targetType} - {formatDate(log.createdAt)}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>,
+          slot
+        );
+      })() : null}
 
       {previewFile && (
         <Modal
