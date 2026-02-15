@@ -186,6 +186,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const [activityFeedError, setActivityFeedError] = useState('');
   const [activityFeedHasMore, setActivityFeedHasMore] = useState(true);
   const activityPageSize = 40;
+  const activityFeedReqIdRef = useRef(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -489,12 +490,19 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
 
   const loadActivityFeedPage = useCallback(async ({ reset = false } = {}) => {
     if (!authUser || authUser.role !== 'admin') return;
+    if (!reset && activityFeedLoading) return;
     try {
+      const reqId = ++activityFeedReqIdRef.current;
       setActivityFeedError('');
       setActivityFeedLoading(true);
+      if (reset) {
+        setActivityFeed([]);
+        setActivityFeedHasMore(true);
+      }
       const skip = reset ? 0 : activityFeed.length;
       const page = await api.getActivityLogs({ limit: activityPageSize, skip, actionPrefix: activityActionPrefix });
       const items = Array.isArray(page) ? page : [];
+      if (reqId !== activityFeedReqIdRef.current) return;
       setActivityFeed((prev) => (reset ? items : [...prev, ...items]));
       setActivityFeedHasMore(items.length >= activityPageSize);
     } catch (err) {
@@ -502,19 +510,10 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     } finally {
       setActivityFeedLoading(false);
     }
-  }, [activityActionPrefix, activityFeed.length, activityPageSize, authUser]);
+  }, [activityActionPrefix, activityFeed.length, activityFeedLoading, activityPageSize, authUser]);
 
   useEffect(() => {
     if (!showActivityModal) return;
-    setActivityFeed([]);
-    setActivityFeedHasMore(true);
-    loadActivityFeedPage({ reset: true });
-  }, [loadActivityFeedPage, showActivityModal]);
-
-  useEffect(() => {
-    if (!showActivityModal) return;
-    setActivityFeed([]);
-    setActivityFeedHasMore(true);
     loadActivityFeedPage({ reset: true });
   }, [activityActionPrefix, loadActivityFeedPage, showActivityModal]);
 
