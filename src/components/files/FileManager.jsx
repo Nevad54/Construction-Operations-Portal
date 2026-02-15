@@ -1516,8 +1516,11 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                   className="w-10 h-10 rounded-lg border border-stroke dark:border-gray-600 text-text-secondary dark:text-gray-300 hover:bg-surface-muted dark:hover:bg-gray-800 hover:text-text-primary dark:hover:text-gray-100 flex items-center justify-center transition-colors"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 6v0M16 12v0M10 18v0" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h10M4 17h10M14 7h6M14 17h6M4 12h6M12 12h8" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 7v0M10 12v0M14 17v0" />
+                    <circle cx="14" cy="7" r="2" />
+                    <circle cx="10" cy="12" r="2" />
+                    <circle cx="14" cy="17" r="2" />
                   </svg>
                 </button>
               </div>
