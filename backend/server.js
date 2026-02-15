@@ -1580,6 +1580,8 @@ app.get('/api/activity-logs', requireAuth, requireRoles(['admin']), async (req, 
     const skip = Math.max(0, Number(req.query.skip || 0));
     const actionPrefix = String(req.query.actionPrefix || '').trim();
     const action = String(req.query.action || '').trim();
+    const targetId = String(req.query.targetId || '').trim();
+    const targetType = String(req.query.targetType || '').trim();
 
     const actionMatch = (val) => {
       const v = String(val || '');
@@ -1590,7 +1592,16 @@ app.get('/api/activity-logs', requireAuth, requireRoles(['admin']), async (req, 
     };
 
     if (useFallback || mongoose.connection.readyState !== 1) {
-      const items = fallbackActivityLogs.filter((l) => actionMatch(l.action));
+      const items = fallbackActivityLogs.filter((l) => {
+        if (!actionMatch(l.action)) return false;
+        if (targetType && String(l.targetType || '') !== targetType) return false;
+        if (targetId) {
+          const tid = String(l.targetId || '');
+          // Handles both single targetId and comma-separated bulk targetIds.
+          if (!(tid === targetId || tid.includes(targetId))) return false;
+        }
+        return true;
+      });
       return res.json(items.slice(skip, skip + limit));
     }
 
@@ -1601,6 +1612,12 @@ app.get('/api/activity-logs', requireAuth, requireRoles(['admin']), async (req, 
       query.action = { $regex: `^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}` };
     } else if (action) {
       query.action = action;
+    }
+    if (targetType) query.targetType = targetType;
+    if (targetId) {
+      const escaped = targetId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Match exact id or comma-separated list (bulk ops).
+      query.targetId = { $regex: `(^|,)${escaped}(,|$)|${escaped}` };
     }
 
     const logs = await ActivityLog.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean();

@@ -242,6 +242,12 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const [officePreviewById, setOfficePreviewById] = useState({});
   const [officePreviewLoadingById, setOfficePreviewLoadingById] = useState({});
   const [officePreviewErrorById, setOfficePreviewErrorById] = useState({});
+  const [inspectorFile, setInspectorFile] = useState(null);
+  const [inspectorTab, setInspectorTab] = useState('details'); // 'details' | 'activity'
+  const [inspectorText, setInspectorText] = useState({ id: '', text: '', loading: false, error: '' });
+  const [inspectorActivity, setInspectorActivity] = useState([]);
+  const [inspectorActivityLoading, setInspectorActivityLoading] = useState(false);
+  const [inspectorActivityError, setInspectorActivityError] = useState('');
   const [newFolderName, setNewFolderName] = useState('');
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
@@ -389,6 +395,15 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     window.open(url, '_blank', 'noopener,noreferrer');
   }, []);
 
+  const openInspectorFor = useCallback((file) => {
+    if (!file) return;
+    setInspectorFile(file);
+    setInspectorTab('details');
+    setInspectorText({ id: '', text: '', loading: false, error: '' });
+    setInspectorActivity([]);
+    setInspectorActivityError('');
+  }, []);
+
   const openPreviewFor = useCallback((file, queue) => {
     if (!file) return;
     if (!isPreviewable(file)) {
@@ -445,6 +460,61 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [clampZoom, previewFile, previewNext, previewPrev]);
+
+  useEffect(() => {
+    if (!inspectorFile) return;
+    const latest = files.find((f) => f && f._id === inspectorFile._id);
+    if (!latest) {
+      setInspectorFile(null);
+      return;
+    }
+    if (latest !== inspectorFile) setInspectorFile(latest);
+  }, [files, inspectorFile]);
+
+  useEffect(() => {
+    if (!inspectorFile) return;
+    if (!isTextPreview(inspectorFile)) return;
+    let canceled = false;
+    const run = async () => {
+      try {
+        setInspectorText({ id: inspectorFile._id, text: '', loading: true, error: '' });
+        const url = resolveFileUrl(inspectorFile);
+        const response = await fetch(url);
+        const text = await response.text();
+        if (canceled) return;
+        setInspectorText({ id: inspectorFile._id, text, loading: false, error: '' });
+      } catch (err) {
+        if (canceled) return;
+        setInspectorText({ id: inspectorFile._id, text: '', loading: false, error: 'Unable to preview text.' });
+      }
+    };
+    run();
+    return () => { canceled = true; };
+  }, [inspectorFile]);
+
+  useEffect(() => {
+    if (!inspectorFile) return;
+    if (inspectorTab !== 'activity') return;
+    if (!authUser || authUser.role !== 'admin') return;
+    let canceled = false;
+    const run = async () => {
+      try {
+        setInspectorActivityError('');
+        setInspectorActivityLoading(true);
+        const items = await api.getActivityLogs({ limit: 60, targetId: inspectorFile._id, actionPrefix: 'file.' });
+        if (canceled) return;
+        setInspectorActivity(Array.isArray(items) ? items : []);
+      } catch (err) {
+        if (canceled) return;
+        setInspectorActivity([]);
+        setInspectorActivityError(err.message || 'Failed to load activity.');
+      } finally {
+        if (!canceled) setInspectorActivityLoading(false);
+      }
+    };
+    run();
+    return () => { canceled = true; };
+  }, [authUser, inspectorFile, inspectorTab]);
 
   const loadAuthUser = useCallback(async () => {
     try {
@@ -1668,25 +1738,27 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
             </div>
           </div>
         </CardHeader>
-        <CardContent
-          onContextMenu={(e) => openFolderContextMenu(e, folderFilter === 'all' ? '__root__' : folderFilter)}
-          onTouchStart={(e) => {
-            const t = e.touches?.[0];
-            if (!t) return;
-            startLongPress(t, (x, y) => openFolderMenuAt(x, y, folderFilter === 'all' ? '__root__' : folderFilter));
-          }}
-          onTouchMove={(e) => {
-            const t = e.touches?.[0];
-            if (!t) return;
-            moveLongPress(t);
-          }}
-          onTouchEnd={clearLongPress}
-          onTouchCancel={clearLongPress}
-          onDragOver={handleDriveDragOver}
-          onDragLeave={handleDriveDragLeave}
-          onDrop={handleDriveDrop}
-          className={dragActive ? 'ring-2 ring-brand/30 rounded-xl' : ''}
-        >
+        <CardContent>
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div
+              onContextMenu={(e) => openFolderContextMenu(e, folderFilter === 'all' ? '__root__' : folderFilter)}
+              onTouchStart={(e) => {
+                const t = e.touches?.[0];
+                if (!t) return;
+                startLongPress(t, (x, y) => openFolderMenuAt(x, y, folderFilter === 'all' ? '__root__' : folderFilter));
+              }}
+              onTouchMove={(e) => {
+                const t = e.touches?.[0];
+                if (!t) return;
+                moveLongPress(t);
+              }}
+              onTouchEnd={clearLongPress}
+              onTouchCancel={clearLongPress}
+              onDragOver={handleDriveDragOver}
+              onDragLeave={handleDriveDragLeave}
+              onDrop={handleDriveDrop}
+              className={`flex-1 min-w-0 ${dragActive ? 'ring-2 ring-brand/30 rounded-xl' : ''}`}
+            >
           {filteredFiles.length === 0 && (viewMode !== 'grid' || folderCards.length === 0) ? (
             <div className="rounded-2xl border border-dashed border-stroke dark:border-gray-700 bg-surface-card/50 dark:bg-gray-900/40 p-6">
               <div className="flex flex-col sm:flex-row sm:items-start gap-4">
@@ -1777,6 +1849,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                         selectedIds.includes(file._id) ? 'bg-brand-50/60 dark:bg-brand-900/20' : ''
                       }`}
                       onClick={(e) => {
+                        openInspectorFor(file);
                         if (!canManage) return;
                         selectFileWithEvent(file._id, e);
                       }}
@@ -1853,7 +1926,11 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
               </table>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+            <div
+              className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 ${
+                inspectorFile ? 'xl:grid-cols-3 2xl:grid-cols-4' : 'xl:grid-cols-4 2xl:grid-cols-5'
+              }`}
+            >
               {folderCards.map((folder, folderIndex) => (
                 <div
                   key={`folder-${folder.path}`}
@@ -1872,7 +1949,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                   }}
                   onTouchEnd={clearLongPress}
                   onTouchCancel={clearLongPress}
-                  onDoubleClick={() => setFolderFilter(folder.path)}
+                  onDoubleClick={() => { setFolderFilter(folder.path); setInspectorFile(null); }}
                   draggable
                   onDragStart={(e) => onDragStartFolder(e, folder.path)}
                   onDragOver={(e) => e.preventDefault()}
@@ -1920,6 +1997,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                     }`}
                     style={{ animationDelay: `${Math.min((folderCards.length + fileIndex) * 22, 260)}ms` }}
                     onClick={(e) => {
+                      openInspectorFor(file);
                       if (!canManage) return;
                       selectFileWithEvent(file._id, e);
                     }}
@@ -1949,7 +2027,6 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                           className="h-full w-full object-cover"
                           loading="lazy"
                           draggable={false}
-                          onClick={(e) => e.stopPropagation()}
                         />
                       ) : (
                         <div className="h-full w-full flex flex-col items-center justify-center gap-2">
@@ -2042,6 +2119,241 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
               ))}
             </div>
           )}
+            </div>
+
+            <aside className="hidden lg:block w-[360px] shrink-0">
+              <div className="sticky top-24">
+                {!inspectorFile ? (
+                  <div className="rounded-2xl border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 p-4">
+                    <p className="text-sm font-semibold text-text-primary dark:text-gray-100">Preview</p>
+                    <p className="text-sm text-text-secondary dark:text-gray-400 mt-1">
+                      Select a file to preview it here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 overflow-hidden">
+                    <div className="p-4 border-b border-stroke dark:border-gray-700 flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-text-primary dark:text-gray-100 truncate">
+                          {inspectorFile.originalName}
+                        </p>
+                        <p className="text-xs text-text-secondary dark:text-gray-400 truncate">
+                          {inspectorFile.folder ? inspectorFile.folder : 'Root'}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="h-9 w-9 rounded-full border border-stroke dark:border-gray-700 hover:bg-surface-muted dark:hover:bg-gray-800 flex items-center justify-center"
+                        aria-label="Close preview panel"
+                        onClick={() => setInspectorFile(null)}
+                      >
+                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div className="p-4 space-y-4">
+                      <div className="inline-flex rounded-full border border-stroke dark:border-gray-700 overflow-hidden">
+                        <button
+                          type="button"
+                          className={`px-3 py-1.5 text-sm ${
+                            inspectorTab === 'details'
+                              ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300'
+                              : 'text-text-secondary dark:text-gray-300'
+                          }`}
+                          onClick={() => setInspectorTab('details')}
+                        >
+                          Details
+                        </button>
+                        <button
+                          type="button"
+                          className={`px-3 py-1.5 text-sm ${
+                            inspectorTab === 'activity'
+                              ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300'
+                              : 'text-text-secondary dark:text-gray-300'
+                          }`}
+                          onClick={() => setInspectorTab('activity')}
+                        >
+                          Activity
+                        </button>
+                      </div>
+
+                      {inspectorTab === 'details' ? (
+                        <>
+                          <div className="rounded-xl border border-stroke dark:border-gray-700 bg-surface-muted/30 dark:bg-gray-800/20 overflow-hidden">
+                            <div className="h-56 w-full bg-white/70 dark:bg-black/20">
+                              {(() => {
+                                const url = resolveFileUrl(inspectorFile);
+                                if (isImageFile(inspectorFile)) {
+                                  return (
+                                    <img
+                                      src={url}
+                                      alt={inspectorFile.originalName || 'Preview'}
+                                      className="h-full w-full object-contain"
+                                      loading="lazy"
+                                    />
+                                  );
+                                }
+                                if (isPdfFile(inspectorFile)) {
+                                  return (
+                                    <iframe
+                                      title={inspectorFile.originalName || 'PDF preview'}
+                                      src={url}
+                                      className="w-full h-full border-0 bg-white"
+                                    />
+                                  );
+                                }
+                                if (isVideoFile(inspectorFile)) {
+                                  return (
+                                    <video
+                                      controls
+                                      preload="metadata"
+                                      className="w-full h-full object-contain bg-black"
+                                      src={url}
+                                    />
+                                  );
+                                }
+                                if (isOfficeFile(inspectorFile)) {
+                                  const officeUrl = officePreviewById[inspectorFile._id] || '';
+                                  const officeLoading = Boolean(officePreviewLoadingById[inspectorFile._id]);
+                                  const officeError = officePreviewErrorById[inspectorFile._id] || '';
+                                  if (officeUrl) {
+                                    return (
+                                      <iframe
+                                        title={`${inspectorFile.originalName || 'Office'} (PDF preview)`}
+                                        src={officeUrl}
+                                        className="w-full h-full border-0 bg-white"
+                                      />
+                                    );
+                                  }
+                                  return (
+                                    <div className="h-full w-full flex flex-col items-center justify-center gap-2 p-4">
+                                      <p className="text-sm text-text-secondary dark:text-gray-300 text-center">
+                                        Office files preview as PDF.
+                                      </p>
+                                      {officeError ? (
+                                        <p className="text-xs text-red-600 dark:text-red-400 text-center">{officeError}</p>
+                                      ) : null}
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={async () => { await ensureOfficePreview(inspectorFile); }}
+                                        disabled={officeLoading}
+                                      >
+                                        {officeLoading ? 'Generating…' : 'Generate Preview'}
+                                      </Button>
+                                    </div>
+                                  );
+                                }
+                                if (isTextPreview(inspectorFile)) {
+                                  if (inspectorText.loading) {
+                                    return <div className="h-full w-full flex items-center justify-center text-sm text-text-secondary dark:text-gray-300">Loading…</div>;
+                                  }
+                                  if (inspectorText.error) {
+                                    return <div className="h-full w-full flex items-center justify-center text-sm text-text-secondary dark:text-gray-300">{inspectorText.error}</div>;
+                                  }
+                                  return (
+                                    <div className="h-full w-full overflow-auto p-3 bg-white dark:bg-gray-950">
+                                      <pre className="text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">
+                                        {(inspectorText.id === inspectorFile._id ? inspectorText.text : '') || ''}
+                                      </pre>
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <div className="h-full w-full flex flex-col items-center justify-center gap-2 p-4">
+                                    <p className="text-sm text-text-secondary dark:text-gray-300 text-center">
+                                      No preview available.
+                                    </p>
+                                    <Button variant="outline" size="sm" onClick={() => openFile(inspectorFile)}>
+                                      Open
+                                    </Button>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+
+                            <div className="flex items-center justify-between gap-2 p-3 border-t border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900">
+                              <Button variant="outline" size="sm" onClick={() => openPreviewFor(inspectorFile, filteredFiles)}>
+                                Full preview
+                              </Button>
+                              <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" onClick={() => openFile(inspectorFile)}>
+                                  Open
+                                </Button>
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  onClick={() => {
+                                    const url = resolveFileUrl(inspectorFile, { download: true });
+                                    if (!url) return;
+                                    window.open(url, '_blank', 'noopener,noreferrer');
+                                  }}
+                                >
+                                  Download
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <p className="text-xs text-text-secondary dark:text-gray-400">Type</p>
+                              <p className="text-text-primary dark:text-gray-100 break-words">{inspectorFile.mimeType || getFileKindLabel(inspectorFile)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-text-secondary dark:text-gray-400">Size</p>
+                              <p className="text-text-primary dark:text-gray-100">{formatSize(inspectorFile.size)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-text-secondary dark:text-gray-400">Visibility</p>
+                              <p className="text-text-primary dark:text-gray-100 capitalize">{inspectorFile.visibility || '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-text-secondary dark:text-gray-400">Updated</p>
+                              <p className="text-text-primary dark:text-gray-100">{formatDate(inspectorFile.updatedAt || inspectorFile.createdAt)}</p>
+                            </div>
+                            {String(inspectorFile.projectId || '').trim() ? (
+                              <div className="col-span-2">
+                                <p className="text-xs text-text-secondary dark:text-gray-400">Project</p>
+                                <p className="text-text-primary dark:text-gray-100 break-words">{projectLabelForId(inspectorFile.projectId)}</p>
+                              </div>
+                            ) : null}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="space-y-2">
+                          {authUser?.role !== 'admin' ? (
+                            <p className="text-sm text-text-secondary dark:text-gray-300">Activity is available to admins only.</p>
+                          ) : inspectorActivityLoading ? (
+                            <p className="text-sm text-text-secondary dark:text-gray-300">Loading activity…</p>
+                          ) : inspectorActivityError ? (
+                            <p className="text-sm text-red-600 dark:text-red-400">{inspectorActivityError}</p>
+                          ) : inspectorActivity.length === 0 ? (
+                            <p className="text-sm text-text-secondary dark:text-gray-300">No activity yet.</p>
+                          ) : (
+                            <ul className="space-y-2">
+                              {inspectorActivity.slice(0, 24).map((log) => (
+                                <li key={log._id} className="rounded-lg border border-stroke/60 dark:border-gray-700/60 p-3 bg-surface-card dark:bg-gray-900">
+                                  <p className="text-sm text-text-primary dark:text-gray-100">
+                                    <span className="font-semibold">{log.actorRole}</span> - {log.action}
+                                  </p>
+                                  <p className="text-xs text-text-secondary dark:text-gray-400">
+                                    {log.details || log.targetType} - {formatDate(log.createdAt)}
+                                  </p>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </aside>
+          </div>
         </CardContent>
       </Card>
 

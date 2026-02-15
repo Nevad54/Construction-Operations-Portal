@@ -471,12 +471,16 @@ export const api = {
         const skip = options && options.skip != null ? Number(options.skip) : 0;
         const actionPrefix = options && options.actionPrefix ? String(options.actionPrefix) : '';
         const action = options && options.action ? String(options.action) : '';
+        const targetId = options && options.targetId ? String(options.targetId) : '';
+        const targetType = options && options.targetType ? String(options.targetType) : '';
 
         const qs = new URLSearchParams();
         qs.set('limit', String(limit));
         if (skip) qs.set('skip', String(skip));
         if (actionPrefix) qs.set('actionPrefix', actionPrefix);
         if (action) qs.set('action', action);
+        if (targetId) qs.set('targetId', targetId);
+        if (targetType) qs.set('targetType', targetType);
 
         const response = await fetch(`${API_PREFIX}/activity-logs?${qs.toString()}`, {
             method: 'GET',
