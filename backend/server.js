@@ -198,9 +198,19 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from the React app
-app.use(express.static(path.join(__dirname, '../build')));
-app.use('/assets', express.static(path.join(__dirname, '../public/assets')));
+// Optional: serve the built React app if it exists (useful for local single-server runs).
+// On Render we're deploying backend-only, so ../build and ../pages may not exist.
+const reactBuildPath = path.join(__dirname, '../build');
+const reactIndexPath = path.join(reactBuildPath, 'index.html');
+const hasReactBuild = fs.existsSync(reactIndexPath);
+if (hasReactBuild) {
+  app.use(express.static(reactBuildPath));
+}
+
+const publicAssetsPath = path.join(__dirname, '../public/assets');
+if (fs.existsSync(publicAssetsPath)) {
+  app.use('/assets', express.static(publicAssetsPath));
+}
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -223,7 +233,9 @@ console.log('Serving assets from:', assetsPath);
 console.log('Serving pages from:', pagesPath);
 
 app.use('/assets', express.static(assetsPath));
-app.use('/pages', express.static(pagesPath));
+if (fs.existsSync(pagesPath)) {
+  app.use('/pages', express.static(pagesPath));
+}
 
 // If this server is behind a reverse proxy (Netlify/Render/etc), trust proxy so secure cookies work correctly.
 app.set('trust proxy', 1);
@@ -250,7 +262,14 @@ app.options('*', cors(corsOptions));
 // Root Route
 app.get('/', (req, res) => {
     console.log('Serving root route');
-    res.sendFile(path.join(__dirname, '../pages/index.html'));
+    if (hasReactBuild) {
+      return res.sendFile(reactIndexPath);
+    }
+    return res.json({
+      ok: true,
+      service: 'mastertech-backend',
+      status: '/api/status',
+    });
 });
 
 // CAPTCHA Route
@@ -2296,7 +2315,10 @@ app.get('/api/status', (req, res) => {
 
 // Serve React app for all other routes
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../build/index.html'));
+    if (hasReactBuild) {
+      return res.sendFile(reactIndexPath);
+    }
+    return res.status(404).json({ error: 'Not found' });
 });
 
 // Start Server
