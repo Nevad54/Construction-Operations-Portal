@@ -179,6 +179,13 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const [files, setFiles] = useState([]);
   const [folders, setFolders] = useState([]);
   const [activityLogs, setActivityLogs] = useState([]);
+  const [activityFilter, setActivityFilter] = useState('all'); // 'all' | 'file' | 'folder' | 'auth' | 'user'
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  const [activityFeed, setActivityFeed] = useState([]);
+  const [activityFeedLoading, setActivityFeedLoading] = useState(false);
+  const [activityFeedError, setActivityFeedError] = useState('');
+  const [activityFeedHasMore, setActivityFeedHasMore] = useState(true);
+  const activityPageSize = 40;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -465,12 +472,51 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const loadActivity = useCallback(async () => {
     if (!authUser || authUser.role !== 'admin') return;
     try {
-      const data = await api.getActivityLogs(20);
+      const data = await api.getActivityLogs({ limit: 40 });
       setActivityLogs(Array.isArray(data) ? data : []);
     } catch (err) {
       setActivityLogs([]);
     }
   }, [authUser]);
+
+  const activityActionPrefix = useMemo(() => {
+    if (activityFilter === 'file') return 'file.';
+    if (activityFilter === 'folder') return 'folder.';
+    if (activityFilter === 'auth') return 'auth.';
+    if (activityFilter === 'user') return 'user.';
+    return '';
+  }, [activityFilter]);
+
+  const loadActivityFeedPage = useCallback(async ({ reset = false } = {}) => {
+    if (!authUser || authUser.role !== 'admin') return;
+    try {
+      setActivityFeedError('');
+      setActivityFeedLoading(true);
+      const skip = reset ? 0 : activityFeed.length;
+      const page = await api.getActivityLogs({ limit: activityPageSize, skip, actionPrefix: activityActionPrefix });
+      const items = Array.isArray(page) ? page : [];
+      setActivityFeed((prev) => (reset ? items : [...prev, ...items]));
+      setActivityFeedHasMore(items.length >= activityPageSize);
+    } catch (err) {
+      setActivityFeedError(err.message || 'Failed to load activity');
+    } finally {
+      setActivityFeedLoading(false);
+    }
+  }, [activityActionPrefix, activityFeed.length, activityPageSize, authUser]);
+
+  useEffect(() => {
+    if (!showActivityModal) return;
+    setActivityFeed([]);
+    setActivityFeedHasMore(true);
+    loadActivityFeedPage({ reset: true });
+  }, [loadActivityFeedPage, showActivityModal]);
+
+  useEffect(() => {
+    if (!showActivityModal) return;
+    setActivityFeed([]);
+    setActivityFeedHasMore(true);
+    loadActivityFeedPage({ reset: true });
+  }, [activityActionPrefix, loadActivityFeedPage, showActivityModal]);
 
   useEffect(() => {
     loadAuthUser();
@@ -1621,7 +1667,71 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
           className={dragActive ? 'ring-2 ring-brand/30 rounded-xl' : ''}
         >
           {filteredFiles.length === 0 && (viewMode !== 'grid' || folderCards.length === 0) ? (
-            <p className="text-text-secondary dark:text-gray-400">No files found.</p>
+            <div className="rounded-2xl border border-dashed border-stroke dark:border-gray-700 bg-surface-card/50 dark:bg-gray-900/40 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                <div className="w-11 h-11 rounded-2xl bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h6l2 2h10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-text-primary dark:text-gray-100">
+                    {files.length === 0 ? 'No files yet' : 'No results'}
+                  </p>
+                  <p className="text-sm text-text-secondary dark:text-gray-400 mt-1">
+                    {files.length === 0
+                      ? (canManage
+                        ? 'Right-click anywhere in this area to Upload or create a folder.'
+                        : 'No files have been shared with you yet.')
+                      : 'Try clearing filters or searching with a different keyword.'}
+                  </p>
+                  <p className="text-xs text-text-muted dark:text-gray-500 mt-2">
+                    Mobile: long-press anywhere to open options.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {canManage && (
+                      <>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => {
+                            setUploadForm((prev) => ({ ...prev, folder: folderFilter === 'all' ? '' : folderFilter }));
+                            setShowUploadModal(true);
+                          }}
+                        >
+                          Upload
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setNewFolderParent(folderFilter === 'all' ? '' : folderFilter);
+                            setShowNewFolderModal(true);
+                          }}
+                        >
+                          New folder
+                        </Button>
+                      </>
+                    )}
+                    {files.length > 0 && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          setQuery('');
+                          setVisibility(expectedRole === 'client' ? 'client' : 'all');
+                          setProjectFilter('all');
+                          setFolderFilter('all');
+                          setSortBy('newest');
+                        }}
+                      >
+                        Clear filters
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : viewMode === 'list' ? (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
@@ -1858,14 +1968,40 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       {authUser.role === 'admin' && (
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle>Recent Activity</CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="w-44">
+                  <Select
+                    value={activityFilter}
+                    onChange={(e) => setActivityFilter(e.target.value)}
+                    options={[
+                      { value: 'all', label: 'All' },
+                      { value: 'file', label: 'Files' },
+                      { value: 'folder', label: 'Folders' },
+                      { value: 'auth', label: 'Auth' },
+                      { value: 'user', label: 'Users' },
+                    ]}
+                  />
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setShowActivityModal(true)}>
+                  View all
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {activityLogs.length === 0 ? (
               <p className="text-text-secondary dark:text-gray-400">No recent activity.</p>
             ) : (
               <ul className="space-y-2">
-                {activityLogs.map((log) => (
+                {activityLogs
+                  .filter((log) => {
+                    if (!activityActionPrefix) return true;
+                    return String(log.action || '').startsWith(activityActionPrefix);
+                  })
+                  .slice(0, 8)
+                  .map((log) => (
                   <li key={log._id} className="border-b border-stroke/60 dark:border-gray-700/60 pb-2 last:border-0">
                     <p className="text-sm text-text-primary dark:text-gray-100">
                       <span className="font-semibold">{log.actorRole}</span> - {log.action}
@@ -1879,6 +2015,94 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
             )}
           </CardContent>
         </Card>
+      )}
+
+      {showActivityModal && authUser.role === 'admin' && (
+        <Modal
+          isOpen={showActivityModal}
+          onClose={() => setShowActivityModal(false)}
+          title="Activity Log"
+          size="lg"
+        >
+          <div className="space-y-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="w-full sm:w-64">
+                <Select
+                  label="Filter"
+                  value={activityFilter}
+                  onChange={(e) => setActivityFilter(e.target.value)}
+                  options={[
+                    { value: 'all', label: 'All activity' },
+                    { value: 'file', label: 'File actions' },
+                    { value: 'folder', label: 'Folder actions' },
+                    { value: 'auth', label: 'Auth actions' },
+                    { value: 'user', label: 'User actions' },
+                  ]}
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadActivityFeedPage({ reset: true })}
+                disabled={activityFeedLoading}
+              >
+                Refresh
+              </Button>
+            </div>
+
+            {activityFeedError ? (
+              <p className="text-sm text-feedback-error">{activityFeedError}</p>
+            ) : null}
+
+            {activityFeed.length === 0 && !activityFeedLoading ? (
+              <p className="text-sm text-text-secondary dark:text-gray-400">No activity found.</p>
+            ) : (
+              <ul className="max-h-[60vh] overflow-auto pr-1 space-y-2">
+                {activityFeed.map((log) => (
+                  <li key={log._id} className="rounded-xl border border-stroke/60 dark:border-gray-700/60 bg-surface-card dark:bg-gray-900 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm text-text-primary dark:text-gray-100">
+                          <span className="font-semibold">{log.actorRole}</span> · <span className="font-mono text-xs">{log.action}</span>
+                        </p>
+                        <p className="text-xs text-text-secondary dark:text-gray-400 mt-1 break-words">
+                          {log.details || log.targetType}
+                        </p>
+                      </div>
+                      <p className="text-xs text-text-muted dark:text-gray-500 shrink-0">
+                        {formatDate(log.createdAt)}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="flex items-center justify-between pt-1">
+              <p className="text-xs text-text-muted dark:text-gray-500">
+                Showing {activityFeed.length} log{activityFeed.length === 1 ? '' : 's'}{activityActionPrefix ? ` (${activityFilter})` : ''}.
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowActivityModal(false)}
+                >
+                  Close
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => loadActivityFeedPage({ reset: false })}
+                  loading={activityFeedLoading}
+                  disabled={!activityFeedHasMore}
+                >
+                  Load more
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {editingFile && (

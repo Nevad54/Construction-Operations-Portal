@@ -466,8 +466,19 @@ export const api = {
         return handleResponse(response);
     },
 
-    getActivityLogs: async (limit = 30) => {
-        const response = await fetch(`${API_PREFIX}/activity-logs?limit=${encodeURIComponent(limit)}`, {
+    getActivityLogs: async (options = {}) => {
+        const limit = options && options.limit != null ? Number(options.limit) : 30;
+        const skip = options && options.skip != null ? Number(options.skip) : 0;
+        const actionPrefix = options && options.actionPrefix ? String(options.actionPrefix) : '';
+        const action = options && options.action ? String(options.action) : '';
+
+        const qs = new URLSearchParams();
+        qs.set('limit', String(limit));
+        if (skip) qs.set('skip', String(skip));
+        if (actionPrefix) qs.set('actionPrefix', actionPrefix);
+        if (action) qs.set('action', action);
+
+        const response = await fetch(`${API_PREFIX}/activity-logs?${qs.toString()}`, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',

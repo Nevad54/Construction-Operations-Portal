@@ -1577,10 +1577,33 @@ app.post('/api/folders/copy', requireAuth, requireRoles(['admin', 'user']), asyn
 app.get('/api/activity-logs', requireAuth, requireRoles(['admin']), async (req, res) => {
   try {
     const limit = Math.min(100, Math.max(1, Number(req.query.limit || 30)));
+    const skip = Math.max(0, Number(req.query.skip || 0));
+    const actionPrefix = String(req.query.actionPrefix || '').trim();
+    const action = String(req.query.action || '').trim();
+
+    const actionMatch = (val) => {
+      const v = String(val || '');
+      if (actionPrefix) return v.startsWith(actionPrefix);
+      if (action && action.endsWith('*')) return v.startsWith(action.slice(0, -1));
+      if (action) return v === action;
+      return true;
+    };
+
     if (useFallback || mongoose.connection.readyState !== 1) {
-      return res.json(fallbackActivityLogs.slice(0, limit));
+      const items = fallbackActivityLogs.filter((l) => actionMatch(l.action));
+      return res.json(items.slice(skip, skip + limit));
     }
-    const logs = await ActivityLog.find().sort({ createdAt: -1 }).limit(limit).lean();
+
+    const query = {};
+    if (actionPrefix) query.action = { $regex: `^${actionPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}` };
+    else if (action && action.endsWith('*')) {
+      const prefix = action.slice(0, -1);
+      query.action = { $regex: `^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}` };
+    } else if (action) {
+      query.action = action;
+    }
+
+    const logs = await ActivityLog.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
     return res.json(logs);
   } catch (err) {
     console.error('Error fetching activity logs:', err);
