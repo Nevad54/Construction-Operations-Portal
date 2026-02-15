@@ -19,8 +19,20 @@ const getApiPrefix = () => {
 
 const API_PREFIX = getApiPrefix();
 
+const isDev = process.env.NODE_ENV !== 'production';
+const debugLog = (...args) => {
+  if (!isDev) return;
+  // eslint-disable-next-line no-console
+  console.log(...args);
+};
+const debugError = (...args) => {
+  if (!isDev) return;
+  // eslint-disable-next-line no-console
+  console.error(...args);
+};
+
 const handleResponse = async (response) => {
-  console.log('API Response:', {
+  debugLog('API Response:', {
     status: response.status,
     statusText: response.statusText,
     headers: Object.fromEntries(response.headers.entries()),
@@ -29,7 +41,7 @@ const handleResponse = async (response) => {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Error response:', errorText);
+    debugError('Error response:', errorText);
     try {
       const parsed = JSON.parse(errorText);
       throw new Error(parsed.error || `HTTP error! status: ${response.status}`);
@@ -45,16 +57,16 @@ const handleResponse = async (response) => {
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       const json = await response.json();
-      console.log('Parsed JSON response:', json);
+      debugLog('Parsed JSON response:', json);
       return json;
     } else {
       const text = await response.text();
-      console.error('Unexpected content type:', contentType);
-      console.error('Response text:', text);
+      debugError('Unexpected content type:', contentType);
+      debugError('Response text:', text);
       throw new Error(`Expected JSON but got ${contentType}`);
     }
   } catch (error) {
-    console.error('Error parsing response:', error);
+    debugError('Error parsing response:', error);
     throw error;
   }
 };
@@ -190,7 +202,7 @@ export const api = {
         const url = API_BASE_URL
           ? (isNetlifyHost ? `${API_BASE_URL}/.netlify/functions/test` : `${API_BASE_URL}/test`)
           : '/.netlify/functions/test';
-        console.log('Testing function at:', url);
+        debugLog('Testing function at:', url);
         
         try {
             const response = await fetch(url, {
@@ -203,7 +215,7 @@ export const api = {
             });
             return handleResponse(response);
         } catch (error) {
-            console.error('Error in test:', error);
+            debugError('Error in test:', error);
             throw error;
         }
     },
@@ -211,7 +223,7 @@ export const api = {
     // Projects
     getProjects: async () => {
         const url = `${API_PREFIX}/projects`;
-        console.log('Fetching projects from:', url);
+        debugLog('Fetching projects from:', url);
         
         try {
             const response = await fetch(url, {
@@ -223,15 +235,15 @@ export const api = {
             });
             return handleResponse(response);
         } catch (error) {
-            console.error('Error in getProjects:', error);
+            debugError('Error in getProjects:', error);
             throw error;
         }
     },
 
     createProject: async (projectData) => {
         const url = `${API_PREFIX}/projects`;
-        console.log('Creating project at:', url);
-        console.log('Project data:', projectData);
+        debugLog('Creating project at:', url);
+        debugLog('Project data:', projectData);
         
         try {
             let response;
@@ -254,16 +266,16 @@ export const api = {
             }
             return handleResponse(response);
         } catch (error) {
-            console.error('Error in createProject:', error);
+            debugError('Error in createProject:', error);
             throw error;
         }
     },
 
     updateProject: async (id, projectData) => {
         const url = `${API_PREFIX}/projects/${id}`;
-        console.log('Updating project at:', url);
-        console.log('Project data:', projectData);
-        console.log('Project ID:', id);
+        debugLog('Updating project at:', url);
+        debugLog('Project data:', projectData);
+        debugLog('Project ID:', id);
         
         try {
             const isFormData = projectData instanceof FormData;
@@ -286,20 +298,20 @@ export const api = {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('Update failed:', errorText);
+                debugError('Update failed:', errorText);
                 throw new Error(`Failed to update project: ${response.status} ${response.statusText}`);
             }
 
             return handleResponse(response);
         } catch (error) {
-            console.error('Error in updateProject:', error);
+            debugError('Error in updateProject:', error);
             throw error;
         }
     },
 
     deleteProject: async (id) => {
         const url = `${API_PREFIX}/projects/${id}`;
-        console.log('Deleting project at:', url);
+        debugLog('Deleting project at:', url);
         
         try {
             const response = await fetch(url, {
@@ -312,7 +324,7 @@ export const api = {
             });
             return handleResponse(response);
         } catch (error) {
-            console.error('Error in deleteProject:', error);
+            debugError('Error in deleteProject:', error);
             throw error;
         }
     },
