@@ -19,6 +19,11 @@ const fileItemSchema = new mongoose.Schema(
     notes: { type: String, default: '' },
     cloudProvider: { type: String, default: '' },
     cloudPublicId: { type: String, default: '' },
+    // Optional preview (e.g., Office -> PDF) generated via third-party services.
+    previewProvider: { type: String, default: '' },
+    previewUrl: { type: String, default: '' },
+    previewMimeType: { type: String, default: '' },
+    previewExpiresAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

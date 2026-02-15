@@ -105,7 +105,13 @@ export default function DashboardSidebar({
             </div>
           )}
           {menuItems.map((item) => (
-            <SidebarItem key={item.label} item={item} collapsed={collapsed} isActive={isActive(item.path)} onClick={onClose} />
+            <SidebarItem
+              key={item.label}
+              item={item}
+              collapsed={collapsed}
+              isActive={isActive(item.path)}
+              onClick={onClose}
+            />
           ))}
         </nav>
 

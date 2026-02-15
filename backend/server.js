@@ -9,6 +9,8 @@ const session = require('express-session');
 const basicAuth = require('express-basic-auth');
 const nodemailer = require('nodemailer');
 const requestIp = require('request-ip');
+const User = require('./models/User');
+const { hashPassword, verifyPassword } = require('./utils/password');
 const https = require('https');
 const querystring = require('querystring');
 let cloudinary = null;
@@ -105,7 +107,7 @@ const CLIENT_USER = process.env.CLIENT_USER || 'client';
 const CLIENT_PASS = process.env.CLIENT_PASS || '1111';
 const ADMIN_SIGNUP_CODE = process.env.ADMIN_SIGNUP_CODE || ADMIN_PASS;
 console.log('ADMIN_USER:', ADMIN_USER);
-console.log('ADMIN_PASS:', ADMIN_PASS);
+// Never log passwords/secrets.
 
 const allowedOrigins = Array.from(
   new Set(
@@ -223,13 +225,21 @@ console.log('Serving pages from:', pagesPath);
 app.use('/assets', express.static(assetsPath));
 app.use('/pages', express.static(pagesPath));
 
+// If this server is behind a reverse proxy (Netlify/Render/etc), trust proxy so secure cookies work correctly.
+app.set('trust proxy', 1);
+
+const sessionCookieSecure =
+  process.env.NODE_ENV === 'production' &&
+  String(process.env.SESSION_COOKIE_SECURE || '').toLowerCase() !== 'false';
+
 app.use(session({
     secret: process.env.SESSION_SECRET || '70f1e04a35336b79732f2f034b101d4d',
     resave: true,
     saveUninitialized: true,
     cookie: { 
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        // Avoid breaking local development if NODE_ENV is mis-set; allow overriding in env.
+        secure: sessionCookieSecure,
+        sameSite: sessionCookieSecure ? 'none' : 'lax',
         maxAge: 60 * 60 * 1000 // 1 hour
     }
 }));
@@ -386,6 +396,39 @@ mongoose.connection.on('disconnected', () => {
     if (process.env.MONGO_URI) setTimeout(connectDB, 5000);
 });
 
+const isDbReady = () => !useFallback && mongoose.connection.readyState === 1;
+
+const ensureDefaultUsers = async () => {
+  if (!isDbReady()) return;
+  try {
+    const seeds = [
+      { username: ADMIN_USER, password: ADMIN_PASS, role: 'admin' },
+      { username: EMP_USER, password: EMP_PASS, role: 'user' },
+      { username: CLIENT_USER, password: CLIENT_PASS, role: 'client' },
+    ];
+
+    for (const seed of seeds) {
+      const usernameLower = String(seed.username || '').trim().toLowerCase();
+      if (!usernameLower) continue;
+      const exists = await User.findOne({ usernameLower }).lean();
+      if (exists) continue;
+      const passwordHash = await hashPassword(seed.password);
+      await User.create({
+        username: seed.username,
+        role: seed.role,
+        passwordHash,
+      });
+    }
+  } catch (err) {
+    console.error('Failed ensuring default users', err);
+  }
+};
+
+mongoose.connection.on('connected', () => {
+  // Seed default accounts (admin/employee/client) if they don't exist yet.
+  ensureDefaultUsers();
+});
+
 const authUsersPath = path.join(__dirname, 'dev_auth_users.json');
 const defaultAuthUsers = [
   { id: 'admin-1', username: ADMIN_USER, password: ADMIN_PASS, role: 'admin' },
@@ -422,7 +465,12 @@ defaultAuthUsers.forEach((seedUser) => {
 });
 persistAuthUsers();
 
-const sanitizeUser = (user) => ({ id: user.id, username: user.username, role: user.role });
+const sanitizeUser = (user) => ({
+  id: String(user.id || user._id || ''),
+  username: user.username,
+  role: user.role,
+  projectIds: Array.isArray(user.projectIds) ? user.projectIds.map((v) => String(v)) : [],
+});
 const getSessionUser = (req) => req.session && req.session.authUser ? req.session.authUser : null;
 
 const requireAuth = (req, res, next) => {
@@ -474,29 +522,55 @@ const logActivity = async (req, payload) => {
 };
 
 // API Routes
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const username = String(req.body.username || '').trim();
   const password = String(req.body.password || '');
-  const user = AUTH_USERS.find(
-    (u) => String(u.username || '').toLowerCase() === username.toLowerCase() && u.password === password
-  );
-  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-  req.session.authUser = sanitizeUser(user);
+  if (!username || !password) return res.status(400).json({ error: 'Username and password are required' });
+
+  if (isDbReady()) {
+    const user = await User.findOne({ usernameLower: username.toLowerCase() });
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    const ok = await verifyPassword(password, user.passwordHash);
+    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+    req.session.authUser = sanitizeUser(user);
+  } else {
+    const user = AUTH_USERS.find(
+      (u) => String(u.username || '').toLowerCase() === username.toLowerCase()
+    );
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const hasHash = Boolean(user.passwordHash);
+    const ok = hasHash ? await verifyPassword(password, user.passwordHash) : user.password === password;
+    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+
+    // Opportunistically migrate plaintext fallback users to hashed passwords.
+    if (!hasHash) {
+      try {
+        user.passwordHash = await hashPassword(password);
+        delete user.password;
+        persistAuthUsers();
+      } catch (e) {
+        // ignore migration failure
+      }
+    }
+
+    req.session.authUser = sanitizeUser(user);
+  }
   logActivity(req, {
     action: 'auth.login',
     targetType: 'session',
     targetId: req.sessionID || '',
-    details: `${user.username} logged in`,
+    details: `${req.session.authUser.username} logged in`,
   });
   return res.json({ user: req.session.authUser });
 });
 
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
   const username = String(req.body.username || '').trim();
   const password = String(req.body.password || '');
   const roleInput = String(req.body.role || 'user').trim().toLowerCase();
   const adminCode = String(req.body.adminCode || '');
-  const role = ['admin', 'user'].includes(roleInput) ? roleInput : 'user';
+  const role = ['admin', 'user', 'client'].includes(roleInput) ? roleInput : 'user';
 
   if (!username || username.length < 3 || username.length > 32) {
     return res.status(400).json({ error: 'Username must be 3 to 32 characters' });
@@ -507,32 +581,322 @@ app.post('/api/auth/register', (req, res) => {
   if (!password || password.length < 4) {
     return res.status(400).json({ error: 'Password must be at least 4 characters' });
   }
-  const exists = AUTH_USERS.some(
-    (u) => String(u.username || '').toLowerCase() === username.toLowerCase()
-  );
-  if (exists) {
-    return res.status(409).json({ error: 'Username already exists' });
-  }
   if (role === 'admin' && adminCode !== ADMIN_SIGNUP_CODE) {
     return res.status(403).json({ error: 'Invalid admin signup code' });
   }
 
-  const newUser = {
-    id: `${role}-${Date.now()}`,
-    username,
-    password,
-    role,
-  };
-  AUTH_USERS.push(newUser);
-  persistAuthUsers();
-  req.session.authUser = sanitizeUser(newUser);
+  if (isDbReady()) {
+    const exists = await User.findOne({ usernameLower: username.toLowerCase() }).lean();
+    if (exists) return res.status(409).json({ error: 'Username already exists' });
+    const passwordHash = await hashPassword(password);
+    const newUser = await User.create({ username, role, passwordHash });
+    req.session.authUser = sanitizeUser(newUser);
+  } else {
+    const exists = AUTH_USERS.some(
+      (u) => String(u.username || '').toLowerCase() === username.toLowerCase()
+    );
+    if (exists) {
+      return res.status(409).json({ error: 'Username already exists' });
+    }
+    const newUser = {
+      id: `${role}-${Date.now()}`,
+      username,
+      passwordHash: await hashPassword(password),
+      role,
+      projectIds: [],
+    };
+    AUTH_USERS.push(newUser);
+    persistAuthUsers();
+    req.session.authUser = sanitizeUser(newUser);
+  }
   logActivity(req, {
     action: 'auth.register',
     targetType: 'user',
-    targetId: newUser.id,
-    details: `${newUser.username} registered as ${newUser.role}`,
+    targetId: req.session.authUser.id,
+    details: `${req.session.authUser.username} registered as ${req.session.authUser.role}`,
   });
   return res.status(201).json({ user: req.session.authUser });
+});
+
+app.post('/api/auth/change-password', requireAuth, async (req, res) => {
+  const currentPassword = String(req.body.currentPassword || '');
+  const newPassword = String(req.body.newPassword || '');
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Current password and new password are required' });
+  // Keep legacy compatibility with existing demo passwords (e.g. 1111).
+  if (newPassword.length < 4) return res.status(400).json({ error: 'New password must be at least 4 characters' });
+
+  try {
+    if (isDbReady()) {
+      const user = await User.findById(req.authUser.id);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      const ok = await verifyPassword(currentPassword, user.passwordHash);
+      if (!ok) return res.status(401).json({ error: 'Invalid current password' });
+      user.passwordHash = await hashPassword(newPassword);
+      await user.save();
+      await logActivity(req, {
+        action: 'auth.change_password',
+        targetType: 'user',
+        targetId: String(user._id),
+        details: `${user.username} changed password`,
+      });
+      return res.json({ ok: true });
+    }
+
+    const record = AUTH_USERS.find((u) => String(u.id) === String(req.authUser.id));
+    if (!record) return res.status(404).json({ error: 'User not found' });
+    const ok = record.passwordHash
+      ? await verifyPassword(currentPassword, record.passwordHash)
+      : String(record.password || '') === currentPassword;
+    if (!ok) return res.status(401).json({ error: 'Invalid current password' });
+
+    record.passwordHash = await hashPassword(newPassword);
+    delete record.password;
+    persistAuthUsers();
+    await logActivity(req, {
+      action: 'auth.change_password',
+      targetType: 'user',
+      targetId: record.id,
+      details: `${record.username} changed password`,
+    });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('Change password failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/admin/users', requireAuth, requireRoles(['admin']), async (req, res) => {
+  try {
+    if (isDbReady()) {
+      const users = await User.find().sort({ createdAt: -1 }).lean();
+      return res.json(users.map((u) => ({
+        id: String(u._id),
+        username: u.username,
+        role: u.role,
+        projectIds: Array.isArray(u.projectIds) ? u.projectIds.map((v) => String(v)) : [],
+        createdAt: u.createdAt,
+      })));
+    }
+    return res.json(AUTH_USERS.map((u) => ({
+      id: u.id,
+      username: u.username,
+      role: u.role,
+      projectIds: Array.isArray(u.projectIds) ? u.projectIds.map((v) => String(v)) : [],
+    })));
+  } catch (err) {
+    console.error('List users failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/api/admin/users/:id', requireAuth, requireRoles(['admin']), async (req, res) => {
+  const id = String(req.params.id || '').trim();
+  if (!id) return res.status(400).json({ error: 'User id required' });
+
+  const updates = {};
+  if (req.body.role !== undefined) {
+    const roleInput = String(req.body.role || '').trim().toLowerCase();
+    if (!['admin', 'user', 'client'].includes(roleInput)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+    updates.role = roleInput;
+  }
+
+  if (req.body.projectIds !== undefined) {
+    const raw = Array.isArray(req.body.projectIds) ? req.body.projectIds : [];
+    const cleaned = raw
+      .map((v) => String(v || '').trim())
+      .filter(Boolean)
+      .slice(0, 100);
+    updates.projectIds = cleaned;
+  }
+
+  try {
+    if (isDbReady()) {
+      const existing = await User.findById(id);
+      if (!existing) return res.status(404).json({ error: 'User not found' });
+
+      if (updates.role && existing.role === 'admin' && updates.role !== 'admin') {
+        const remainingAdmins = await User.countDocuments({ role: 'admin', _id: { $ne: id } });
+        if (remainingAdmins === 0) {
+          return res.status(400).json({ error: 'Cannot remove admin role from the last admin account' });
+        }
+      }
+
+      Object.keys(updates).forEach((k) => { existing[k] = updates[k]; });
+      await existing.save();
+
+      await logActivity(req, {
+        action: 'admin.user_update',
+        targetType: 'user',
+        targetId: String(existing._id),
+        details: `Admin updated user ${existing.username}`,
+        metadata: Object.keys(updates).reduce((acc, k) => ({ ...acc, [k]: updates[k] }), {}),
+      });
+
+      return res.json({ user: sanitizeUser(existing) });
+    }
+
+    const idx = AUTH_USERS.findIndex((u) => String(u.id) === id);
+    if (idx === -1) return res.status(404).json({ error: 'User not found' });
+    const existing = AUTH_USERS[idx];
+
+    if (updates.role && existing.role === 'admin' && updates.role !== 'admin') {
+      const remainingAdmins = AUTH_USERS.filter((u) => u.role === 'admin' && String(u.id) !== id).length;
+      if (remainingAdmins === 0) {
+        return res.status(400).json({ error: 'Cannot remove admin role from the last admin account' });
+      }
+    }
+
+    AUTH_USERS[idx] = { ...existing, ...updates };
+    persistAuthUsers();
+    await logActivity(req, {
+      action: 'admin.user_update',
+      targetType: 'user',
+      targetId: id,
+      details: `Admin updated user ${existing.username}`,
+      metadata: Object.keys(updates).reduce((acc, k) => ({ ...acc, [k]: updates[k] }), {}),
+    });
+    return res.json({ user: sanitizeUser(AUTH_USERS[idx]) });
+  } catch (err) {
+    console.error('Update user failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/admin/users', requireAuth, requireRoles(['admin']), async (req, res) => {
+  const username = String(req.body.username || '').trim();
+  const password = String(req.body.password || '');
+  const roleInput = String(req.body.role || 'user').trim().toLowerCase();
+  const role = ['admin', 'user', 'client'].includes(roleInput) ? roleInput : 'user';
+
+  if (!username || username.length < 3 || username.length > 32) {
+    return res.status(400).json({ error: 'Username must be 3 to 32 characters' });
+  }
+  if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
+    return res.status(400).json({ error: 'Username can only contain letters, numbers, dot, underscore, and dash' });
+  }
+  // Keep legacy compatibility with existing demo passwords (e.g. 1111).
+  if (!password || password.length < 4) {
+    return res.status(400).json({ error: 'Password must be at least 4 characters' });
+  }
+
+  try {
+    if (isDbReady()) {
+      const exists = await User.findOne({ usernameLower: username.toLowerCase() }).lean();
+      if (exists) return res.status(409).json({ error: 'Username already exists' });
+      const passwordHash = await hashPassword(password);
+      const created = await User.create({ username, role, passwordHash });
+      await logActivity(req, {
+        action: 'admin.user_create',
+        targetType: 'user',
+        targetId: String(created._id),
+        details: `Admin created user ${created.username} (${created.role})`,
+      });
+      return res.status(201).json({ user: { id: String(created._id), username: created.username, role: created.role, createdAt: created.createdAt } });
+    }
+
+    const exists = AUTH_USERS.some((u) => String(u.username || '').toLowerCase() === username.toLowerCase());
+    if (exists) return res.status(409).json({ error: 'Username already exists' });
+    const created = { id: `${role}-${Date.now()}`, username, role, passwordHash: await hashPassword(password), projectIds: [] };
+    AUTH_USERS.push(created);
+    persistAuthUsers();
+    await logActivity(req, {
+      action: 'admin.user_create',
+      targetType: 'user',
+      targetId: created.id,
+      details: `Admin created user ${created.username} (${created.role})`,
+    });
+    return res.status(201).json({ user: { id: created.id, username: created.username, role: created.role } });
+  } catch (err) {
+    console.error('Create user failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/admin/users/:id/reset-password', requireAuth, requireRoles(['admin']), async (req, res) => {
+  const id = String(req.params.id || '').trim();
+  const newPassword = String(req.body.newPassword || '');
+  if (!id) return res.status(400).json({ error: 'User id required' });
+  // Keep legacy compatibility with existing demo passwords (e.g. 1111).
+  if (!newPassword || newPassword.length < 4) return res.status(400).json({ error: 'New password must be at least 4 characters' });
+
+  try {
+    if (isDbReady()) {
+      const user = await User.findById(id);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      user.passwordHash = await hashPassword(newPassword);
+      await user.save();
+      await logActivity(req, {
+        action: 'admin.user_reset_password',
+        targetType: 'user',
+        targetId: String(user._id),
+        details: `Admin reset password for ${user.username}`,
+      });
+      return res.json({ ok: true });
+    }
+
+    const record = AUTH_USERS.find((u) => String(u.id) === id);
+    if (!record) return res.status(404).json({ error: 'User not found' });
+    record.passwordHash = await hashPassword(newPassword);
+    delete record.password;
+    persistAuthUsers();
+    await logActivity(req, {
+      action: 'admin.user_reset_password',
+      targetType: 'user',
+      targetId: record.id,
+      details: `Admin reset password for ${record.username}`,
+    });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('Reset password failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.delete('/api/admin/users/:id', requireAuth, requireRoles(['admin']), async (req, res) => {
+  const id = String(req.params.id || '').trim();
+  if (!id) return res.status(400).json({ error: 'User id required' });
+  if (String(req.authUser.id) === id) return res.status(400).json({ error: 'You cannot delete your own account' });
+
+  try {
+    if (isDbReady()) {
+      const user = await User.findById(id).lean();
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      const remainingAdmins = await User.countDocuments({ role: 'admin', _id: { $ne: id } });
+      if (user.role === 'admin' && remainingAdmins === 0) {
+        return res.status(400).json({ error: 'Cannot delete the last admin account' });
+      }
+      await User.deleteOne({ _id: id });
+      await logActivity(req, {
+        action: 'admin.user_delete',
+        targetType: 'user',
+        targetId: id,
+        details: `Admin deleted user ${user.username} (${user.role})`,
+      });
+      return res.json({ ok: true });
+    }
+
+    const idx = AUTH_USERS.findIndex((u) => String(u.id) === id);
+    if (idx === -1) return res.status(404).json({ error: 'User not found' });
+    const user = AUTH_USERS[idx];
+    const remainingAdmins = AUTH_USERS.filter((u) => u.role === 'admin' && String(u.id) !== id).length;
+    if (user.role === 'admin' && remainingAdmins === 0) {
+      return res.status(400).json({ error: 'Cannot delete the last admin account' });
+    }
+    AUTH_USERS.splice(idx, 1);
+    persistAuthUsers();
+    await logActivity(req, {
+      action: 'admin.user_delete',
+      targetType: 'user',
+      targetId: id,
+      details: `Admin deleted user ${user.username} (${user.role})`,
+    });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('Delete user failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
 });
 
 app.post('/api/auth/logout', (req, res) => {
@@ -548,9 +912,23 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 app.get('/api/auth/me', (req, res) => {
-  const user = getSessionUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
-  return res.json({ user });
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser) return res.status(401).json({ error: 'Unauthorized' });
+
+  // Refresh from DB so role/project changes made by admin apply without requiring re-login.
+  if (isDbReady()) {
+    User.findById(sessionUser.id).lean()
+      .then((dbUser) => {
+        if (!dbUser) return res.status(401).json({ error: 'Unauthorized' });
+        const safe = sanitizeUser(dbUser);
+        req.session.authUser = safe;
+        return res.json({ user: safe });
+      })
+      .catch(() => res.json({ user: sessionUser }));
+    return;
+  }
+
+  return res.json({ user: sessionUser });
 });
 
 app.get('/api/projects', async (req, res) => {
@@ -790,6 +1168,131 @@ const uploadFileToCloud = async (file) => {
   };
 };
 
+const isOfficeName = (name = '') => {
+  const ext = String(name || '').toLowerCase().split('.').pop();
+  return ['xls', 'xlsx', 'doc', 'docx', 'ppt', 'pptx'].includes(ext);
+};
+
+const downloadFileBytes = async (record) => {
+  if (!record) throw new Error('Missing file record');
+  // Cloudinary-backed: use a signed Cloudinary download URL (no cookies required).
+  if (record.cloudProvider === 'cloudinary' && record.cloudPublicId && cloudStorageEnabled && cloudinary) {
+    const ext = path.extname(record.originalName || '').replace('.', '') || 'bin';
+    const resourceType = inferCloudinaryResourceType(record);
+    const signed = cloudinary.utils.private_download_url(record.cloudPublicId, ext, {
+      resource_type: resourceType,
+      type: 'upload',
+      attachment: false,
+    });
+    const res = await fetch(signed);
+    if (!res.ok) throw new Error(`Cloud download failed (${res.status})`);
+    const ab = await res.arrayBuffer();
+    return Buffer.from(ab);
+  }
+
+  // Absolute URL (other providers): fetch.
+  if (record.path && /^https?:\/\//i.test(String(record.path))) {
+    const res = await fetch(String(record.path));
+    if (!res.ok) throw new Error(`Remote download failed (${res.status})`);
+    const ab = await res.arrayBuffer();
+    return Buffer.from(ab);
+  }
+
+  // Local disk-backed.
+  const rel = String(record.path || '').replace(/\\/g, '/').replace(/^\/+/, '');
+  const diskPath = path.join(__dirname, rel);
+  if (!fs.existsSync(diskPath)) throw new Error('File not found on disk');
+  return fs.readFileSync(diskPath);
+};
+
+const cloudConvertEnabled = Boolean(process.env.CLOUDCONVERT_API_KEY);
+
+const cloudConvertJobToPdfUrl = async ({ filename, bytes, contentType }) => {
+  if (!cloudConvertEnabled) {
+    throw new Error('CloudConvert is not configured (missing CLOUDCONVERT_API_KEY)');
+  }
+
+  const createJobRes = await fetch('https://api.cloudconvert.com/v2/jobs', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.CLOUDCONVERT_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      tasks: {
+        'import-1': { operation: 'import/upload' },
+        'convert-1': {
+          operation: 'convert',
+          input: ['import-1'],
+          output_format: 'pdf',
+          // If CloudConvert can infer type, leave input_format undefined.
+        },
+        'export-1': {
+          operation: 'export/url',
+          input: ['convert-1'],
+          inline: true,
+          archive_multiple_files: false,
+        },
+      },
+    }),
+  });
+
+  if (!createJobRes.ok) {
+    const msg = await createJobRes.text();
+    if (createJobRes.status === 401 || createJobRes.status === 403) {
+      throw new Error('CloudConvert API key unauthorized. Create a new API key with task.read + task.write scopes.');
+    }
+    throw new Error(`CloudConvert job create failed (${createJobRes.status}): ${msg}`);
+  }
+
+  const jobBody = await createJobRes.json();
+  const jobId = jobBody?.data?.id;
+  const importTask = (jobBody?.data?.tasks || []).find((t) => t.name === 'import-1');
+  const form = importTask?.result?.form;
+  if (!jobId || !form?.url || !form?.parameters) {
+    throw new Error('CloudConvert did not return upload form');
+  }
+
+  const fd = new FormData();
+  Object.entries(form.parameters).forEach(([k, v]) => fd.append(k, String(v)));
+  fd.append('file', new Blob([bytes], { type: contentType || 'application/octet-stream' }), filename || 'file');
+
+  const uploadRes = await fetch(form.url, { method: 'POST', body: fd });
+  if (!uploadRes.ok) {
+    const msg = await uploadRes.text();
+    if (uploadRes.status === 401 || uploadRes.status === 403) {
+      throw new Error('CloudConvert upload unauthorized. Verify your API key scopes include task.write.');
+    }
+    throw new Error(`CloudConvert upload failed (${uploadRes.status}): ${msg}`);
+  }
+
+  // Poll job status until finished.
+  const deadline = Date.now() + 60_000;
+  while (Date.now() < deadline) {
+    const pollRes = await fetch(`https://api.cloudconvert.com/v2/jobs/${encodeURIComponent(jobId)}`, {
+      headers: { Authorization: `Bearer ${process.env.CLOUDCONVERT_API_KEY}` },
+    });
+    if (!pollRes.ok) {
+      const msg = await pollRes.text();
+      throw new Error(`CloudConvert job poll failed (${pollRes.status}): ${msg}`);
+    }
+    const pollBody = await pollRes.json();
+    const status = pollBody?.data?.status;
+    if (status === 'finished') {
+      const exportTask = (pollBody?.data?.tasks || []).find((t) => t.name === 'export-1');
+      const url = exportTask?.result?.files?.[0]?.url;
+      if (!url) throw new Error('CloudConvert finished but no export URL found');
+      return url;
+    }
+    if (status === 'error') {
+      throw new Error('CloudConvert job failed');
+    }
+    await new Promise((r) => setTimeout(r, 1200));
+  }
+
+  throw new Error('CloudConvert preview timed out');
+};
+
 const removeLocalFile = (filePath) => {
   if (!filePath) return;
   const normalized = path.join(__dirname, String(filePath).replace(/^\/+/, ''));
@@ -798,20 +1301,49 @@ const removeLocalFile = (filePath) => {
   }
 };
 
-const filterFilesByRole = (files, role, userId) => {
+const normalizeProjectIds = (value) => {
+  const raw = Array.isArray(value) ? value : [];
+  return raw
+    .map((v) => String(v || '').trim())
+    .filter(Boolean);
+};
+
+const filterFilesByRole = (files, role, userId, projectIds = []) => {
+  const allowedProjects = new Set(normalizeProjectIds(projectIds));
+
   if (role === 'admin') return files;
-  if (role === 'client') return files.filter((f) => f.visibility === 'client');
-  return files.filter((f) => f.ownerId === userId || f.visibility === 'team' || f.visibility === 'client');
+
+  if (role === 'client') {
+    // Clients: only client-visible files that belong to one of their assigned projects.
+    if (!allowedProjects.size) return [];
+    return files.filter((f) => f.visibility === 'client' && allowedProjects.has(String(f.projectId || '')));
+  }
+
+  // Employees (user): always see their own uploads.
+  // For shared/team/client-visible files: require project match if a projectId exists.
+  return files.filter((f) => {
+    if (String(f.ownerId || '') === String(userId || '')) return true;
+    const vis = String(f.visibility || '');
+    if (vis !== 'team' && vis !== 'client') return false;
+
+    const pid = String(f.projectId || '').trim();
+    // Allow global shared files with no projectId.
+    if (!pid) return true;
+    // If user has no assigned projects, don't show project-scoped shared files.
+    if (!allowedProjects.size) return false;
+    return allowedProjects.has(pid);
+  });
 };
 
 app.get('/api/folders', requireAuth, async (req, res) => {
   try {
     const role = req.authUser.role;
     const userId = req.authUser.id;
+    const projectIds = req.authUser.projectIds || [];
 
     const files = useFallback || mongoose.connection.readyState !== 1
-      ? filterFilesByRole(fallbackFiles, role, userId)
-      : filterFilesByRole(await FileItem.find().lean(), role, userId);
+      ? filterFilesByRole(fallbackFiles, role, userId, projectIds)
+      : filterFilesByRole(await FileItem.find().lean(), role, userId, projectIds);
 
     const fileFolders = files.map((f) => (f.folder || '').trim()).filter(Boolean);
     const standaloneFolders = role === 'admin'
@@ -1028,16 +1560,206 @@ app.options('/api/files/:id', cors(corsOptions));
 app.get('/api/files', requireAuth, async (req, res) => {
   const role = req.authUser.role;
   const userId = req.authUser.id;
+  const projectIds = req.authUser.projectIds || [];
   try {
     if (useFallback || mongoose.connection.readyState !== 1) {
-      return res.json(filterFilesByRole(fallbackFiles, role, userId));
+      return res.json(filterFilesByRole(fallbackFiles, role, userId, projectIds));
     }
 
     const files = await FileItem.find().sort({ createdAt: -1 }).lean();
-    return res.json(filterFilesByRole(files, role, userId));
+    return res.json(filterFilesByRole(files, role, userId, projectIds));
   } catch (err) {
     console.error('Error fetching files:', err);
     return res.status(500).json({ error: 'Failed to fetch files' });
+  }
+});
+
+function inferCloudinaryResourceType(fileRecord) {
+  try {
+    const url = String(fileRecord?.path || '');
+    const re = new RegExp('res\\\\.cloudinary\\\\.com\\\\/[^\\\\/]+\\\\/([^\\\\/]+)\\\\/', 'i');
+    const match = url.match(re);
+    if (match && match[1]) return String(match[1]).toLowerCase();
+  } catch (e) {
+    // ignore
+  }
+  const mime = String(fileRecord?.mimeType || '').toLowerCase();
+  if (mime.startsWith('video/')) return 'video';
+  if (mime.startsWith('image/')) return 'image';
+  if (mime === 'application/pdf') return 'image';
+  return 'raw';
+}
+
+// Signed view/download URL for Cloudinary-backed files.
+// Cloudinary delivery URLs in this account currently return 401, so we redirect to a signed download URL.
+app.get('/api/files/:id/view', requireAuth, async (req, res) => {
+  try {
+    const fileId = String(req.params.id || '').trim();
+    if (!fileId) return res.status(400).json({ error: 'Missing file id' });
+
+    const role = req.authUser.role;
+    const userId = req.authUser.id;
+    const wantsDownload =
+      String(req.query.download || '') === '1' ||
+      String(req.query.download || '').toLowerCase() === 'true';
+
+    const loadOne = async () => {
+      if (useFallback || mongoose.connection.readyState !== 1) {
+        const scoped = filterFilesByRole(fallbackFiles, role, userId, req.authUser.projectIds || []);
+        return scoped.find((f) => String(f._id) === fileId) || null;
+      }
+      if (role === 'admin') return await FileItem.findById(fileId).lean();
+      const scoped = filterFilesByRole(await FileItem.find().lean(), role, userId, req.authUser.projectIds || []);
+      return scoped.find((f) => String(f._id) === fileId) || null;
+    };
+
+    const record = await loadOne();
+    if (!record) return res.status(404).json({ error: 'File not found' });
+
+    if (record.cloudProvider === 'cloudinary' && record.cloudPublicId && cloudStorageEnabled && cloudinary) {
+      const ext = path.extname(record.originalName || '').replace('.', '') || 'bin';
+      const resourceType = inferCloudinaryResourceType(record);
+      const signed = cloudinary.utils.private_download_url(record.cloudPublicId, ext, {
+        resource_type: resourceType,
+        type: 'upload',
+        attachment: Boolean(wantsDownload),
+      });
+      return res.redirect(302, signed);
+    }
+
+    if (record.path && /^https?:\/\//i.test(String(record.path))) {
+      return res.redirect(302, String(record.path));
+    }
+
+    const rel = String(record.path || '').replace(/\\/g, '/').replace(/^\/+/, '');
+    const diskPath = path.join(__dirname, rel);
+    if (!fs.existsSync(diskPath)) return res.status(404).json({ error: 'File not found on disk' });
+
+    res.setHeader('Content-Type', record.mimeType || 'application/octet-stream');
+    res.setHeader(
+      'Content-Disposition',
+      `${wantsDownload ? 'attachment' : 'inline'}; filename=\"${String(record.originalName || 'file')}\"`
+    );
+    return res.sendFile(diskPath);
+  } catch (err) {
+    console.error('Error serving file view:', err);
+    return res.status(500).json({ error: 'Failed to open file' });
+  }
+});
+
+// Download with a consistent filename (works for Cloudinary + local files).
+app.get('/api/files/:id/download', requireAuth, async (req, res) => {
+  try {
+    const fileId = String(req.params.id || '').trim();
+    if (!fileId) return res.status(400).json({ error: 'Missing file id' });
+
+    const role = req.authUser.role;
+    const userId = req.authUser.id;
+
+    const loadOne = async () => {
+      if (useFallback || mongoose.connection.readyState !== 1) {
+        const scoped = filterFilesByRole(fallbackFiles, role, userId, req.authUser.projectIds || []);
+        return scoped.find((f) => String(f._id) === fileId) || null;
+      }
+      if (role === 'admin') return await FileItem.findById(fileId).lean();
+      const scoped = filterFilesByRole(await FileItem.find().lean(), role, userId, req.authUser.projectIds || []);
+      return scoped.find((f) => String(f._id) === fileId) || null;
+    };
+
+    const record = await loadOne();
+    if (!record) return res.status(404).json({ error: 'File not found' });
+
+    const safeName = String(record.originalName || 'download').replace(/[\r\n"]/g, '').trim() || 'download';
+
+    // Cloud/remote: fetch bytes then send with our own Content-Disposition.
+    if (
+      (record.cloudProvider === 'cloudinary' && record.cloudPublicId) ||
+      (record.path && /^https?:\/\//i.test(String(record.path)))
+    ) {
+      const bytes = await downloadFileBytes(record);
+      res.setHeader('Content-Type', record.mimeType || 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${safeName}"`);
+      res.setHeader('Content-Length', String(bytes.length));
+      return res.status(200).send(bytes);
+    }
+
+    // Local disk-backed.
+    const rel = String(record.path || '').replace(/\\/g, '/').replace(/^\/+/, '');
+    const diskPath = path.join(__dirname, rel);
+    if (!fs.existsSync(diskPath)) return res.status(404).json({ error: 'File not found on disk' });
+    return res.download(diskPath, safeName);
+  } catch (err) {
+    console.error('Error downloading file:', err);
+    return res.status(500).json({ error: 'Failed to download file' });
+  }
+});
+
+// Office preview: converts Office docs to PDF via CloudConvert and returns a temporary PDF URL.
+// Restricted to admin/user because conversion can incur third-party costs.
+app.post('/api/files/:id/preview', requireAuth, requireRoles(['admin', 'user']), async (req, res) => {
+  try {
+    const fileId = String(req.params.id || '').trim();
+    if (!fileId) return res.status(400).json({ error: 'Missing file id' });
+
+    const role = req.authUser.role;
+    const userId = req.authUser.id;
+
+    const loadOne = async () => {
+      if (useFallback || mongoose.connection.readyState !== 1) {
+        const scoped = filterFilesByRole(fallbackFiles, role, userId, req.authUser.projectIds || []);
+        return scoped.find((f) => String(f._id) === fileId) || null;
+      }
+      if (role === 'admin') return await FileItem.findById(fileId);
+      const scoped = filterFilesByRole(await FileItem.find().lean(), role, userId, req.authUser.projectIds || []);
+      const match = scoped.find((f) => String(f._id) === fileId) || null;
+      if (!match) return null;
+      return await FileItem.findById(fileId);
+    };
+
+    const record = await loadOne();
+    if (!record) return res.status(404).json({ error: 'File not found' });
+
+    const isOffice = isOfficeName(record.originalName) || isOfficeName(record.path);
+    if (!isOffice) {
+      return res.json({ url: `/api/files/${encodeURIComponent(fileId)}/view` });
+    }
+
+    const now = Date.now();
+    const expiresAt = record.previewExpiresAt ? new Date(record.previewExpiresAt).getTime() : 0;
+    if (record.previewUrl && expiresAt && expiresAt > now + 15_000) {
+      return res.json({ url: record.previewUrl, cached: true });
+    }
+
+    const bytes = await downloadFileBytes(record);
+    const pdfUrl = await cloudConvertJobToPdfUrl({
+      filename: record.originalName,
+      bytes,
+      contentType: record.mimeType || 'application/octet-stream',
+    });
+
+    const ttlMs = 60 * 60 * 1000;
+    const nextExpires = new Date(Date.now() + ttlMs);
+
+    if (useFallback || mongoose.connection.readyState !== 1) {
+      fallbackFiles = fallbackFiles.map((f) => (
+        String(f._id) === fileId
+          ? { ...f, previewProvider: 'cloudconvert', previewUrl: pdfUrl, previewMimeType: 'application/pdf', previewExpiresAt: nextExpires.toISOString() }
+          : f
+      ));
+      persistFallbackFiles();
+      return res.json({ url: pdfUrl, cached: false, expiresAt: nextExpires.toISOString() });
+    }
+
+    record.previewProvider = 'cloudconvert';
+    record.previewUrl = pdfUrl;
+    record.previewMimeType = 'application/pdf';
+    record.previewExpiresAt = nextExpires;
+    await record.save();
+
+    return res.json({ url: pdfUrl, cached: false, expiresAt: nextExpires.toISOString() });
+  } catch (err) {
+    console.error('Error generating office preview:', err);
+    return res.status(500).json({ error: err.message || 'Failed to generate preview' });
   }
 });
 
@@ -1047,12 +1769,24 @@ app.post('/api/files', requireAuth, requireRoles(['admin', 'user']), fileUpload.
       return res.status(400).json({ error: 'File upload is required' });
     }
 
+    const requestedProjectId = String(req.body.projectId || '').trim();
+    const allowedProjects = new Set(normalizeProjectIds(req.authUser.projectIds || []));
+    if (req.authUser.role !== 'admin' && requestedProjectId) {
+      if (!allowedProjects.has(requestedProjectId)) {
+        return res.status(403).json({ error: 'Forbidden: you are not assigned to this project' });
+      }
+    }
+
     const ownerId = req.authUser.role === 'admin'
       ? (req.body.ownerId || req.authUser.id).toString()
       : req.authUser.id;
     const visibility = ['private', 'team', 'client'].includes(req.body.visibility) ? req.body.visibility : 'private';
     const tags = normalizeTags(req.body.tags);
     const cloudMeta = cloudStorageEnabled ? await uploadFileToCloud(req.file) : null;
+    if (visibility === 'client' && !requestedProjectId) {
+      return res.status(400).json({ error: 'Client shared files must be assigned to a project' });
+    }
+
     const payload = {
       originalName: req.file.originalname,
       storedName: cloudMeta?.storedName || req.file.filename,
@@ -1062,7 +1796,7 @@ app.post('/api/files', requireAuth, requireRoles(['admin', 'user']), fileUpload.
       ownerId,
       visibility,
       folder: (req.body.folder || '').toString().trim(),
-      projectId: (req.body.projectId || '').toString(),
+      projectId: requestedProjectId,
       tags,
       notes: (req.body.notes || '').toString(),
       cloudProvider: cloudMeta?.cloudProvider || '',
@@ -1223,8 +1957,32 @@ app.put('/api/files/:id', requireAuth, requireRoles(['admin', 'user']), async (r
     if (req.body.folder !== undefined) {
       updates.folder = String(req.body.folder || '').trim();
     }
+    if (req.body.projectId !== undefined) {
+      updates.projectId = String(req.body.projectId || '').trim();
+      if (req.authUser.role !== 'admin' && updates.projectId) {
+        const allowedProjects = new Set(normalizeProjectIds(req.authUser.projectIds || []));
+        if (!allowedProjects.has(updates.projectId)) {
+          return res.status(403).json({ error: 'Forbidden: you are not assigned to this project' });
+        }
+      }
+    }
     if (typeof req.body.notes === 'string') {
       updates.notes = req.body.notes;
+    }
+
+    if (updates.visibility === 'client' && !String(updates.projectId || '').trim()) {
+      // If visibility is client and projectId isn't being updated, require existing projectId.
+      if (useFallback || mongoose.connection.readyState !== 1) {
+        const existing = fallbackFiles.find((f) => String(f._id) === String(req.params.id));
+        if (!existing || !String(existing.projectId || '').trim()) {
+          return res.status(400).json({ error: 'Client shared files must be assigned to a project' });
+        }
+      } else {
+        const existing = await FileItem.findById(req.params.id).lean();
+        if (!existing || !String(existing.projectId || '').trim()) {
+          return res.status(400).json({ error: 'Client shared files must be assigned to a project' });
+        }
+      }
     }
 
     if (useFallback || mongoose.connection.readyState !== 1) {
@@ -1533,7 +2291,7 @@ app.post('/api/contact', async (req, res) => {
 // Placed before the catch-all so API requests return JSON instead of index.html
 app.get('/api/status', (req, res) => {
   const dbConnected = mongoose.connection && mongoose.connection.readyState === 1;
-  res.json({ usingFallback: useFallback || !dbConnected, dbConnected, cloudStorageEnabled });
+  res.json({ usingFallback: useFallback || !dbConnected, dbConnected, cloudStorageEnabled, cloudConvertEnabled });
 });
 
 // Serve React app for all other routes

@@ -6,6 +6,8 @@ services:
     buildCommand: npm install
     startCommand: node server.js
     envVars:
+      - key: NODE_VERSION
+        value: 22
       - key: MONGO_URI
         value: ${MONGO_URI}
       - key: ADMIN_USER
@@ -28,6 +30,8 @@ services:
         value: ${CLOUDINARY_API_KEY}
       - key: CLOUDINARY_API_SECRET
         value: ${CLOUDINARY_API_SECRET}
+      - key: CLOUDCONVERT_API_KEY
+        value: ${CLOUDCONVERT_API_KEY}
 
   - type: web
     name: mastertech-frontend

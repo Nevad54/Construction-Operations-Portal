@@ -78,27 +78,59 @@ const isTextPreview = (file) => {
   return ['txt', 'md', 'json', 'csv'].includes(ext);
 };
 
+const isAbsoluteHttpUrl = (value = '') => {
+  const v = String(value || '').trim();
+  return v.startsWith('http://') || v.startsWith('https://');
+};
+
 const normalizePath = (path = '') => {
   const cleaned = String(path || '').replace(/\\/g, '/').trim();
   if (!cleaned) return '';
+  // Keep absolute URLs intact (Cloudinary, S3, etc).
+  if (isAbsoluteHttpUrl(cleaned)) return cleaned;
   return cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
 };
 
-const resolveFileUrl = (file) => {
-  const path = normalizePath(file?.path || '');
+const getFilesApiPrefix = () => {
+  const base = (IMAGE_BASE_URL || '').trim().replace(/\/$/, '');
+  if (!base) return '/api';
+  const isNetlifyHost = base.includes('netlify.app') || base.includes('netlify.com');
+  return isNetlifyHost ? `${base}/.netlify/functions/api` : `${base}/api`;
+};
+
+const resolveFileUrl = (file, { download = false } = {}) => {
+  // Always use backend download endpoint for correct filenames.
+  if (download && file?._id) {
+    const prefix = getFilesApiPrefix();
+    return `${prefix}/files/${encodeURIComponent(file._id)}/download`;
+  }
+
+  // Use backend view endpoint when possible:
+  // - Works for both local-disk files and Cloudinary-backed files.
+  // - Avoids CORS issues and keeps auth enforcement consistent in production (Netlify -> /api -> proxy).
+  if (file?._id) {
+    const prefix = getFilesApiPrefix();
+    return `${prefix}/files/${encodeURIComponent(file._id)}/view`;
+  }
+
+  const raw = String(file?.path || '').trim();
+  if (!raw) return '';
+
+  // If backend already gave us a full URL, use it as-is.
+  if (isAbsoluteHttpUrl(raw)) return raw;
+
+  const path = normalizePath(raw);
   if (!path) return '';
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+
+  // Prefer explicit API base when provided.
   if (IMAGE_BASE_URL) return `${IMAGE_BASE_URL}${path}`;
+
+  // Local dev convenience when running frontend separately.
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return `http://localhost:3002${path}`;
   }
-  return path;
-};
 
-const getAbsoluteUrl = (url) => {
-  if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `${window.location.origin}${url}`;
+  return path;
 };
 
 const getImmediateFolderChildren = (folderPaths = [], parentPath = '') => {
@@ -152,11 +184,13 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
 
   const [query, setQuery] = useState('');
   const [visibility, setVisibility] = useState(expectedRole === 'client' ? 'client' : 'all');
+  const [projectFilter, setProjectFilter] = useState('all'); // 'all' | '' (no project) | projectId
   const [folderFilter, setFolderFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [activeSection, setActiveSection] = useState('my-drive');
   const [viewMode, setViewMode] = useState('grid');
   const [selectedIds, setSelectedIds] = useState([]);
+  const [lastSelectedId, setLastSelectedId] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [contextMenu, setContextMenu] = useState({
     open: false,
@@ -169,8 +203,15 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   });
   const contextMenuRef = useRef(null);
   const [previewFile, setPreviewFile] = useState(null);
+  const [previewQueue, setPreviewQueue] = useState([]);
+  const [previewIndex, setPreviewIndex] = useState(-1);
+  const [previewZoom, setPreviewZoom] = useState(1);
+  const [previewShowDetails, setPreviewShowDetails] = useState(true);
   const [previewText, setPreviewText] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [officePreviewById, setOfficePreviewById] = useState({});
+  const [officePreviewLoadingById, setOfficePreviewLoadingById] = useState({});
+  const [officePreviewErrorById, setOfficePreviewErrorById] = useState({});
   const [newFolderName, setNewFolderName] = useState('');
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
@@ -180,12 +221,15 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const [starredIds, setStarredIds] = useState([]);
   const [recentOpenIds, setRecentOpenIds] = useState([]);
   const [clipboard, setClipboard] = useState({ type: '', mode: '', ids: [], folderPath: '' });
+  const [bulkAction, setBulkAction] = useState({ open: false, mode: '', destinationFolder: '' });
 
   const [uploading, setUploading] = useState(false);
+  const [uploadModalError, setUploadModalError] = useState('');
   const [uploadForm, setUploadForm] = useState({
     file: null,
     visibility: expectedRole === 'client' ? 'client' : 'private',
     folder: '',
+    projectId: '',
     tags: '',
     notes: '',
   });
@@ -196,12 +240,163 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     originalName: '',
     visibility: 'private',
     folder: '',
+    projectId: '',
     tags: '',
     notes: '',
   });
 
+  const [projects, setProjects] = useState([]);
+
   const canManage = canManageByRole(authUser?.role);
   const hasSelection = selectedIds.length > 0;
+
+  const iconBtnBase =
+    'w-9 h-9 rounded-lg border border-stroke dark:border-gray-600 text-text-secondary dark:text-gray-300 ' +
+    'hover:bg-surface-muted dark:hover:bg-gray-800 hover:text-text-primary dark:hover:text-gray-100 ' +
+    'flex items-center justify-center transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
+  const iconBtnActive =
+    'border-brand/50 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300';
+
+  const longPressRef = useRef({ timer: null, startX: 0, startY: 0 });
+
+  const clearLongPress = useCallback(() => {
+    if (longPressRef.current.timer) {
+      clearTimeout(longPressRef.current.timer);
+      longPressRef.current.timer = null;
+    }
+  }, []);
+
+  const startLongPress = useCallback((touch, onTrigger) => {
+    clearLongPress();
+    longPressRef.current.startX = touch.clientX;
+    longPressRef.current.startY = touch.clientY;
+    longPressRef.current.timer = setTimeout(() => {
+      longPressRef.current.timer = null;
+      onTrigger(touch.clientX, touch.clientY);
+    }, 520);
+  }, [clearLongPress]);
+
+  const moveLongPress = useCallback((touch) => {
+    const dx = Math.abs(touch.clientX - longPressRef.current.startX);
+    const dy = Math.abs(touch.clientY - longPressRef.current.startY);
+    if (dx > 10 || dy > 10) {
+      clearLongPress();
+    }
+  }, [clearLongPress]);
+
+  const openFileMenuAt = useCallback((x, y, file) => {
+    const mobile = window.innerWidth < 640;
+    const menuWidth = 220;
+    const menuHeight = 320;
+    const maxX = window.innerWidth - menuWidth - 8;
+    const maxY = window.innerHeight - menuHeight - 8;
+    setContextMenu({
+      open: true,
+      x: mobile ? 8 : Math.max(8, Math.min(x, maxX)),
+      y: mobile ? 0 : Math.max(8, Math.min(y, maxY)),
+      mobile,
+      mode: selectedIds.includes(file._id) && selectedIds.length > 1 ? 'multi' : 'single',
+      file,
+      folderPath: '',
+    });
+  }, [selectedIds]);
+
+  const openFolderMenuAt = useCallback((x, y, folderPath) => {
+    const mobile = window.innerWidth < 640;
+    const menuWidth = 220;
+    const menuHeight = 320;
+    const maxX = window.innerWidth - menuWidth - 8;
+    const maxY = window.innerHeight - menuHeight - 8;
+    setContextMenu({
+      open: true,
+      x: mobile ? 8 : Math.max(8, Math.min(x, maxX)),
+      y: mobile ? 0 : Math.max(8, Math.min(y, maxY)),
+      mobile,
+      mode: 'single',
+      file: null,
+      folderPath: folderPath || '__root__',
+    });
+  }, []);
+
+  const closePreview = useCallback(() => {
+    setPreviewFile(null);
+    setPreviewQueue([]);
+    setPreviewIndex(-1);
+    setPreviewZoom(1);
+    setPreviewText('');
+    setPreviewLoading(false);
+    // Keep office preview cache so next open is instant.
+  }, []);
+
+  const clampZoom = useCallback((value) => {
+    const next = Number(value || 1);
+    if (Number.isNaN(next)) return 1;
+    return Math.min(3, Math.max(0.5, next));
+  }, []);
+
+  const openFile = useCallback((file) => {
+    const url = resolveFileUrl(file);
+    if (!url) return;
+    setRecentOpenIds((prev) => [file._id, ...prev.filter((id) => id !== file._id)].slice(0, 50));
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }, []);
+
+  const openPreviewFor = useCallback((file, queue) => {
+    if (!file) return;
+    if (!isPreviewable(file)) {
+      openFile(file);
+      return;
+    }
+    const list = Array.isArray(queue) && queue.length ? queue : [file];
+    const idx = Math.max(0, list.findIndex((item) => item && item._id === file._id));
+    setPreviewQueue(list);
+    setPreviewIndex(idx);
+    setPreviewZoom(1);
+    setPreviewShowDetails(true);
+    setPreviewText('');
+    setPreviewFile(file);
+  }, [openFile]);
+
+  const previewGoToIndex = useCallback((nextIndex) => {
+    if (!previewQueue.length) return;
+    const idx = Math.min(previewQueue.length - 1, Math.max(0, Number(nextIndex || 0)));
+    const nextFile = previewQueue[idx];
+    if (!nextFile) return;
+    setPreviewIndex(idx);
+    setPreviewZoom(1);
+    setPreviewText('');
+    setPreviewFile(nextFile);
+  }, [previewQueue]);
+
+  const previewPrev = useCallback(() => previewGoToIndex(previewIndex - 1), [previewGoToIndex, previewIndex]);
+  const previewNext = useCallback(() => previewGoToIndex(previewIndex + 1), [previewGoToIndex, previewIndex]);
+
+  useEffect(() => {
+    if (!previewFile) return;
+    const onKey = (e) => {
+      // Ignore when typing.
+      const tag = (e.target && e.target.tagName) ? String(e.target.tagName).toLowerCase() : '';
+      if (tag === 'input' || tag === 'textarea') return;
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        previewPrev();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        previewNext();
+      } else if (e.key === 'd' || e.key === 'D') {
+        setPreviewShowDetails((v) => !v);
+      } else if (e.key === '+' || e.key === '=') {
+        setPreviewZoom((z) => clampZoom(z + 0.1));
+      } else if (e.key === '-' || e.key === '_') {
+        setPreviewZoom((z) => clampZoom(z - 0.1));
+      } else if (e.key === '0') {
+        setPreviewZoom(1);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [clampZoom, previewFile, previewNext, previewPrev]);
 
   const loadAuthUser = useCallback(async () => {
     try {
@@ -239,6 +434,16 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     }
   }, [authUser]);
 
+  const loadProjects = useCallback(async () => {
+    if (!authUser) return;
+    try {
+      const data = await api.getProjects();
+      setProjects(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setProjects([]);
+    }
+  }, [authUser]);
+
   const loadActivity = useCallback(async () => {
     if (!authUser || authUser.role !== 'admin') return;
     try {
@@ -258,8 +463,54 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       loadFiles();
       loadFolders();
       loadActivity();
+      loadProjects();
     }
-  }, [authUser, loadFiles, loadFolders, loadActivity]);
+  }, [authUser, loadFiles, loadFolders, loadActivity, loadProjects]);
+
+  const projectOptions = useMemo(() => {
+    const base = (Array.isArray(projects) ? projects : [])
+      .map((p) => ({ value: String(p?._id || p?.id || '').trim(), label: String(p?.title || 'Untitled Project') }))
+      .filter((p) => p.value);
+
+    const allowed = authUser?.role === 'admin'
+      ? base
+      : base.filter((p) => (authUser?.projectIds || []).includes(p.value));
+
+    return [{ value: '', label: 'No project' }, ...allowed];
+  }, [authUser, projects]);
+
+  // Default project filter:
+  // - admin: All projects
+  // - user/client: first assigned project (if any), otherwise All projects
+  useEffect(() => {
+    if (!authUser) return;
+    setProjectFilter((prev) => {
+      if (prev === 'all' || prev === '') {
+        // keep as-is unless we can set a better default for user/client
+      } else if (projectOptions.some((opt) => opt.value === prev)) {
+        return prev;
+      }
+
+      if (authUser.role === 'admin') return 'all';
+      const firstAssigned = Array.isArray(authUser.projectIds) ? String(authUser.projectIds[0] || '').trim() : '';
+      if (firstAssigned && projectOptions.some((opt) => opt.value === firstAssigned)) return firstAssigned;
+      return 'all';
+    });
+  }, [authUser, projectOptions]);
+
+  // Simple UX: when an employee opens the upload modal, preselect their first assigned project.
+  useEffect(() => {
+    if (!showUploadModal) return;
+    if (!authUser || authUser.role !== 'user') return;
+    const firstAssigned = Array.isArray(authUser.projectIds) ? String(authUser.projectIds[0] || '').trim() : '';
+    if (!firstAssigned) return;
+    const allowed = projectOptions.some((opt) => opt.value === firstAssigned);
+    if (!allowed) return;
+    setUploadForm((prev) => {
+      if (String(prev.projectId || '').trim()) return prev;
+      return { ...prev, projectId: firstAssigned };
+    });
+  }, [authUser, projectOptions, showUploadModal]);
 
   useEffect(() => {
     if (!authUser) return;
@@ -292,12 +543,21 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       if (activeSection === 'starred' && !starredIds.includes(f._id)) return false;
 
       if (visibility !== 'all' && f.visibility !== visibility) return false;
+      if (projectFilter !== 'all') {
+        const pid = String(f.projectId || '').trim();
+        if (projectFilter === '') {
+          if (pid) return false;
+        } else if (pid !== projectFilter) {
+          return false;
+        }
+      }
       if (folderFilter !== 'all' && (f.folder || '') !== folderFilter) return false;
       if (!q) return true;
       const blob = [
         f.originalName,
         f.ownerId,
         f.visibility,
+        f.projectId,
         f.folder,
         f.notes,
         (f.tags || []).join(' ')
@@ -308,7 +568,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       return blob.includes(q);
     });
     return sortFiles(filtered, sortBy);
-  }, [files, query, visibility, folderFilter, sortBy, activeSection, recentOpenIds, starredIds]);
+  }, [files, query, visibility, projectFilter, folderFilter, sortBy, activeSection, recentOpenIds, starredIds]);
 
   const scopedFiles = useMemo(() => {
     return files.filter((f) => {
@@ -316,14 +576,22 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       if (activeSection === 'recent' && !isRecentFile(f) && !recentOpenIds.includes(f._id)) return false;
       if (activeSection === 'starred' && !starredIds.includes(f._id)) return false;
       if (visibility !== 'all' && f.visibility !== visibility) return false;
+      if (projectFilter !== 'all') {
+        const pid = String(f.projectId || '').trim();
+        if (projectFilter === '') {
+          if (pid) return false;
+        } else if (pid !== projectFilter) {
+          return false;
+        }
+      }
       return true;
     });
-  }, [files, activeSection, recentOpenIds, starredIds, visibility]);
+  }, [files, activeSection, recentOpenIds, starredIds, visibility, projectFilter]);
 
   const allFolders = useMemo(() => {
-    const source = new Set([...(folders || []), ...files.map((f) => f.folder).filter(Boolean)]);
+    const source = new Set([...(folders || []), ...scopedFiles.map((f) => f.folder).filter(Boolean)]);
     return Array.from(source).sort((a, b) => String(a).localeCompare(String(b)));
-  }, [folders, files]);
+  }, [folders, scopedFiles]);
 
   const folderCards = useMemo(() => {
     const folderPaths = [
@@ -354,6 +622,13 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     if (folderSegments.length <= 1) return '';
     return folderSegments.slice(0, -1).join('/');
   }, [folderSegments]);
+
+  // If current folder selection disappears due to project/visibility filters, reset to root.
+  useEffect(() => {
+    if (folderFilter === 'all') return;
+    const stillHasFolder = allFolders.includes(folderFilter) || scopedFiles.some((f) => String(f.folder || '').trim() === folderFilter);
+    if (!stillHasFolder) setFolderFilter('all');
+  }, [allFolders, folderFilter, scopedFiles]);
 
 
   const selectedFiles = useMemo(
@@ -388,8 +663,15 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!uploadForm.file) return;
+    if (uploadForm.visibility === 'client' && !String(uploadForm.projectId || '').trim()) {
+      const msg = 'Client shared files must be assigned to a project.';
+      setError(msg);
+      setUploadModalError(msg);
+      return false;
+    }
 
     try {
+      setUploadModalError('');
       setUploading(true);
       const formData = new FormData();
       formData.append('file', uploadForm.file);
@@ -398,6 +680,9 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       }
       formData.append('visibility', uploadForm.visibility);
       formData.append('folder', uploadForm.folder);
+      if (String(uploadForm.projectId || '').trim()) {
+        formData.append('projectId', String(uploadForm.projectId || '').trim());
+      }
       formData.append('tags', uploadForm.tags);
       formData.append('notes', uploadForm.notes);
       await api.uploadFile(formData);
@@ -405,14 +690,19 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
         file: null,
         visibility: expectedRole === 'client' ? 'client' : 'private',
         folder: '',
+        projectId: '',
         tags: '',
         notes: '',
       });
       await loadFiles();
       await loadFolders();
       await loadActivity();
+      return true;
     } catch (err) {
-      setError(err.message || 'Failed to upload file');
+      const msg = err.message || 'Failed to upload file';
+      setError(msg);
+      setUploadModalError(msg);
+      return false;
     } finally {
       setUploading(false);
     }
@@ -424,6 +714,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       originalName: file.originalName || '',
       visibility: file.visibility || 'private',
       folder: file.folder || '',
+      projectId: file.projectId || '',
       tags: Array.isArray(file.tags) ? file.tags.join(', ') : '',
       notes: file.notes || '',
     });
@@ -432,12 +723,17 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!editingFile) return;
+    if (editForm.visibility === 'client' && !String(editForm.projectId || '').trim()) {
+      setError('Client shared files must be assigned to a project.');
+      return;
+    }
     try {
       setSavingEdit(true);
       await api.updateFile(editingFile._id, {
         originalName: editForm.originalName,
         visibility: editForm.visibility,
         folder: editForm.folder,
+        projectId: editForm.projectId,
         tags: editForm.tags,
         notes: editForm.notes,
       });
@@ -464,20 +760,9 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     }
   };
 
-  const openFile = (file) => {
-    const url = resolveFileUrl(file);
-    if (!url) return;
-    setRecentOpenIds((prev) => [file._id, ...prev.filter((id) => id !== file._id)].slice(0, 50));
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
-
   const viewFile = async (file) => {
-    if (!isPreviewable(file)) {
-      openFile(file);
-      return;
-    }
     setRecentOpenIds((prev) => [file._id, ...prev.filter((id) => id !== file._id)].slice(0, 50));
-    setPreviewFile(file);
+    openPreviewFor(file, filteredFiles);
     if (!isTextPreview(file)) return;
     try {
       setPreviewLoading(true);
@@ -491,6 +776,30 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       setPreviewLoading(false);
     }
   };
+
+  const ensureOfficePreview = useCallback(async (file) => {
+    if (!file?._id) return '';
+    if (!isOfficeFile(file)) return '';
+    const existing = officePreviewById[file._id];
+    if (existing) return existing;
+
+    try {
+      setOfficePreviewErrorById((prev) => ({ ...prev, [file._id]: '' }));
+      setOfficePreviewLoadingById((prev) => ({ ...prev, [file._id]: true }));
+      const data = await api.getFilePreview(file._id);
+      const url = data?.url || '';
+      if (url) {
+        setOfficePreviewById((prev) => ({ ...prev, [file._id]: url }));
+      }
+      return url;
+    } catch (err) {
+      const msg = err?.message || 'Failed to generate preview';
+      setOfficePreviewErrorById((prev) => ({ ...prev, [file._id]: msg }));
+      return '';
+    } finally {
+      setOfficePreviewLoadingById((prev) => ({ ...prev, [file._id]: false }));
+    }
+  }, [officePreviewById]);
 
   const toggleStar = (fileId) => {
     setStarredIds((prev) => (
@@ -579,7 +888,87 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     ));
   };
 
-  const toggleSelectAllVisible = () => {
+  const selectFileWithEvent = (fileId, event) => {
+    const isShift = Boolean(event && event.shiftKey);
+    const isSelected = selectedIds.includes(fileId);
+    const isToggle = Boolean(event && (event.ctrlKey || event.metaKey));
+
+    // Shift+click adds a contiguous range based on current filtered order (Drive-like).
+    if (isShift && lastSelectedId && !isSelected) {
+      const ids = filteredFiles.map((f) => f._id);
+      const a = ids.indexOf(lastSelectedId);
+      const b = ids.indexOf(fileId);
+      if (a !== -1 && b !== -1) {
+        const [start, end] = a < b ? [a, b] : [b, a];
+        const range = ids.slice(start, end + 1);
+        setSelectedIds((prev) => Array.from(new Set([...prev, ...range])));
+        setLastSelectedId(fileId);
+        return;
+      }
+    }
+
+    if (isToggle) {
+      toggleFileSelect(fileId);
+      setLastSelectedId(fileId);
+      return;
+    }
+
+    // Plain click: select just this file (keep selected if it's already the only one).
+    setSelectedIds((prev) => {
+      if (prev.length === 1 && prev[0] === fileId) return prev;
+      return [fileId];
+    });
+    setLastSelectedId(fileId);
+  };
+
+  const openBulkAction = (mode) => {
+    if (!hasSelection) return;
+    setBulkAction({
+      open: true,
+      mode,
+      destinationFolder: folderFilter === 'all' ? '' : folderFilter,
+    });
+  };
+
+  const runBulkAction = async () => {
+    if (!bulkAction.open || !bulkAction.mode) return;
+    const destination = bulkAction.destinationFolder || '';
+    try {
+      setLoading(true);
+      if (bulkAction.mode === 'move') {
+        await executeFileMove(selectedIds, destination);
+      } else if (bulkAction.mode === 'copy') {
+        await executeFileCopy(selectedIds, destination);
+      }
+      setBulkAction({ open: false, mode: '', destinationFolder: '' });
+      await loadFiles();
+      await loadFolders();
+      await loadActivity();
+    } catch (err) {
+      setError(err.message || 'Bulk action failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copySelectedLinks = useCallback(async () => {
+    if (!selectedFiles.length) return;
+    const links = selectedFiles
+      .map((file) => resolveFileUrl(file))
+      .filter(Boolean)
+      .join('\n');
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(links);
+      } else {
+        window.prompt('Copy file links:', links);
+      }
+    } catch (err) {
+      window.prompt('Copy file links:', links);
+    }
+  }, [selectedFiles]);
+
+  const toggleSelectAllVisible = useCallback(() => {
     const visibleIds = filteredFiles.map((file) => file._id);
     const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
     if (allSelected) {
@@ -587,9 +976,9 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       return;
     }
     setSelectedIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
-  };
+  }, [filteredFiles, selectedIds]);
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = useCallback(async () => {
     if (!canManage || !hasSelection) return;
     if (!window.confirm(`Delete ${selectedIds.length} selected file(s)?`)) return;
     try {
@@ -604,7 +993,51 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     } finally {
       setLoading(false);
     }
-  };
+  }, [canManage, hasSelection, loadActivity, loadFiles, loadFolders, selectedIds]);
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      const tag = (e.target && e.target.tagName) ? String(e.target.tagName).toLowerCase() : '';
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+      // Let the preview modal own keyboard shortcuts while open.
+      if (previewFile) return;
+
+      if (e.key === 'Escape') {
+        if (hasSelection) {
+          e.preventDefault();
+          setSelectedIds([]);
+        }
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
+        e.preventDefault();
+        toggleSelectAllVisible();
+        return;
+      }
+
+      if ((e.key === 'Delete' || e.key === 'Backspace') && canManage && hasSelection) {
+        e.preventDefault();
+        handleBulkDelete();
+        return;
+      }
+
+      if (e.key === 'Enter' && selectedFiles.length === 1) {
+        e.preventDefault();
+        openFile(selectedFiles[0]);
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && hasSelection) {
+        e.preventDefault();
+        copySelectedLinks();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [canManage, copySelectedLinks, handleBulkDelete, hasSelection, openFile, previewFile, selectedFiles, toggleSelectAllVisible]);
 
   const copyFileLink = async (file) => {
     const url = resolveFileUrl(file);
@@ -616,23 +1049,6 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       }
     } catch (err) {
       window.prompt('Copy file link:', url);
-    }
-  };
-
-  const copySelectedLinks = async () => {
-    if (!selectedFiles.length) return;
-    const links = selectedFiles
-      .map((file) => resolveFileUrl(file))
-      .filter(Boolean)
-      .join('\n');
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(links);
-      } else {
-        window.prompt('Copy file links:', links);
-      }
-    } catch (err) {
-      window.prompt('Copy file links:', links);
     }
   };
 
@@ -689,20 +1105,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const openContextMenu = (event, file) => {
     event.preventDefault();
     event.stopPropagation();
-    const mobile = window.innerWidth < 640;
-    const menuWidth = 220;
-    const menuHeight = 320;
-    const maxX = window.innerWidth - menuWidth - 8;
-    const maxY = window.innerHeight - menuHeight - 8;
-    setContextMenu({
-      open: true,
-      x: mobile ? 8 : Math.max(8, Math.min(event.clientX, maxX)),
-      y: mobile ? 0 : Math.max(8, Math.min(event.clientY, maxY)),
-      mobile,
-      mode: selectedIds.includes(file._id) && selectedIds.length > 1 ? 'multi' : 'single',
-      file,
-      folderPath: '',
-    });
+    openFileMenuAt(event.clientX, event.clientY, file);
   };
 
   const openContextMenuFromButton = (event, file) => {
@@ -728,20 +1131,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const openFolderContextMenu = (event, folderPath) => {
     event.preventDefault();
     event.stopPropagation();
-    const mobile = window.innerWidth < 640;
-    const menuWidth = 220;
-    const menuHeight = 320;
-    const maxX = window.innerWidth - menuWidth - 8;
-    const maxY = window.innerHeight - menuHeight - 8;
-    setContextMenu({
-      open: true,
-      x: mobile ? 8 : Math.max(8, Math.min(event.clientX, maxX)),
-      y: mobile ? 0 : Math.max(8, Math.min(event.clientY, maxY)),
-      mobile,
-      mode: 'single',
-      file: null,
-      folderPath: folderPath || '__root__',
-    });
+    openFolderMenuAt(event.clientX, event.clientY, folderPath);
   };
 
   const onDragStartFile = (event, fileId) => {
@@ -866,7 +1256,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       return;
     }
     if (action === 'download') {
-      const url = resolveFileUrl(file);
+      const url = resolveFileUrl(file, { download: true });
       if (url) {
         const link = document.createElement('a');
         link.href = url;
@@ -939,37 +1329,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     }
   };
 
-  useEffect(() => {
-    const onKeyDown = async (event) => {
-      const target = event.target;
-      const isEditable = target && (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      );
-      if (isEditable) return;
-
-      if (event.key === 'Delete' && canManage && hasSelection) {
-        event.preventDefault();
-        await handleBulkDelete();
-        return;
-      }
-
-      if (event.key === 'Enter' && selectedFiles.length === 1) {
-        event.preventDefault();
-        openFile(selectedFiles[0]);
-        return;
-      }
-
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c' && hasSelection) {
-        event.preventDefault();
-        await copySelectedLinks();
-      }
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [canManage, hasSelection, selectedFiles]);
+  // (keyboard shortcuts handled in the earlier keydown effect)
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -979,15 +1339,6 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       await loadAuthUser();
     } catch (err) {
       setError(err.message || 'Login failed');
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await api.logout();
-    } finally {
-      setAuthUser(null);
-      setFiles([]);
     }
   };
 
@@ -1040,14 +1391,16 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
           <p className="text-text-secondary dark:text-gray-400">
             Logged in as <strong>{authUser.username}</strong> ({authUser.role}). This page requires <strong>{expectedRole}</strong>.
           </p>
-          <Button variant="outline" onClick={handleLogout}>Logout</Button>
+          <p className="text-xs text-text-muted dark:text-gray-500">
+            Use the correct login route (Admin vs User) in the sidebar/login page.
+          </p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${hasSelection ? 'pb-28' : ''}`}>
       <Card>
         <CardHeader>
           <CardTitle>{title}</CardTitle>
@@ -1130,9 +1483,18 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                     <path d="M3 4h14v2H3V4zm0 5h14v2H3V9zm0 5h14v2H3v-2z" />
                   </svg>
                 </button>
-                <Button variant="outline" size="sm" onClick={() => setShowOptionsModal(true)}>
-                  Options
-                </Button>
+                <button
+                  type="button"
+                  aria-label="View options"
+                  title="Options"
+                  onClick={() => setShowOptionsModal(true)}
+                  className="w-10 h-10 rounded-lg border border-stroke dark:border-gray-600 text-text-secondary dark:text-gray-300 hover:bg-surface-muted dark:hover:bg-gray-800 hover:text-text-primary dark:hover:text-gray-100 flex items-center justify-center transition-colors"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 6v0M16 12v0M10 18v0" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -1213,6 +1575,18 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
         </CardHeader>
         <CardContent
           onContextMenu={(e) => openFolderContextMenu(e, folderFilter === 'all' ? '__root__' : folderFilter)}
+          onTouchStart={(e) => {
+            const t = e.touches?.[0];
+            if (!t) return;
+            startLongPress(t, (x, y) => openFolderMenuAt(x, y, folderFilter === 'all' ? '__root__' : folderFilter));
+          }}
+          onTouchMove={(e) => {
+            const t = e.touches?.[0];
+            if (!t) return;
+            moveLongPress(t);
+          }}
+          onTouchEnd={clearLongPress}
+          onTouchCancel={clearLongPress}
           onDragOver={handleDriveDragOver}
           onDragLeave={handleDriveDragLeave}
           onDrop={handleDriveDrop}
@@ -1240,8 +1614,26 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                   {filteredFiles.map((file) => (
                     <tr
                       key={file._id}
-                      className="border-b border-stroke/60 dark:border-gray-700/60 align-top"
+                      className={`border-b border-stroke/60 dark:border-gray-700/60 align-top transition-colors ${
+                        selectedIds.includes(file._id) ? 'bg-brand-50/60 dark:bg-brand-900/20' : ''
+                      }`}
+                      onClick={(e) => {
+                        if (!canManage) return;
+                        selectFileWithEvent(file._id, e);
+                      }}
                       onContextMenu={(e) => openContextMenu(e, file)}
+                      onTouchStart={(e) => {
+                        const t = e.touches?.[0];
+                        if (!t) return;
+                        startLongPress(t, (x, y) => openFileMenuAt(x, y, file));
+                      }}
+                      onTouchMove={(e) => {
+                        const t = e.touches?.[0];
+                        if (!t) return;
+                        moveLongPress(t);
+                      }}
+                      onTouchEnd={clearLongPress}
+                      onTouchCancel={clearLongPress}
                       onDoubleClick={() => openFile(file)}
                       draggable
                       onDragStart={(e) => onDragStartFile(e, file._id)}
@@ -1251,13 +1643,18 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                           <input
                             type="checkbox"
                             checked={selectedIds.includes(file._id)}
-                            onChange={() => toggleFileSelect(file._id)}
+                            onChange={(e) => selectFileWithEvent(file._id, e)}
+                            onClick={(e) => e.stopPropagation()}
                           />
                         </td>
                       )}
                       <td className="py-2 pr-4">
                         <p className="font-medium text-text-primary dark:text-gray-100 flex items-center gap-2">
-                          {starredIds.includes(file._id) && <span className="text-yellow-500">★</span>}
+                          {starredIds.includes(file._id) && (
+                            <svg className="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                              <path d="M12 17.27l5.18 3.04-1.64-5.81L20 9.24l-5.9-.5L12 3.5 9.9 8.74 4 9.24l4.46 5.26-1.64 5.81L12 17.27z" />
+                            </svg>
+                          )}
                           <span>{file.originalName}</span>
                         </p>
                       </td>
@@ -1284,7 +1681,11 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                           className="w-8 h-8 rounded-md border border-stroke dark:border-gray-600 hover:bg-surface-muted dark:hover:bg-gray-800 flex items-center justify-center"
                           onClick={(e) => openContextMenuFromButton(e, file)}
                         >
-                          <span className="text-lg leading-none">⋮</span>
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <circle cx="12" cy="5" r="1.8" />
+                            <circle cx="12" cy="12" r="1.8" />
+                            <circle cx="12" cy="19" r="1.8" />
+                          </svg>
                         </button>
                       </td>
                     </tr>
@@ -1300,6 +1701,18 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                   className="rounded-xl border border-stroke dark:border-gray-700 p-3 bg-surface-card dark:bg-gray-900 fm-grid-item fm-card-animate"
                   style={{ animationDelay: `${Math.min(folderIndex * 22, 180)}ms` }}
                   onContextMenu={(e) => openFolderContextMenu(e, folder.path)}
+                  onTouchStart={(e) => {
+                    const t = e.touches?.[0];
+                    if (!t) return;
+                    startLongPress(t, (x, y) => openFolderMenuAt(x, y, folder.path));
+                  }}
+                  onTouchMove={(e) => {
+                    const t = e.touches?.[0];
+                    if (!t) return;
+                    moveLongPress(t);
+                  }}
+                  onTouchEnd={clearLongPress}
+                  onTouchCancel={clearLongPress}
                   onDoubleClick={() => setFolderFilter(folder.path)}
                   draggable
                   onDragStart={(e) => onDragStartFolder(e, folder.path)}
@@ -1317,7 +1730,11 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                       className="w-8 h-8 rounded-md border border-stroke dark:border-gray-600 hover:bg-surface-muted dark:hover:bg-gray-800 flex items-center justify-center"
                       onClick={(e) => openFolderContextMenu(e, folder.path)}
                     >
-                      <span className="text-lg leading-none">⋮</span>
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <circle cx="12" cy="5" r="1.8" />
+                        <circle cx="12" cy="12" r="1.8" />
+                        <circle cx="12" cy="19" r="1.8" />
+                      </svg>
                     </button>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
@@ -1326,45 +1743,72 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                 </div>
               ))}
               {filteredFiles.map((file, fileIndex) => (
-                <div
-                  key={file._id}
-                  className="rounded-xl border border-stroke dark:border-gray-700 p-3 bg-surface-card dark:bg-gray-900 fm-grid-item fm-card-animate"
-                  style={{ animationDelay: `${Math.min((folderCards.length + fileIndex) * 22, 260)}ms` }}
-                  onContextMenu={(e) => openContextMenu(e, file)}
+                  <div
+                    key={file._id}
+                    className={`rounded-xl border border-stroke dark:border-gray-700 p-3 bg-surface-card dark:bg-gray-900 fm-grid-item fm-card-animate transition-colors ${
+                      selectedIds.includes(file._id) ? 'ring-2 ring-brand/30' : ''
+                    }`}
+                    style={{ animationDelay: `${Math.min((folderCards.length + fileIndex) * 22, 260)}ms` }}
+                    onClick={(e) => {
+                      if (!canManage) return;
+                      selectFileWithEvent(file._id, e);
+                    }}
+                    onContextMenu={(e) => openContextMenu(e, file)}
+                    onTouchStart={(e) => {
+                      const t = e.touches?.[0];
+                      if (!t) return;
+                      startLongPress(t, (x, y) => openFileMenuAt(x, y, file));
+                    }}
+                  onTouchMove={(e) => {
+                    const t = e.touches?.[0];
+                    if (!t) return;
+                    moveLongPress(t);
+                  }}
+                  onTouchEnd={clearLongPress}
+                  onTouchCancel={clearLongPress}
                   onDoubleClick={() => openFile(file)}
                   draggable
                   onDragStart={(e) => onDragStartFile(e, file._id)}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-medium text-text-primary dark:text-gray-100 truncate flex items-center gap-1">
-                        {starredIds.includes(file._id) && <span className="text-yellow-500">★</span>}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium text-text-primary dark:text-gray-100 truncate flex items-center gap-1">
+                        {starredIds.includes(file._id) && (
+                          <svg className="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M12 17.27l5.18 3.04-1.64-5.81L20 9.24l-5.9-.5L12 3.5 9.9 8.74 4 9.24l4.46 5.26-1.64 5.81L12 17.27z" />
+                          </svg>
+                        )}
                         <span className="truncate">{file.originalName}</span>
                       </p>
                       <p className="text-xs text-text-secondary dark:text-gray-400 truncate">{file.folder || 'No folder'}</p>
                     </div>
-                    {canManage && (
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.includes(file._id)}
-                        onChange={() => toggleFileSelect(file._id)}
-                      />
-                    )}
+                      <div className="flex items-center gap-2">
+                        {canManage && (
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(file._id)}
+                            onChange={(e) => selectFileWithEvent(file._id, e)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
+                        <button
+                          type="button"
+                          aria-label="File options"
+                          className="w-8 h-8 rounded-md border border-stroke dark:border-gray-600 hover:bg-surface-muted dark:hover:bg-gray-800 flex items-center justify-center"
+                          onClick={(e) => openContextMenuFromButton(e, file)}
+                        >
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <circle cx="12" cy="5" r="1.8" />
+                          <circle cx="12" cy="12" r="1.8" />
+                          <circle cx="12" cy="19" r="1.8" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
                     <Badge variant="secondary" size="sm">{file.visibility}</Badge>
                     <Badge variant="secondary" size="sm">{formatSize(file.size)}</Badge>
                     <Badge variant="secondary" size="sm">{formatDate(file.updatedAt || file.createdAt)}</Badge>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      aria-label="File options"
-                      className="w-8 h-8 rounded-md border border-stroke dark:border-gray-600 hover:bg-surface-muted dark:hover:bg-gray-800 flex items-center justify-center"
-                      onClick={(e) => openContextMenuFromButton(e, file)}
-                    >
-                      <span className="text-lg leading-none">⋮</span>
-                    </button>
                   </div>
                 </div>
               ))}
@@ -1423,6 +1867,12 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                 { value: 'client', label: 'Client shared' },
               ]}
             />
+            <Select
+              label="Project"
+              value={editForm.projectId}
+              onChange={(e) => setEditForm((prev) => ({ ...prev, projectId: e.target.value }))}
+              options={projectOptions}
+            />
             <Input
               label="Folder"
               value={editForm.folder}
@@ -1447,6 +1897,138 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
               </Button>
             </ModalFooter>
           </form>
+        </Modal>
+      )}
+
+      {hasSelection && (
+        <div className="fixed bottom-4 left-0 right-0 z-[900] px-3">
+          <div className="max-w-5xl mx-auto">
+            <div className="rounded-2xl border border-stroke dark:border-gray-700 bg-surface-card/95 dark:bg-gray-900/95 backdrop-blur shadow-elevated px-3 py-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Badge variant="secondary" className="shrink-0">
+                    {selectedIds.length} selected
+                  </Badge>
+                  <p className="text-xs text-text-secondary dark:text-gray-400 truncate">
+                    Tip: Shift+click to select a range.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 justify-end">
+                  <button
+                    type="button"
+                    className={iconBtnBase}
+                    title="Select all visible (Ctrl/Cmd+A)"
+                    aria-label="Select all visible"
+                    onClick={toggleSelectAllVisible}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 7h14M5 12h14M5 17h14" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 7v0M7 12v0M7 17v0" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    className={iconBtnBase}
+                    title="Clear selection"
+                    aria-label="Clear selection"
+                    onClick={() => setSelectedIds([])}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    className={iconBtnBase}
+                    title="Copy selected links"
+                    aria-label="Copy selected links"
+                    onClick={copySelectedLinks}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 13a5 5 0 007.07 0l1.41-1.41a5 5 0 000-7.07 5 5 0 00-7.07 0L10 5" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14 11a5 5 0 01-7.07 0L5.52 9.59a5 5 0 010-7.07 5 5 0 017.07 0L14 4" />
+                    </svg>
+                  </button>
+                  {canManage && (
+                    <>
+                      <button
+                        type="button"
+                        className={iconBtnBase}
+                        title="Move selected"
+                        aria-label="Move selected"
+                        onClick={() => openBulkAction('move')}
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 9h14M10 5l-4 4 4 4M14 19l4-4-4-4" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        className={iconBtnBase}
+                        title="Copy selected"
+                        aria-label="Copy selected"
+                        onClick={() => openBulkAction('copy')}
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 8h11v11H8z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 16H4a1 1 0 01-1-1V4a1 1 0 011-1h11a1 1 0 011 1v1" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        className={`${iconBtnBase} text-feedback-error hover:bg-red-50 dark:hover:bg-red-900/20`}
+                        title="Delete selected"
+                        aria-label="Delete selected"
+                        onClick={handleBulkDelete}
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 6V4h8v2" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 6l-1 14H6L5 6" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bulkAction.open && canManage && (
+        <Modal
+          isOpen={bulkAction.open}
+          onClose={() => setBulkAction({ open: false, mode: '', destinationFolder: '' })}
+          title={bulkAction.mode === 'move' ? 'Move Selected' : 'Copy Selected'}
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-text-secondary dark:text-gray-400">
+              {bulkAction.mode === 'move' ? 'Move' : 'Copy'} {selectedIds.length} item(s) to:
+            </p>
+            <Select
+              label="Destination Folder"
+              value={bulkAction.destinationFolder}
+              onChange={(e) => setBulkAction((prev) => ({ ...prev, destinationFolder: e.target.value }))}
+              options={[
+                { value: '', label: 'Root' },
+                ...allFolders.map((folder) => ({ value: folder, label: folder })),
+              ]}
+            />
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                onClick={() => setBulkAction({ open: false, mode: '', destinationFolder: '' })}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button onClick={runBulkAction} loading={loading}>
+                {bulkAction.mode === 'move' ? 'Move' : 'Copy'}
+              </Button>
+            </ModalFooter>
+          </div>
         </Modal>
       )}
 
@@ -1675,73 +2257,366 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       {previewFile && (
         <Modal
           isOpen={Boolean(previewFile)}
-          onClose={() => { setPreviewFile(null); setPreviewText(''); }}
-          title={`Preview: ${previewFile.originalName}`}
-          size="xl"
+          onClose={closePreview}
+          title={null}
+          showCloseButton={false}
+          size="full"
+          className="h-[90vh]"
         >
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => openFile(previewFile)}>
-                Open in New Tab
+          <div className="-mx-6 -my-4 h-full flex flex-col">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900">
+              <Button variant="outline" size="sm" onClick={closePreview} aria-label="Close preview">
+                <span className="inline-flex items-center gap-2">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back
+                </span>
               </Button>
-            </div>
-            {(() => {
-              const url = resolveFileUrl(previewFile);
-              if (isImageFile(previewFile)) {
-                return <img src={url} alt={previewFile.originalName} className="max-h-[70vh] w-full object-contain rounded-lg border border-stroke dark:border-gray-700" />;
-              }
-              if (isPdfFile(previewFile)) {
-                return <iframe title={previewFile.originalName} src={url} className="w-full h-[70vh] rounded-lg border border-stroke dark:border-gray-700" />;
-              }
-              if (isVideoFile(previewFile)) {
-                return (
-                  <video
-                    controls
-                    preload="metadata"
-                    className="w-full max-h-[70vh] rounded-lg border border-stroke dark:border-gray-700 bg-black"
-                    src={url}
-                  />
-                );
-              }
-              if (isOfficeFile(previewFile)) {
-                const absoluteUrl = getAbsoluteUrl(url);
-                const isPublicHttps =
-                  absoluteUrl.startsWith('https://') &&
-                  !absoluteUrl.includes('localhost') &&
-                  !absoluteUrl.includes('127.0.0.1');
-                if (isPublicHttps) {
-                  const officeEmbed = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteUrl)}`;
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <p className="font-semibold text-sm text-text-primary dark:text-gray-100 truncate">
+                    {previewFile.originalName}
+                  </p>
+                  {previewFile.cloudProvider ? (
+                    <Badge variant="secondary" className="shrink-0">
+                      {previewFile.cloudProvider}
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="text-xs text-text-secondary dark:text-gray-400">
+                  {previewIndex >= 0 && previewQueue.length ? `${previewIndex + 1} / ${previewQueue.length}` : ''}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className={iconBtnBase}
+                  onClick={previewPrev}
+                  disabled={previewIndex <= 0}
+                  title="Previous (←)"
+                  aria-label="Previous file"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className={iconBtnBase}
+                  onClick={previewNext}
+                  disabled={previewIndex >= previewQueue.length - 1}
+                  title="Next (→)"
+                  aria-label="Next file"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const officePdf = isOfficeFile(previewFile) ? officePreviewById[previewFile._id] : '';
+                  const canZoom =
+                    isPdfFile(previewFile) ||
+                    isImageFile(previewFile) ||
+                    isTextPreview(previewFile) ||
+                    Boolean(officePdf);
+                  if (!canZoom) return null;
                   return (
-                    <iframe
-                      title={previewFile.originalName}
-                      src={officeEmbed}
-                      className="w-full h-[70vh] rounded-lg border border-stroke dark:border-gray-700"
-                    />
+                  <>
+                    <button
+                      type="button"
+                      className={iconBtnBase}
+                      title="Zoom out (-)"
+                      aria-label="Zoom out"
+                      onClick={() => setPreviewZoom((z) => clampZoom(z - 0.1))}
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      className={`${iconBtnBase} w-auto px-2.5 font-semibold text-xs`}
+                      title="Reset zoom (0)"
+                      aria-label="Reset zoom"
+                      onClick={() => setPreviewZoom(1)}
+                    >
+                      {Math.round(previewZoom * 100)}%
+                    </button>
+                    <button
+                      type="button"
+                      className={iconBtnBase}
+                      title="Zoom in (+)"
+                      aria-label="Zoom in"
+                      onClick={() => setPreviewZoom((z) => clampZoom(z + 0.1))}
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
+                      </svg>
+                    </button>
+                  </>
                   );
-                }
-                return (
-                  <div className="rounded-lg border border-stroke dark:border-gray-700 p-4 bg-surface-muted dark:bg-gray-800">
-                    <p className="text-sm text-text-primary dark:text-gray-100">
-                      Office preview needs a public HTTPS file URL.
-                    </p>
-                    <p className="text-xs text-text-secondary dark:text-gray-400 mt-1">
-                      In local development, use Open in New Tab or download the file.
+                })()}
+                <button
+                  type="button"
+                  className={`${iconBtnBase} ${previewShowDetails ? iconBtnActive : ''}`}
+                  title="Details (D)"
+                  aria-label="Toggle details panel"
+                  onClick={() => setPreviewShowDetails((v) => !v)}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h10M9 7h10M9 17h10M5 7h.01M5 12h.01M5 17h.01" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className={iconBtnBase}
+                  title="Open"
+                  aria-label="Open in new tab"
+                  onClick={() => openFile(previewFile)}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 3h7v7M10 14L21 3M21 14v7H3V3h7" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className={iconBtnBase}
+                  title="Download"
+                  aria-label="Download"
+                  onClick={() => {
+                    const url = resolveFileUrl(previewFile, { download: true });
+                    if (!url) return;
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                  }}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v10m0 0l4-4m-4 4l-4-4M4 17v3h16v-3" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 min-h-0 flex bg-surface-page dark:bg-gray-950">
+              <div className="flex-1 min-w-0 min-h-0 overflow-hidden relative z-0 isolate">
+                {(() => {
+                  const url = resolveFileUrl(previewFile);
+                  if (isImageFile(previewFile)) {
+                    return (
+                      <div className="h-full w-full overflow-auto p-6">
+                        <div
+                          className="inline-block"
+                          style={{ transform: `scale(${previewZoom})`, transformOrigin: 'top left' }}
+                        >
+                          <img
+                            src={url}
+                            alt={previewFile.originalName}
+                            className="max-w-none rounded-xl border border-stroke dark:border-gray-700 bg-white"
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (isPdfFile(previewFile)) {
+                    const inv = 1 / previewZoom;
+                    return (
+                      <div className="h-full w-full overflow-auto relative z-0">
+                        <div
+                          className="h-full"
+                          style={{
+                            transform: `scale(${previewZoom})`,
+                            transformOrigin: 'top left',
+                            width: `${inv * 100}%`,
+                            height: `${inv * 100}%`,
+                          }}
+                        >
+                          <iframe
+                            title={previewFile.originalName}
+                            src={url}
+                            className="w-full h-full border-0 bg-white"
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (isVideoFile(previewFile)) {
+                    return (
+                      <div className="h-full w-full flex items-center justify-center bg-black">
+                        <video
+                          controls
+                          preload="metadata"
+                          className="w-full h-full max-h-full object-contain"
+                          src={url}
+                        />
+                      </div>
+                    );
+                  }
+                  if (isOfficeFile(previewFile)) {
+                    const officeUrl = officePreviewById[previewFile._id] || '';
+                    const officeLoading = Boolean(officePreviewLoadingById[previewFile._id]);
+                    const officeError = officePreviewErrorById[previewFile._id] || '';
+                    if (officeUrl) {
+                      const inv = 1 / previewZoom;
+                      return (
+                        <div className="h-full w-full overflow-auto relative z-0">
+                          <div
+                            className="h-full"
+                            style={{
+                              transform: `scale(${previewZoom})`,
+                              transformOrigin: 'top left',
+                              width: `${inv * 100}%`,
+                              height: `${inv * 100}%`,
+                            }}
+                          >
+                            <iframe
+                              title={`${previewFile.originalName} (PDF preview)`}
+                              src={officeUrl}
+                              className="w-full h-full border-0 bg-white"
+                            />
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="h-full w-full flex items-center justify-center p-6">
+                        <div className="max-w-xl w-full rounded-2xl border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 p-5">
+                          <p className="text-sm font-semibold text-text-primary dark:text-gray-100">
+                            Office preview
+                          </p>
+                          <p className="text-sm text-text-secondary dark:text-gray-400 mt-1">
+                            Generate a PDF preview (CloudConvert) or use Open/Download.
+                          </p>
+                          {officeError ? (
+                            <p className="text-sm text-feedback-error mt-3">{officeError}</p>
+                          ) : null}
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              loading={officeLoading}
+                              onClick={async () => {
+                                await ensureOfficePreview(previewFile);
+                              }}
+                            >
+                              Generate Preview
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => openFile(previewFile)}>
+                              Open
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const dl = resolveFileUrl(previewFile, { download: true });
+                                if (!dl) return;
+                                window.open(dl, '_blank', 'noopener,noreferrer');
+                              }}
+                            >
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (isTextPreview(previewFile)) {
+                    return (
+                      <div className="h-full w-full overflow-auto p-6">
+                        {previewLoading ? (
+                          <p className="text-sm text-text-secondary dark:text-gray-400">Loading preview...</p>
+                        ) : (
+                          <div
+                            className="inline-block"
+                            style={{ transform: `scale(${previewZoom})`, transformOrigin: 'top left' }}
+                          >
+                            <pre className="text-xs whitespace-pre-wrap rounded-xl border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 p-4 text-text-primary dark:text-gray-100 max-w-none">
+                              {previewText || 'No content.'}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="h-full w-full flex items-center justify-center p-6">
+                      <div className="max-w-xl w-full rounded-2xl border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 p-5">
+                        <p className="text-sm font-semibold text-text-primary dark:text-gray-100">
+                          Preview not available
+                        </p>
+                        <p className="text-sm text-text-secondary dark:text-gray-400 mt-1">
+                          Use Open or Download.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {previewShowDetails && (
+                <aside className="hidden md:block w-80 shrink-0 border-l border-stroke dark:border-gray-800 bg-surface-card dark:bg-gray-900 overflow-y-auto relative z-10">
+                  <div className="p-4 space-y-3">
+                    <div>
+                      <p className="text-xs text-text-secondary dark:text-gray-400">Name</p>
+                      <p className="text-sm text-text-primary dark:text-gray-100 break-all leading-snug">
+                        {previewFile.originalName}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs text-text-secondary dark:text-gray-400">Type</p>
+                        <p className="text-sm text-text-primary dark:text-gray-100 break-all leading-snug">
+                          {previewFile.mimeType || '-'}
+                        </p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-text-secondary dark:text-gray-400">Size</p>
+                        <p className="text-sm text-text-primary dark:text-gray-100">{formatSize(previewFile.size)}</p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-text-secondary dark:text-gray-400">Visibility</p>
+                        <p className="text-sm text-text-primary dark:text-gray-100">{previewFile.visibility || '-'}</p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-text-secondary dark:text-gray-400">Folder</p>
+                        <p className="text-sm text-text-primary dark:text-gray-100">{previewFile.folder || 'root'}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-secondary dark:text-gray-400">Uploaded</p>
+                      <p className="text-sm text-text-primary dark:text-gray-100">{formatDate(previewFile.createdAt)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-secondary dark:text-gray-400">Owner</p>
+                      <p className="text-sm text-text-primary dark:text-gray-100 break-words">{previewFile.ownerId || '-'}</p>
+                    </div>
+                    {Array.isArray(previewFile.tags) && previewFile.tags.length > 0 && (
+                      <div>
+                        <p className="text-xs text-text-secondary dark:text-gray-400 mb-1">Tags</p>
+                        <div className="flex flex-wrap gap-1">
+                          {previewFile.tags.slice(0, 12).map((t) => (
+                            <Badge key={t} variant="secondary">{t}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {previewFile.notes ? (
+                      <div>
+                        <p className="text-xs text-text-secondary dark:text-gray-400">Notes</p>
+                        <p className="text-sm text-text-primary dark:text-gray-100 whitespace-pre-wrap break-words">{previewFile.notes}</p>
+                      </div>
+                    ) : null}
+                    <p className="text-[11px] text-text-muted dark:text-gray-500 pt-1">
+                      Shortcuts: ←/→, +/-, 0, D
                     </p>
                   </div>
-                );
-              }
-              if (isTextPreview(previewFile)) {
-                if (previewLoading) {
-                  return <p className="text-sm text-text-secondary dark:text-gray-400">Loading preview...</p>;
-                }
-                return (
-                  <pre className="text-xs whitespace-pre-wrap max-h-[70vh] overflow-auto rounded-lg border border-stroke dark:border-gray-700 bg-surface-muted dark:bg-gray-800 p-3 text-text-primary dark:text-gray-100">
-                    {previewText || 'No content.'}
-                  </pre>
-                );
-              }
-              return <p className="text-sm text-text-secondary dark:text-gray-400">Preview is not available for this file type.</p>;
-            })()}
+                </aside>
+              )}
+            </div>
           </div>
         </Modal>
       )}
@@ -1754,6 +2629,15 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
           size="md"
         >
           <div className="space-y-4">
+            <Select
+              label="Project"
+              value={projectFilter}
+              onChange={(e) => setProjectFilter(e.target.value)}
+              options={[
+                { value: 'all', label: 'All projects' },
+                ...projectOptions,
+              ]}
+            />
             <Select
               label="Visibility"
               value={visibility}
@@ -1823,11 +2707,17 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       {showUploadModal && canManage && (
         <Modal
           isOpen={showUploadModal}
-          onClose={() => setShowUploadModal(false)}
+          onClose={() => { setShowUploadModal(false); setUploadModalError(''); }}
           title="Upload File"
           size="md"
         >
-          <form onSubmit={async (e) => { await handleUpload(e); setShowUploadModal(false); }} className="space-y-3">
+          <form
+            onSubmit={async (e) => {
+              const ok = await handleUpload(e);
+              if (ok) setShowUploadModal(false);
+            }}
+            className="space-y-3"
+          >
             <div
               className={`rounded-xl border-2 border-dashed p-3 transition-colors ${
                 dragActive
@@ -1855,6 +2745,12 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                 { value: 'client', label: 'Client shared' },
               ]}
             />
+            <Select
+              label="Project"
+              value={uploadForm.projectId}
+              onChange={(e) => setUploadForm((prev) => ({ ...prev, projectId: e.target.value }))}
+              options={projectOptions}
+            />
             <Input
               label="Folder"
               placeholder="Site-A/Permits"
@@ -1867,6 +2763,9 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
               value={uploadForm.tags}
               onChange={(e) => setUploadForm((prev) => ({ ...prev, tags: e.target.value }))}
             />
+            {uploadModalError && (
+              <p className="text-sm text-feedback-error">{uploadModalError}</p>
+            )}
             <ModalFooter>
               <Button variant="secondary" onClick={() => setShowUploadModal(false)} disabled={uploading}>
                 Cancel

@@ -1,6 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-const ThemeContext = createContext(undefined);
+const DEFAULT_THEME_CONTEXT = {
+  theme: 'light',
+  toggleTheme: () => {},
+};
+
+// Use a non-undefined default so accidental missing providers don't crash the app.
+// We still warn in development to catch wiring issues early.
+const ThemeContext = createContext(DEFAULT_THEME_CONTEXT);
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState('light');
@@ -40,8 +47,10 @@ export function ThemeProvider({ children }) {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
+  const value = useMemo(() => ({ theme, toggleTheme }), [theme]);
+
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );
@@ -49,8 +58,12 @@ export function ThemeProvider({ children }) {
 
 export function useTheme() {
   const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within ThemeProvider');
+  if (!context) {
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.warn('useTheme used without ThemeProvider; falling back to light theme.');
+    }
+    return DEFAULT_THEME_CONTEXT;
   }
   return context;
 }

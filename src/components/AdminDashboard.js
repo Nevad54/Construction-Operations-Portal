@@ -7,6 +7,7 @@ import { DashboardLayout } from './dashboard';
 import { Button, Card, CardHeader, CardTitle, CardContent, Modal, ModalFooter, Input, Textarea, Select, EmptyState, useToast, ToastContainer } from './ui';
 import ProjectCard from './ProjectCard';
 import FileManager from './files/FileManager';
+import AccountSettings from './auth/AccountSettings';
 
 const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
 
@@ -40,6 +41,7 @@ const Admin = () => {
     const [isFallback, setIsFallback] = useState(false);
     const isProjectsPage = location.pathname === '/admin/dashboard' || location.pathname === '/admin/dashboard/projects';
     const isFilesPage = location.pathname === '/admin/dashboard/files';
+    const isSettingsPage = location.pathname === '/admin/dashboard/settings';
     const adminPageMeta = useMemo(() => {
         if (location.pathname === '/admin/dashboard/clients') {
             return { title: 'Contacts', description: 'Client and inquiry management will appear here.' };
@@ -65,6 +67,16 @@ const Admin = () => {
             easing: 'ease-in-out'
         });
     }, []);
+
+    // Refresh AOS on route/content changes (SPA navigation won't remount everything).
+    useEffect(() => {
+        // In some environments AOS may not be available during SSR/build.
+        try {
+            AOS.refreshHard();
+        } catch (_) {
+            try { AOS.refresh(); } catch (__) {}
+        }
+    }, [location.pathname, projects.length, loading]);
 
     // Fetch API status (to detect fallback mode)
     useEffect(() => {
@@ -384,7 +396,11 @@ const Admin = () => {
                     <FileManager expectedRole="admin" title="Admin File Management" />
                 )}
 
-                {!isProjectsPage && !isFilesPage && (
+                {isSettingsPage && (
+                    <AccountSettings mode="admin" />
+                )}
+
+                {!isProjectsPage && !isFilesPage && !isSettingsPage && (
                     <Card>
                         <CardHeader>
                             <CardTitle>{adminPageMeta.title}</CardTitle>

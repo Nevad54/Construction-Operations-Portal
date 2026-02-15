@@ -149,6 +149,16 @@
   animation: pulse 2s ease-in-out infinite;
 }
 
+/* Softer dot pulse used in dashboard notification badge. */
+@keyframes pulseSoft {
+  0%, 100% { opacity: 0.35; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+.animate-pulse-soft {
+  animation: pulseSoft 1.4s ease-in-out infinite;
+}
+
 @keyframes shimmer {
   0% {
     background-position: -1000px 0;

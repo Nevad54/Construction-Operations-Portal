@@ -1,8 +1,16 @@
 const crypto = require('crypto');
-const mongoose = require('mongoose');
 
 const SESSION_COOKIE = 'mti_auth';
 const SESSION_MAX_AGE = 60 * 60; // 1 hour
+
+// Lazy-load mongoose so the function stays fast/light in proxy mode.
+let mongoose = null;
+const getMongoose = () => {
+  if (mongoose) return mongoose;
+  // eslint-disable-next-line global-require
+  mongoose = require('mongoose');
+  return mongoose;
+};
 
 let cachedConnection = null;
 let ProjectModel = null;
@@ -107,7 +115,8 @@ const buildMongoUriCandidates = (rawUri) => {
 };
 
 const ensureDb = async () => {
-  if (cachedConnection && mongoose.connection.readyState === 1) {
+  const mg = getMongoose();
+  if (cachedConnection && mg.connection.readyState === 1) {
     dbConnected = true;
     dbLastError = '';
     return true;
@@ -124,16 +133,16 @@ const ensureDb = async () => {
   let lastError = null;
   for (const uri of uriCandidates) {
     try {
-      if (mongoose.connection.readyState !== 0) {
-        try { await mongoose.disconnect(); } catch (_) {}
+      if (mg.connection.readyState !== 0) {
+        try { await mg.disconnect(); } catch (_) {}
       }
-      cachedConnection = await mongoose.connect(uri, {
+      cachedConnection = await mg.connect(uri, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         serverSelectionTimeoutMS: 10000,
       });
       if (!ProjectModel) {
-        const schema = new mongoose.Schema(
+        const schema = new mg.Schema(
           {
             title: String,
             description: String,
@@ -146,7 +155,7 @@ const ensureDb = async () => {
           },
           { timestamps: true }
         );
-        ProjectModel = mongoose.models.Project || mongoose.model('Project', schema);
+        ProjectModel = mg.models.Project || mg.model('Project', schema);
       }
       dbConnected = true;
       dbLastError = '';

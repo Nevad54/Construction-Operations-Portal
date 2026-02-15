@@ -109,6 +109,81 @@ export const api = {
         return handleResponse(response);
     },
 
+    changePassword: async (currentPassword, newPassword) => {
+        const response = await fetch(`${API_PREFIX}/auth/change-password`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ currentPassword, newPassword }),
+        });
+        return handleResponse(response);
+    },
+
+    // Admin user management
+    adminListUsers: async () => {
+        const response = await fetch(`${API_PREFIX}/admin/users`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            },
+            credentials: 'include',
+        });
+        return handleResponse(response);
+    },
+
+    adminCreateUser: async ({ username, password, role }) => {
+        const response = await fetch(`${API_PREFIX}/admin/users`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ username, password, role }),
+        });
+        return handleResponse(response);
+    },
+
+    adminResetUserPassword: async (id, newPassword) => {
+        const response = await fetch(`${API_PREFIX}/admin/users/${encodeURIComponent(id)}/reset-password`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ newPassword }),
+        });
+        return handleResponse(response);
+    },
+
+    adminDeleteUser: async (id) => {
+        const response = await fetch(`${API_PREFIX}/admin/users/${encodeURIComponent(id)}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+            },
+            credentials: 'include',
+        });
+        return handleResponse(response);
+    },
+
+    adminUpdateUser: async (id, updates = {}) => {
+        const response = await fetch(`${API_PREFIX}/admin/users/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify(updates || {}),
+        });
+        return handleResponse(response);
+    },
+
     // Test function
     test: async () => {
         const isNetlifyHost = API_BASE_URL.includes('netlify.app') || API_BASE_URL.includes('netlify.com');
@@ -247,6 +322,18 @@ export const api = {
         const url = `${API_PREFIX}/files`;
         const response = await fetch(url, {
             method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            },
+            credentials: 'include',
+        });
+        return handleResponse(response);
+    },
+
+    getFilePreview: async (id) => {
+        const url = `${API_PREFIX}/files/${encodeURIComponent(id)}/preview`;
+        const response = await fetch(url, {
+            method: 'POST',
             headers: {
                 'Accept': 'application/json',
             },

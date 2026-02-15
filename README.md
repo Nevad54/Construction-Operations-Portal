@@ -1,5 +1,14 @@
-# Getting Started with Create React App
+# Mastertech App (React + Tailwind)
 
+## Project Docs
+
+- File Management System: `FILE_MANAGEMENT_GUIDE.md`
+- Dark Mode docs index: `DARK_MODE_DOCUMENTATION_INDEX.md`
+- Deploy (Netlify + Render): `DEPLOY_NETLIFY.md`
+
+---
+
+# Getting Started with Create React App
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts

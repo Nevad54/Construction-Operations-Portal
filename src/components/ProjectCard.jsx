@@ -42,25 +42,23 @@ const ProjectCard = memo(function ProjectCard({
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       className={`
-        rounded-xl border-2 overflow-hidden bg-surface-muted dark:bg-gray-800 transition-all duration-200
-        hover:shadow-md cursor-pointer group
+        rounded-xl border-2 overflow-hidden bg-surface-muted dark:bg-gray-800 transition-colors duration-150
+        hover:shadow-sm cursor-pointer group
         ${selected 
           ? 'border-brand ring-2 ring-brand/20 shadow-md' 
           : 'border-transparent hover:border-stroke dark:hover:border-gray-600'
         }
       `}
-      data-aos="fade-up"
-      data-aos-delay={200 + index * 50}
     >
       {project.image && (
         <div className="relative overflow-hidden">
           <img
             src={`${IMAGE_BASE_URL}${project.image}`}
             alt={project.title}
-            className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-44 object-cover transition-opacity duration-200 group-hover:opacity-95"
           />
           {selected && (
-            <div className="absolute top-2 right-2 w-6 h-6 bg-brand rounded-full flex items-center justify-center">
+            <div className="absolute top-2 right-2 w-7 h-7 bg-brand rounded-full flex items-center justify-center shadow-sm">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
