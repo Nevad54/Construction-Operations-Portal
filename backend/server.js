@@ -6,6 +6,13 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const session = require('express-session');
+let MongoStore = null;
+try {
+  // Optional dependency. In production, use it to avoid MemoryStore (session loss on restart).
+  MongoStore = require('connect-mongo');
+} catch (e) {
+  MongoStore = null;
+}
 const basicAuth = require('express-basic-auth');
 const nodemailer = require('nodemailer');
 const requestIp = require('request-ip');
@@ -245,15 +252,24 @@ const sessionCookieSecure =
   String(process.env.SESSION_COOKIE_SECURE || '').toLowerCase() !== 'false';
 
 app.use(session({
-    secret: process.env.SESSION_SECRET || '70f1e04a35336b79732f2f034b101d4d',
-    resave: true,
-    saveUninitialized: true,
-    cookie: { 
-        // Avoid breaking local development if NODE_ENV is mis-set; allow overriding in env.
-        secure: sessionCookieSecure,
-        sameSite: sessionCookieSecure ? 'none' : 'lax',
-        maxAge: 60 * 60 * 1000 // 1 hour
-    }
+  ...(MongoStore && process.env.MONGO_URI
+    ? {
+        store: MongoStore.create({
+          mongoUrl: process.env.MONGO_URI,
+          collectionName: 'sessions',
+          ttl: 60 * 60, // seconds
+        }),
+      }
+    : {}),
+  secret: process.env.SESSION_SECRET || '70f1e04a35336b79732f2f034b101d4d',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    // Avoid breaking local development if NODE_ENV is mis-set; allow overriding in env.
+    secure: sessionCookieSecure,
+    sameSite: sessionCookieSecure ? 'none' : 'lax',
+    maxAge: 60 * 60 * 1000, // 1 hour
+  },
 }));
 
 // Global OPTIONS handler for all routes

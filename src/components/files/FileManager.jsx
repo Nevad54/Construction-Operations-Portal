@@ -222,6 +222,9 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const [recentOpenIds, setRecentOpenIds] = useState([]);
   const [clipboard, setClipboard] = useState({ type: '', mode: '', ids: [], folderPath: '' });
   const [bulkAction, setBulkAction] = useState({ open: false, mode: '', destinationFolder: '' });
+  const [assignProject, setAssignProject] = useState({ open: false, file: null, projectId: '' });
+  const [assignProjectSaving, setAssignProjectSaving] = useState(false);
+  const [assignProjectError, setAssignProjectError] = useState('');
 
   const [uploading, setUploading] = useState(false);
   const [uploadModalError, setUploadModalError] = useState('');
@@ -246,6 +249,21 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   });
 
   const [projects, setProjects] = useState([]);
+  const projectTitleById = useMemo(() => {
+    const map = {};
+    (Array.isArray(projects) ? projects : []).forEach((p) => {
+      const id = String(p?._id || p?.id || '').trim();
+      if (!id) return;
+      map[id] = String(p?.title || 'Untitled Project');
+    });
+    return map;
+  }, [projects]);
+
+  const projectLabelForId = useCallback((projectId) => {
+    const id = String(projectId || '').trim();
+    if (!id) return 'No project';
+    return projectTitleById[id] || 'Unknown project';
+  }, [projectTitleById]);
 
   const canManage = canManageByRole(authUser?.role);
   const hasSelection = selectedIds.length > 0;
@@ -558,6 +576,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
         f.ownerId,
         f.visibility,
         f.projectId,
+        projectTitleById[String(f.projectId || '').trim()] || '',
         f.folder,
         f.notes,
         (f.tags || []).join(' ')
@@ -568,7 +587,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       return blob.includes(q);
     });
     return sortFiles(filtered, sortBy);
-  }, [files, query, visibility, projectFilter, folderFilter, sortBy, activeSection, recentOpenIds, starredIds]);
+  }, [files, query, visibility, projectFilter, folderFilter, sortBy, activeSection, recentOpenIds, starredIds, projectTitleById]);
 
   const scopedFiles = useMemo(() => {
     return files.filter((f) => {
@@ -1308,6 +1327,12 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       closeContextMenu();
       return;
     }
+    if (action === 'assign_project' && canManage) {
+      setAssignProject({ open: true, file, projectId: String(file.projectId || '').trim() });
+      setAssignProjectError('');
+      closeContextMenu();
+      return;
+    }
     if (action === 'delete' && canManage) {
       closeContextMenu();
       await handleDelete(file);
@@ -1807,6 +1832,16 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
                     <Badge variant="secondary" size="sm">{file.visibility}</Badge>
+                    {String(file.projectId || '').trim() ? (
+                      <Badge
+                        variant="secondary"
+                        size="sm"
+                        className="max-w-[220px] truncate"
+                        title={projectLabelForId(file.projectId)}
+                      >
+                        Project: {projectLabelForId(file.projectId)}
+                      </Badge>
+                    ) : null}
                     <Badge variant="secondary" size="sm">{formatSize(file.size)}</Badge>
                     <Badge variant="secondary" size="sm">{formatDate(file.updatedAt || file.createdAt)}</Badge>
                   </div>
@@ -2187,6 +2222,13 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                     onClick={() => runContextAction('edit')}
                   >
                     Edit Details
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-surface-muted dark:hover:bg-gray-800"
+                    onClick={() => runContextAction('assign_project')}
+                  >
+                    Assign Project
                   </button>
                   <button
                     type="button"
@@ -2585,6 +2627,12 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                         <p className="text-xs text-text-secondary dark:text-gray-400">Folder</p>
                         <p className="text-sm text-text-primary dark:text-gray-100">{previewFile.folder || 'root'}</p>
                       </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-text-secondary dark:text-gray-400">Project</p>
+                        <p className="text-sm text-text-primary dark:text-gray-100 break-words">
+                          {projectLabelForId(previewFile.projectId)}
+                        </p>
+                      </div>
                     </div>
                     <div>
                       <p className="text-xs text-text-secondary dark:text-gray-400">Uploaded</p>
@@ -2808,6 +2856,69 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
               </Button>
               <Button type="submit" loading={creatingFolder} disabled={!newFolderName.trim()}>
                 Create
+              </Button>
+            </ModalFooter>
+          </form>
+        </Modal>
+      )}
+
+      {assignProject.open && assignProject.file && canManage && (
+        <Modal
+          isOpen={assignProject.open}
+          onClose={() => { setAssignProject({ open: false, file: null, projectId: '' }); setAssignProjectError(''); }}
+          title="Assign Project"
+          size="sm"
+        >
+          <form
+            className="space-y-3"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const file = assignProject.file;
+              if (!file) return;
+              const nextProjectId = String(assignProject.projectId || '').trim();
+              if (file.visibility === 'client' && !nextProjectId) {
+                setAssignProjectError('Client shared files must be assigned to a project.');
+                return;
+              }
+              try {
+                setAssignProjectError('');
+                setAssignProjectSaving(true);
+                await api.updateFile(file._id, { projectId: nextProjectId });
+                await loadFiles();
+                await loadActivity();
+                setAssignProject({ open: false, file: null, projectId: '' });
+              } catch (err) {
+                setAssignProjectError(err.message || 'Failed to assign project');
+              } finally {
+                setAssignProjectSaving(false);
+              }
+            }}
+          >
+            <p className="text-sm text-text-secondary dark:text-gray-400">
+              File: <span className="text-text-primary dark:text-gray-100 font-medium">{assignProject.file.originalName}</span>
+            </p>
+            <Select
+              label="Project"
+              value={assignProject.projectId}
+              onChange={(e) => setAssignProject((prev) => ({ ...prev, projectId: e.target.value }))}
+              options={projectOptions}
+            />
+            {assignProject.file.visibility === 'client' && (
+              <p className="text-xs text-text-muted dark:text-gray-500">
+                Note: Client shared files require a project.
+              </p>
+            )}
+            {assignProjectError && <p className="text-sm text-feedback-error">{assignProjectError}</p>}
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                onClick={() => { setAssignProject({ open: false, file: null, projectId: '' }); setAssignProjectError(''); }}
+                disabled={assignProjectSaving}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" loading={assignProjectSaving}>
+                Save
               </Button>
             </ModalFooter>
           </form>
