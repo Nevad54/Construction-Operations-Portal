@@ -230,7 +230,12 @@ const proxyToBackend = async (event, backendBase) => {
   const text = await upstream.text();
   const outHeaders = {};
   upstream.headers.forEach((v, k) => {
-    if (k.toLowerCase() === 'set-cookie') return;
+    const key = k.toLowerCase();
+    if (key === 'set-cookie') return;
+    // We're returning an already-decoded string body; forwarding encoding/length can break browsers.
+    if (key === 'content-encoding') return;
+    if (key === 'content-length') return;
+    if (key === 'transfer-encoding') return;
     outHeaders[k] = v;
   });
   const cookies = typeof upstream.headers.getSetCookie === 'function' ? upstream.headers.getSetCookie() : [];
