@@ -38,6 +38,19 @@ const formatDate = (value) => {
   return date.toLocaleString();
 };
 
+const formatShortDateTime = (value) => {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+};
+
 const sortFiles = (list, sortBy) => {
   const items = [...list];
   if (sortBy === 'oldest') return items.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
@@ -67,6 +80,15 @@ const isVideoFile = (file) => {
 const isOfficeFile = (file) => {
   const ext = getFileExt(file?.originalName || file?.path || '');
   return ['xls', 'xlsx', 'doc', 'docx', 'ppt', 'pptx'].includes(ext);
+};
+
+const getFileKindLabel = (file) => {
+  if (isPdfFile(file)) return 'PDF';
+  if (isImageFile(file)) return 'Image';
+  if (isVideoFile(file)) return 'Video';
+  if (isOfficeFile(file)) return 'Document';
+  if (isTextPreview(file)) return 'Text';
+  return 'File';
 };
 
 const isPreviewable = (file) => {
@@ -1831,11 +1853,11 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
               </table>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
               {folderCards.map((folder, folderIndex) => (
                 <div
                   key={`folder-${folder.path}`}
-                  className="rounded-xl border border-stroke dark:border-gray-700 p-3 bg-surface-card dark:bg-gray-900 fm-grid-item fm-card-animate"
+                  className="group relative rounded-xl border border-stroke dark:border-gray-700 p-3 bg-surface-card dark:bg-gray-900 fm-grid-item fm-card-animate hover:bg-surface-muted/40 dark:hover:bg-gray-900/60 transition-colors"
                   style={{ animationDelay: `${Math.min(folderIndex * 22, 180)}ms` }}
                   onContextMenu={(e) => openFolderContextMenu(e, folder.path)}
                   onTouchStart={(e) => {
@@ -1856,15 +1878,29 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => onDropToFolder(e, folder.path)}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-medium text-text-primary dark:text-gray-100 truncate">Folder: {folder.name}</p>
-                      <p className="text-xs text-text-secondary dark:text-gray-400 truncate">{folder.path}</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-muted/60 dark:bg-gray-800/60 border border-stroke dark:border-gray-700">
+                        <svg className="h-5 w-5 text-text-secondary dark:text-gray-300" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path
+                            d="M3.5 7.5c0-1.1.9-2 2-2h4.3c.5 0 1 .2 1.3.6l.9 1.1c.3.4.8.6 1.3.6h5.2c1.1 0 2 .9 2 2v7.5c0 1.1-.9 2-2 2h-13c-1.1 0-2-.9-2-2V7.5z"
+                            stroke="currentColor"
+                            strokeWidth="1.6"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-text-primary dark:text-gray-100 truncate">{folder.name}</p>
+                        <p className="text-xs text-text-secondary dark:text-gray-400 truncate">
+                          {folder.fileCount} item{folder.fileCount === 1 ? '' : 's'}
+                        </p>
+                      </div>
                     </div>
                     <button
                       type="button"
                       aria-label="Folder options"
-                      className="w-8 h-8 rounded-md border border-stroke dark:border-gray-600 hover:bg-surface-muted dark:hover:bg-gray-800 flex items-center justify-center"
+                      className="h-9 w-9 rounded-full border border-stroke dark:border-gray-700 bg-surface-card/80 dark:bg-gray-900/80 hover:bg-surface-muted dark:hover:bg-gray-800 flex items-center justify-center transition-opacity opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                       onClick={(e) => openFolderContextMenu(e, folder.path)}
                     >
                       <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -1874,15 +1910,12 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                       </svg>
                     </button>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    <Badge variant="secondary" size="sm">{folder.fileCount} files</Badge>
-                  </div>
                 </div>
               ))}
               {filteredFiles.map((file, fileIndex) => (
                   <div
                     key={file._id}
-                    className={`rounded-xl border border-stroke dark:border-gray-700 p-3 bg-surface-card dark:bg-gray-900 fm-grid-item fm-card-animate transition-colors ${
+                    className={`group relative rounded-xl border border-stroke dark:border-gray-700 p-3 bg-surface-card dark:bg-gray-900 fm-grid-item fm-card-animate transition-colors hover:bg-surface-muted/40 dark:hover:bg-gray-900/60 ${
                       selectedIds.includes(file._id) ? 'ring-2 ring-brand/30' : ''
                     }`}
                     style={{ animationDelay: `${Math.min((folderCards.length + fileIndex) * 22, 260)}ms` }}
@@ -1907,33 +1940,57 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                   draggable
                   onDragStart={(e) => onDragStartFile(e, file._id)}
                 >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-medium text-text-primary dark:text-gray-100 truncate flex items-center gap-1">
-                        {starredIds.includes(file._id) && (
-                          <svg className="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M12 17.27l5.18 3.04-1.64-5.81L20 9.24l-5.9-.5L12 3.5 9.9 8.74 4 9.24l4.46 5.26-1.64 5.81L12 17.27z" />
-                          </svg>
-                        )}
-                        <span className="truncate">{file.originalName}</span>
-                      </p>
-                      <p className="text-xs text-text-secondary dark:text-gray-400 truncate">{file.folder || 'No folder'}</p>
+                  <div className="relative overflow-hidden rounded-lg border border-stroke/60 dark:border-gray-800 bg-surface-muted/40 dark:bg-gray-800/20">
+                    <div className="h-36 w-full">
+                      {isImageFile(file) ? (
+                        <img
+                          src={resolveFileUrl(file)}
+                          alt={file.originalName || 'File'}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          draggable={false}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <div className="h-full w-full flex flex-col items-center justify-center gap-2">
+                          <div className="h-10 w-10 rounded-xl bg-surface-card dark:bg-gray-900 border border-stroke dark:border-gray-700 flex items-center justify-center">
+                            <svg className="h-5 w-5 text-text-secondary dark:text-gray-300" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                              <path
+                                d="M7 3.5h7l3 3V20a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 20V5A1.5 1.5 0 0 1 7 3.5Z"
+                                stroke="currentColor"
+                                strokeWidth="1.6"
+                                strokeLinejoin="round"
+                              />
+                              <path d="M14 3.5V7h3.5" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                            </svg>
+                          </div>
+                          <div className="text-xs text-text-secondary dark:text-gray-300">
+                            <span className="font-semibold">{getFileExt(file.originalName || file.path || '').toUpperCase() || getFileKindLabel(file)}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                      <div className="flex items-center gap-2">
-                        {canManage && (
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.includes(file._id)}
-                            onChange={(e) => selectFileWithEvent(file._id, e)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        )}
-                        <button
-                          type="button"
-                          aria-label="File options"
-                          className="w-8 h-8 rounded-md border border-stroke dark:border-gray-600 hover:bg-surface-muted dark:hover:bg-gray-800 flex items-center justify-center"
-                          onClick={(e) => openContextMenuFromButton(e, file)}
-                        >
+
+                    {canManage && (
+                      <div className="absolute left-2 top-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(file._id)}
+                          aria-label="Select file"
+                          className="h-4 w-4 accent-emerald-600 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                          onChange={(e) => selectFileWithEvent(file._id, e)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    )}
+
+                    <div className="absolute right-2 top-2">
+                      <button
+                        type="button"
+                        aria-label="File options"
+                        className="h-9 w-9 rounded-full border border-stroke dark:border-gray-700 bg-surface-card/80 dark:bg-gray-900/80 hover:bg-surface-muted dark:hover:bg-gray-800 flex items-center justify-center transition-opacity opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                        onClick={(e) => openContextMenuFromButton(e, file)}
+                      >
                         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                           <circle cx="12" cy="5" r="1.8" />
                           <circle cx="12" cy="12" r="1.8" />
@@ -1942,20 +1999,44 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                       </button>
                     </div>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    <Badge variant="secondary" size="sm">{file.visibility}</Badge>
-                    {String(file.projectId || '').trim() ? (
-                      <Badge
-                        variant="secondary"
-                        size="sm"
-                        className="max-w-[220px] truncate"
-                        title={projectLabelForId(file.projectId)}
-                      >
-                        Project: {projectLabelForId(file.projectId)}
-                      </Badge>
-                    ) : null}
-                    <Badge variant="secondary" size="sm">{formatSize(file.size)}</Badge>
-                    <Badge variant="secondary" size="sm">{formatDate(file.updatedAt || file.createdAt)}</Badge>
+
+                  <div className="mt-2 min-w-0">
+                    <p className="font-semibold text-text-primary dark:text-gray-100 truncate flex items-center gap-1">
+                      {starredIds.includes(file._id) && (
+                        <svg className="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <path d="M12 17.27l5.18 3.04-1.64-5.81L20 9.24l-5.9-.5L12 3.5 9.9 8.74 4 9.24l4.46 5.26-1.64 5.81L12 17.27z" />
+                        </svg>
+                      )}
+                      <span className="truncate">{file.originalName}</span>
+                      {String(file.projectId || '').trim() ? (
+                        <span
+                          className="ml-1 inline-flex items-center text-text-muted dark:text-gray-400"
+                          title={`Project: ${projectLabelForId(file.projectId)}`}
+                        >
+                          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path
+                              d="M6.5 7.5c0-1.1.9-2 2-2h7c1.1 0 2 .9 2 2v2.2c0 .5-.2 1-.6 1.3l-5.7 5.7c-.8.8-2 .8-2.8 0l-2.3-2.3c-.8-.8-.8-2 0-2.8l5.7-5.7c.4-.4.8-.6 1.3-.6H17.5"
+                              stroke="currentColor"
+                              strokeWidth="1.6"
+                              strokeLinejoin="round"
+                            />
+                            <path d="M14.5 9.5h.01" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" />
+                          </svg>
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="text-xs text-text-secondary dark:text-gray-400 truncate">
+                      {file.folder ? file.folder : 'Root'}
+                    </p>
+                    <div className="mt-1 text-xs text-text-secondary dark:text-gray-400 flex flex-wrap gap-x-2 gap-y-1">
+                      <span className="capitalize">{file.visibility || 'private'}</span>
+                      <span className="opacity-70">|</span>
+                      <span>{formatSize(file.size)}</span>
+                      <span className="opacity-70">|</span>
+                      <span className="truncate" title={formatDate(file.updatedAt || file.createdAt)}>
+                        {formatShortDateTime(file.updatedAt || file.createdAt)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
