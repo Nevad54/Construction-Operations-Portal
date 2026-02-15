@@ -18,7 +18,15 @@ let fallbackProjects = [];
 let dbLastError = '';
 let dbConnected = false;
 
-const getBackendBaseUrl = () => (process.env.BACKEND_API_URL || '').trim().replace(/\/$/, '');
+const normalizeBackendBaseUrl = (value) => {
+  const raw = String(value || '').trim().replace(/\/$/, '');
+  if (!raw) return '';
+  // Netlify UI env vars sometimes get pasted without protocol.
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+  return `https://${raw}`;
+};
+
+const getBackendBaseUrl = () => normalizeBackendBaseUrl(process.env.BACKEND_API_URL);
 
 const toJson = (value) => JSON.stringify(value || {});
 
