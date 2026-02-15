@@ -2312,26 +2312,35 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                               })()}
                             </div>
 
-                            <div className="flex items-center justify-between gap-2 p-3 border-t border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900">
-                              <Button variant="outline" size="sm" onClick={() => openPreviewFor(inspectorFile, filteredFiles)}>
+                            <div className="grid grid-cols-3 gap-2 p-3 border-t border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full justify-center truncate"
+                                onClick={() => openPreviewFor(inspectorFile, filteredFiles)}
+                              >
                                 Full preview
                               </Button>
-                              <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" onClick={() => openFile(inspectorFile)}>
-                                  Open
-                                </Button>
-                                <Button
-                                  variant="primary"
-                                  size="sm"
-                                  onClick={() => {
-                                    const url = resolveFileUrl(inspectorFile, { download: true });
-                                    if (!url) return;
-                                    window.open(url, '_blank', 'noopener,noreferrer');
-                                  }}
-                                >
-                                  Download
-                                </Button>
-                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full justify-center truncate"
+                                onClick={() => openFile(inspectorFile)}
+                              >
+                                Open
+                              </Button>
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                className="w-full justify-center truncate"
+                                onClick={() => {
+                                  const url = resolveFileUrl(inspectorFile, { download: true });
+                                  if (!url) return;
+                                  window.open(url, '_blank', 'noopener,noreferrer');
+                                }}
+                              >
+                                Download
+                              </Button>
                             </div>
                           </div>
 
@@ -3053,7 +3062,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
         if (!slot) return null;
 
         return createPortal(
-          <div className="rounded-lg shadow-sm border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 overflow-hidden">
+          <div className="rounded-lg shadow-sm border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 overflow-hidden max-h-[calc(100vh-8rem)] flex flex-col">
             <div className="p-4 border-b border-stroke dark:border-gray-700 flex items-start justify-between gap-3">
               <div className="min-w-0 flex items-start gap-3">
                 <div
@@ -3085,7 +3094,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
               </button>
             </div>
 
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-4 overflow-auto">
               <div className="inline-flex rounded-full border border-stroke dark:border-gray-700 overflow-hidden">
                 <button
                   type="button"
@@ -3207,26 +3216,35 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                       })()}
                     </div>
 
-                    <div className="flex items-center justify-between gap-2 p-3 border-t border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900">
-                      <Button variant="outline" size="sm" onClick={() => openPreviewFor(inspectorFile, filteredFiles)}>
+                    <div className="grid grid-cols-3 gap-2 p-3 border-t border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-center truncate"
+                        onClick={() => openPreviewFor(inspectorFile, filteredFiles)}
+                      >
                         Full preview
                       </Button>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => openFile(inspectorFile)}>
-                          Open
-                        </Button>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => {
-                            const url = resolveFileUrl(inspectorFile, { download: true });
-                            if (!url) return;
-                            window.open(url, '_blank', 'noopener,noreferrer');
-                          }}
-                        >
-                          Download
-                        </Button>
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-center truncate"
+                        onClick={() => openFile(inspectorFile)}
+                      >
+                        Open
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="w-full justify-center truncate"
+                        onClick={() => {
+                          const url = resolveFileUrl(inspectorFile, { download: true });
+                          if (!url) return;
+                          window.open(url, '_blank', 'noopener,noreferrer');
+                        }}
+                      >
+                        Download
+                      </Button>
                     </div>
                   </div>
 
