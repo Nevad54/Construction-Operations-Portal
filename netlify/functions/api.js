@@ -220,6 +220,12 @@ const proxyToBackend = async (event, backendBase) => {
   delete headers.Host;
   delete headers['content-length'];
   delete headers['Content-Length'];
+  // Avoid backend CORS middleware rejecting requests due to a missing/misconfigured CORS_ORIGINS.
+  // This is server-to-server traffic; browser CORS doesn't apply here.
+  delete headers.origin;
+  delete headers.Origin;
+  delete headers.referer;
+  delete headers.Referer;
 
   const opts = { method, headers };
   if (!['GET', 'HEAD'].includes(method) && event.body != null) {
@@ -238,7 +244,14 @@ const proxyToBackend = async (event, backendBase) => {
     if (key === 'transfer-encoding') return;
     outHeaders[k] = v;
   });
-  const cookies = typeof upstream.headers.getSetCookie === 'function' ? upstream.headers.getSetCookie() : [];
+  // Node's built-in fetch may not expose getSetCookie(); fall back to a single set-cookie value.
+  let cookies = [];
+  if (typeof upstream.headers.getSetCookie === 'function') {
+    cookies = upstream.headers.getSetCookie() || [];
+  } else {
+    const single = upstream.headers.get('set-cookie');
+    if (single) cookies = [single];
+  }
   const response = { statusCode: upstream.status, headers: outHeaders, body: text };
   if (cookies.length) response.multiValueHeaders = { 'set-cookie': cookies };
   return response;
