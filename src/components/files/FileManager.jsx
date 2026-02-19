@@ -502,13 +502,22 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       try {
         setInspectorText({ id: inspectorFile._id, text: '', loading: true, error: '' });
         const url = resolveFileUrl(inspectorFile);
-        const response = await fetch(url);
+        const response = await fetch(url, { credentials: 'include' });
         const text = await response.text();
+        if (!response.ok) {
+          const msg =
+            response.status === 401
+              ? 'Unauthorized. Please sign in again.'
+              : response.status === 403
+                ? 'Forbidden. You do not have access to this file.'
+                : `Preview failed (HTTP ${response.status}).`;
+          throw new Error(msg);
+        }
         if (canceled) return;
         setInspectorText({ id: inspectorFile._id, text, loading: false, error: '' });
       } catch (err) {
         if (canceled) return;
-        setInspectorText({ id: inspectorFile._id, text: '', loading: false, error: 'Unable to preview text.' });
+        setInspectorText({ id: inspectorFile._id, text: '', loading: false, error: err?.message || 'Unable to preview text.' });
       }
     };
     run();
@@ -954,11 +963,14 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     try {
       setPreviewLoading(true);
       const url = resolveFileUrl(file);
-      const response = await fetch(url);
+      const response = await fetch(url, { credentials: 'include' });
       const text = await response.text();
+      if (!response.ok) {
+        throw new Error(response.status === 401 ? 'Unauthorized' : `HTTP ${response.status}`);
+      }
       setPreviewText(text);
     } catch (err) {
-      setPreviewText('Unable to preview text content.');
+      setPreviewText(err?.message === 'Unauthorized' ? 'Unauthorized. Please sign in again.' : 'Unable to preview text content.');
     } finally {
       setPreviewLoading(false);
     }
@@ -2312,35 +2324,44 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                               })()}
                             </div>
 
-                            <div className="grid grid-cols-3 gap-2 p-3 border-t border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full justify-center truncate"
+                            <div className="flex items-center justify-end gap-2 p-3 border-t border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900">
+                              <button
+                                type="button"
+                                title="Full preview"
+                                aria-label="Full preview"
+                                className="h-9 w-9 rounded-full border border-stroke dark:border-gray-700 hover:bg-surface-muted dark:hover:bg-gray-800 flex items-center justify-center"
                                 onClick={() => openPreviewFor(inspectorFile, filteredFiles)}
                               >
-                                Full preview
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full justify-center truncate"
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M8 21H5a2 2 0 01-2-2v-3M16 21h3a2 2 0 002-2v-3" />
+                                </svg>
+                              </button>
+                              <button
+                                type="button"
+                                title="Open"
+                                aria-label="Open in new tab"
+                                className="h-9 w-9 rounded-full border border-stroke dark:border-gray-700 hover:bg-surface-muted dark:hover:bg-gray-800 flex items-center justify-center"
                                 onClick={() => openFile(inspectorFile)}
                               >
-                                Open
-                              </Button>
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                className="w-full justify-center truncate"
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 3h7v7M10 14L21 3M21 14v7H3V3h7" />
+                                </svg>
+                              </button>
+                              <button
+                                type="button"
+                                title="Download"
+                                aria-label="Download"
+                                className="h-9 w-9 rounded-full border border-stroke dark:border-gray-700 bg-brand-600/10 text-brand-700 dark:text-brand-300 hover:bg-brand-600/15 flex items-center justify-center"
                                 onClick={() => {
                                   const url = resolveFileUrl(inspectorFile, { download: true });
                                   if (!url) return;
                                   window.open(url, '_blank', 'noopener,noreferrer');
                                 }}
                               >
-                                Download
-                              </Button>
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v10m0 0l4-4m-4 4l-4-4M4 17v3h16v-3" />
+                                </svg>
+                              </button>
                             </div>
                           </div>
 
@@ -3216,35 +3237,44 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                       })()}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 p-3 border-t border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-center truncate"
+                    <div className="flex items-center justify-end gap-2 p-3 border-t border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900">
+                      <button
+                        type="button"
+                        title="Full preview"
+                        aria-label="Full preview"
+                        className="h-9 w-9 rounded-full border border-stroke dark:border-gray-700 hover:bg-surface-muted dark:hover:bg-gray-800 flex items-center justify-center"
                         onClick={() => openPreviewFor(inspectorFile, filteredFiles)}
                       >
-                        Full preview
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-center truncate"
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M8 21H5a2 2 0 01-2-2v-3M16 21h3a2 2 0 002-2v-3" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        title="Open"
+                        aria-label="Open in new tab"
+                        className="h-9 w-9 rounded-full border border-stroke dark:border-gray-700 hover:bg-surface-muted dark:hover:bg-gray-800 flex items-center justify-center"
                         onClick={() => openFile(inspectorFile)}
                       >
-                        Open
-                      </Button>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        className="w-full justify-center truncate"
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14 3h7v7M10 14L21 3M21 14v7H3V3h7" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        title="Download"
+                        aria-label="Download"
+                        className="h-9 w-9 rounded-full border border-stroke dark:border-gray-700 bg-brand-600/10 text-brand-700 dark:text-brand-300 hover:bg-brand-600/15 flex items-center justify-center"
                         onClick={() => {
                           const url = resolveFileUrl(inspectorFile, { download: true });
                           if (!url) return;
                           window.open(url, '_blank', 'noopener,noreferrer');
                         }}
                       >
-                        Download
-                      </Button>
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v10m0 0l4-4m-4 4l-4-4M4 17v3h16v-3" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
 
