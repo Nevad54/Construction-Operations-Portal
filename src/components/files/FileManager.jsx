@@ -306,6 +306,18 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     tags: '',
     notes: '',
   });
+  const [accessModal, setAccessModal] = useState({ open: false, file: null });
+  const [savingAccess, setSavingAccess] = useState(false);
+  const [accessError, setAccessError] = useState('');
+  const [accessForm, setAccessForm] = useState({
+    sharedWithUsers: '',
+    sharedWithRoles: {
+      admin: false,
+      user: false,
+      client: false,
+    },
+    linkAccess: 'none',
+  });
 
   const [projects, setProjects] = useState([]);
   const projectTitleById = useMemo(() => {
@@ -914,6 +926,49 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       tags: Array.isArray(file.tags) ? file.tags.join(', ') : '',
       notes: file.notes || '',
     });
+  };
+
+  const openAccessModal = (file) => {
+    if (!file) return;
+    const roles = Array.isArray(file.sharedWithRoles) ? file.sharedWithRoles : [];
+    setAccessForm({
+      sharedWithUsers: Array.isArray(file.sharedWithUsers) ? file.sharedWithUsers.join(', ') : '',
+      sharedWithRoles: {
+        admin: roles.includes('admin'),
+        user: roles.includes('user'),
+        client: roles.includes('client'),
+      },
+      linkAccess: ['none', 'view', 'comment'].includes(String(file.linkAccess || 'none'))
+        ? String(file.linkAccess || 'none')
+        : 'none',
+    });
+    setAccessError('');
+    setAccessModal({ open: true, file });
+  };
+
+  const handleSaveAccess = async (e) => {
+    e.preventDefault();
+    const file = accessModal.file;
+    if (!file?._id) return;
+    try {
+      setSavingAccess(true);
+      setAccessError('');
+      const sharedWithRoles = Object.entries(accessForm.sharedWithRoles || {})
+        .filter(([, enabled]) => Boolean(enabled))
+        .map(([role]) => role);
+      await api.updateFile(file._id, {
+        sharedWithUsers: accessForm.sharedWithUsers,
+        sharedWithRoles,
+        linkAccess: accessForm.linkAccess,
+      });
+      setAccessModal({ open: false, file: null });
+      await loadFiles();
+      await loadActivity();
+    } catch (err) {
+      setAccessError(err.message || 'Failed to update access');
+    } finally {
+      setSavingAccess(false);
+    }
   };
 
   const handleSaveEdit = async (e) => {
@@ -2416,7 +2471,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                                 variant="outline"
                                 size="sm"
                                 disabled={!canManage}
-                                onClick={() => { if (canManage) openEditModal(inspectorFile); }}
+                                onClick={() => { if (canManage) openAccessModal(inspectorFile); }}
                               >
                                 Manage access
                               </Button>
@@ -2654,6 +2709,78 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
               </div>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {accessModal.open && accessModal.file && (
+        <Modal
+          isOpen={accessModal.open}
+          onClose={() => setAccessModal({ open: false, file: null })}
+          title="Manage Access"
+          size="md"
+        >
+          <form className="space-y-4" onSubmit={handleSaveAccess}>
+            <p className="text-sm text-text-secondary dark:text-gray-400">
+              Configure sharing for <span className="font-semibold text-text-primary dark:text-gray-100">{accessModal.file.originalName}</span>.
+            </p>
+
+            <Input
+              label="Shared Users (IDs or usernames, comma-separated)"
+              value={accessForm.sharedWithUsers}
+              onChange={(e) => setAccessForm((prev) => ({ ...prev, sharedWithUsers: e.target.value }))}
+              placeholder="user-123, employee"
+            />
+
+            <div>
+              <p className="text-sm font-medium text-text-primary dark:text-gray-100 mb-2">Shared Roles</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {['admin', 'user', 'client'].map((role) => (
+                  <label
+                    key={role}
+                    className="flex items-center gap-2 rounded-lg border border-stroke dark:border-gray-700 px-3 py-2 bg-surface-card dark:bg-gray-900"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={Boolean(accessForm.sharedWithRoles[role])}
+                      onChange={(e) => setAccessForm((prev) => ({
+                        ...prev,
+                        sharedWithRoles: { ...prev.sharedWithRoles, [role]: e.target.checked },
+                      }))}
+                    />
+                    <span className="text-sm capitalize text-text-primary dark:text-gray-100">{role}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <Select
+              label="Link Access"
+              value={accessForm.linkAccess}
+              onChange={(e) => setAccessForm((prev) => ({ ...prev, linkAccess: e.target.value }))}
+              options={[
+                { value: 'none', label: 'No link access' },
+                { value: 'view', label: 'Anyone with link can view' },
+                { value: 'comment', label: 'Anyone with link can comment' },
+              ]}
+            />
+
+            {accessError ? (
+              <p className="text-sm text-feedback-error">{accessError}</p>
+            ) : null}
+
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                onClick={() => setAccessModal({ open: false, file: null })}
+                disabled={savingAccess}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" loading={savingAccess}>
+                Save Access
+              </Button>
+            </ModalFooter>
+          </form>
         </Modal>
       )}
 
@@ -3329,7 +3456,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                         variant="outline"
                         size="sm"
                         disabled={!canManage}
-                        onClick={() => { if (canManage) openEditModal(inspectorFile); }}
+                        onClick={() => { if (canManage) openAccessModal(inspectorFile); }}
                       >
                         Manage access
                       </Button>

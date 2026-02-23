@@ -1365,21 +1365,48 @@ const normalizeProjectIds = (value) => {
     .filter(Boolean);
 };
 
-const filterFilesByRole = (files, role, userId, projectIds = []) => {
+const hasAclAccess = (file, auth = {}) => {
+  const role = String(auth.role || '').trim();
+  const userId = String(auth.id || '').trim();
+  const username = String(auth.username || '').trim();
+
+  if (!file) return false;
+  if (role === 'admin') return true;
+  if (String(file.ownerId || '') === userId) return true;
+
+  const sharedUsers = normalizeStringList(file.sharedWithUsers);
+  if (userId && sharedUsers.includes(userId)) return true;
+  if (username && sharedUsers.includes(username)) return true;
+
+  const sharedRoles = normalizeSharedRoles(file.sharedWithRoles);
+  if (role && sharedRoles.includes(role)) return true;
+
+  // Authenticated "anyone with link" access mode (foundation only).
+  const linkAccess = normalizeLinkAccess(file.linkAccess);
+  if (linkAccess === 'view' || linkAccess === 'comment') return true;
+
+  return false;
+};
+
+const filterFilesByRole = (files, role, userId, projectIds = [], authUser = null) => {
   const allowedProjects = new Set(normalizeProjectIds(projectIds));
+  const auth = authUser || { role, id: userId, projectIds };
 
   if (role === 'admin') return files;
 
   if (role === 'client') {
     // Clients: only client-visible files that belong to one of their assigned projects.
-    if (!allowedProjects.size) return [];
-    return files.filter((f) => f.visibility === 'client' && allowedProjects.has(String(f.projectId || '')));
+    return files.filter((f) => {
+      if (hasAclAccess(f, auth)) return true;
+      if (!allowedProjects.size) return false;
+      return f.visibility === 'client' && allowedProjects.has(String(f.projectId || ''));
+    });
   }
 
   // Employees (user): always see their own uploads.
   // For shared/team/client-visible files: require project match if a projectId exists.
   return files.filter((f) => {
-    if (String(f.ownerId || '') === String(userId || '')) return true;
+    if (hasAclAccess(f, auth)) return true;
     const vis = String(f.visibility || '');
     if (vis !== 'team' && vis !== 'client') return false;
 
@@ -1399,8 +1426,8 @@ app.get('/api/folders', requireAuth, async (req, res) => {
     const projectIds = req.authUser.projectIds || [];
 
     const files = useFallback || mongoose.connection.readyState !== 1
-      ? filterFilesByRole(fallbackFiles, role, userId, projectIds)
-      : filterFilesByRole(await FileItem.find().lean(), role, userId, projectIds);
+      ? filterFilesByRole(fallbackFiles, role, userId, projectIds, req.authUser)
+      : filterFilesByRole(await FileItem.find().lean(), role, userId, projectIds, req.authUser);
 
     const fileFolders = files.map((f) => (f.folder || '').trim()).filter(Boolean);
     const standaloneFolders = role === 'admin'
@@ -1663,11 +1690,11 @@ app.get('/api/files', requireAuth, async (req, res) => {
   const projectIds = req.authUser.projectIds || [];
   try {
     if (useFallback || mongoose.connection.readyState !== 1) {
-      return res.json(filterFilesByRole(fallbackFiles, role, userId, projectIds));
+      return res.json(filterFilesByRole(fallbackFiles, role, userId, projectIds, req.authUser));
     }
 
     const files = await FileItem.find().sort({ createdAt: -1 }).lean();
-    return res.json(filterFilesByRole(files, role, userId, projectIds));
+    return res.json(filterFilesByRole(files, role, userId, projectIds, req.authUser));
   } catch (err) {
     console.error('Error fetching files:', err);
     return res.status(500).json({ error: 'Failed to fetch files' });
@@ -1705,11 +1732,11 @@ app.get('/api/files/:id/view', requireAuth, async (req, res) => {
 
     const loadOne = async () => {
       if (useFallback || mongoose.connection.readyState !== 1) {
-        const scoped = filterFilesByRole(fallbackFiles, role, userId, req.authUser.projectIds || []);
+        const scoped = filterFilesByRole(fallbackFiles, role, userId, req.authUser.projectIds || [], req.authUser);
         return scoped.find((f) => String(f._id) === fileId) || null;
       }
       if (role === 'admin') return await FileItem.findById(fileId).lean();
-      const scoped = filterFilesByRole(await FileItem.find().lean(), role, userId, req.authUser.projectIds || []);
+      const scoped = filterFilesByRole(await FileItem.find().lean(), role, userId, req.authUser.projectIds || [], req.authUser);
       return scoped.find((f) => String(f._id) === fileId) || null;
     };
 
@@ -1758,11 +1785,11 @@ app.get('/api/files/:id/download', requireAuth, async (req, res) => {
 
     const loadOne = async () => {
       if (useFallback || mongoose.connection.readyState !== 1) {
-        const scoped = filterFilesByRole(fallbackFiles, role, userId, req.authUser.projectIds || []);
+        const scoped = filterFilesByRole(fallbackFiles, role, userId, req.authUser.projectIds || [], req.authUser);
         return scoped.find((f) => String(f._id) === fileId) || null;
       }
       if (role === 'admin') return await FileItem.findById(fileId).lean();
-      const scoped = filterFilesByRole(await FileItem.find().lean(), role, userId, req.authUser.projectIds || []);
+      const scoped = filterFilesByRole(await FileItem.find().lean(), role, userId, req.authUser.projectIds || [], req.authUser);
       return scoped.find((f) => String(f._id) === fileId) || null;
     };
 
@@ -1806,11 +1833,11 @@ app.post('/api/files/:id/preview', requireAuth, requireRoles(['admin', 'user']),
 
     const loadOne = async () => {
       if (useFallback || mongoose.connection.readyState !== 1) {
-        const scoped = filterFilesByRole(fallbackFiles, role, userId, req.authUser.projectIds || []);
+        const scoped = filterFilesByRole(fallbackFiles, role, userId, req.authUser.projectIds || [], req.authUser);
         return scoped.find((f) => String(f._id) === fileId) || null;
       }
       if (role === 'admin') return await FileItem.findById(fileId);
-      const scoped = filterFilesByRole(await FileItem.find().lean(), role, userId, req.authUser.projectIds || []);
+      const scoped = filterFilesByRole(await FileItem.find().lean(), role, userId, req.authUser.projectIds || [], req.authUser);
       const match = scoped.find((f) => String(f._id) === fileId) || null;
       if (!match) return null;
       return await FileItem.findById(fileId);
