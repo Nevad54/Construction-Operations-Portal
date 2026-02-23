@@ -66,6 +66,10 @@ header .container {
     background: var(--neutral-100);
     color: var(--text-primary);
 }
+.hamburger-btn.active {
+    background: var(--neutral-100);
+    color: var(--text-primary);
+}
 .hamburger-btn:active {
     background: var(--neutral-200);
 }
@@ -1814,6 +1818,74 @@ footer {
     .about,
     .contact {
         border-radius: var(--radius-md);
+    }
+}
+
+/* Final pass refinements */
+.hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+}
+
+.hero-actions .btn {
+    min-width: 170px;
+    text-align: center;
+}
+
+.about-lead {
+    font-size: var(--text-lg);
+    line-height: var(--leading-relaxed);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+    font-weight: var(--font-medium);
+}
+
+.services-intro {
+    max-width: 68ch;
+    margin: 0 auto var(--space-6);
+    color: var(--text-secondary);
+    font-size: var(--text-base);
+    line-height: var(--leading-relaxed);
+}
+
+.contact-intro {
+    max-width: 62ch;
+    margin: 0 0 var(--space-5);
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+}
+
+.footer-info {
+    border-top: 1px solid var(--border-color);
+}
+
+.footer-item .certification {
+    display: inline-block;
+    vertical-align: middle;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--white);
+}
+
+@media (max-width: 768px) {
+    .hero-actions {
+        gap: var(--space-2);
+    }
+
+    .hero-actions .btn {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .about-lead {
+        font-size: var(--text-base);
+    }
+
+    .services-intro,
+    .contact-intro {
+        margin-bottom: var(--space-4);
     }
 }
 

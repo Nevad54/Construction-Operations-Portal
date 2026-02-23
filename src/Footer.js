@@ -2,21 +2,9 @@ import React from 'react';
 import './styles.css';
 
 const Footer = () => {
-  const placeholderStyle = {
-    backgroundColor: '#eee',
-    width: '100%',
-    height: '200px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#999',
-    fontSize: '14px'
-  };
-
   return (
     <>
-      {/* Footer Info Section */}
-      <section className="footer-info" role="contentinfo">
+      <section className="footer-info" aria-label="Company contact details">
         <div className="container">
           <div className="footer-item">
             <h2>Send Us a Message</h2>
@@ -41,26 +29,25 @@ const Footer = () => {
           </div>
           <div className="footer-item">
             <h2>Certifications</h2>
-            <div 
-              className="certification" 
-              style={placeholderStyle}
-            >
-              No Image Available
-            </div>
-            <div 
-              className="certification" 
-              style={placeholderStyle}
-            >
-              No Image Available
-            </div>
+            <img
+              src="/Uploads/certification1.jpg"
+              alt="ISO 9001 Certification"
+              className="certification"
+              loading="lazy"
+            />
+            <img
+              src="/Uploads/certification2.jpg"
+              alt="Safety Compliance Certification"
+              className="certification"
+              loading="lazy"
+            />
           </div>
         </div>
       </section>
 
-      {/* Footer */}
       <footer role="contentinfo">
         <div className="container_footer">
-          <p>© 2025 MASTERTECH INTERGROUPPE INC. All Rights Reserved.</p>
+          <p>&copy; 2025 MASTERTECH INTERGROUPPE INC. All Rights Reserved.</p>
         </div>
       </footer>
     </>

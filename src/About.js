@@ -9,12 +9,16 @@ const About = memo(() => {
 
   return (
     <PageLayout>
-      <section className="about" role="main">
+      <section className="about">
         <div className="container">
           <h1>About Us</h1>
           <div className="about-content">
             <div className="about-text fade-in">
               <h2>Company Overview</h2>
+              <p className="about-lead">
+                Built for long-term partnerships, Mastertech combines construction expertise and industrial support
+                to help clients deliver critical projects with confidence.
+              </p>
               <p>Mastertech Intergrouppe Inc. was duly incorporated and registered with the Securities and Exchange Commission (SEC) on February 13, 2014, under SEC Certificate No. CS201402904.</p>
               <p>The Company is primarily engaged in General Construction Services, including but not limited to:</p>
               <ul>

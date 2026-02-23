@@ -7,25 +7,27 @@ const Home = memo(() => {
   const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
 
   return (
-    <PageLayout>
+      <PageLayout>
         <section className="hero" role="banner">
           <div className="hero-content">
             <h1>
-              Welcome to MASTERTECH INTERGROUPPE INC.
+              Reliable Construction and Industrial Solutions, Delivered Safely.
             </h1>
             <p className="hero-subtitle">
-              Your Trusted Partner in Construction and Industrial Solutions
+              We help manufacturing and commercial teams execute projects faster with disciplined planning,
+              technical depth, and dependable field delivery.
             </p>
-            <Link
-              to="/contact"
-              className="btn"
-              aria-label="Contact us"
-            >
-              Get in Touch
-            </Link>
+            <div className="hero-actions">
+              <Link to="/contact" className="btn" aria-label="Contact us">
+                Request a Quote
+              </Link>
+              <Link to="/projects" className="btn btn-secondary" aria-label="View projects">
+                View Projects
+              </Link>
+            </div>
           </div>
         </section>
-        <section className="project-categories" role="main">
+        <section className="project-categories">
           <div className="container">
           <h2>Our Expertise</h2>
           <div className="categories-grid">

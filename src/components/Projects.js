@@ -4,9 +4,7 @@ import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faSort } from '@fortawesome/free-solid-svg-icons';
-import Header from '../Header';
-import Sidebar from '../Sidebar';
-import Footer from '../Footer';
+import PageLayout from './PageLayout';
 import { useProjects } from '../context/ProjectContext';
 
 const Projects = () => {
@@ -15,9 +13,6 @@ const Projects = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('desc');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [isSidebarActive, setIsSidebarActive] = useState(false);
-  const [isNavLinksActive, setIsNavLinksActive] = useState(false);
-  const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
     // Initialize AOS
@@ -27,17 +22,6 @@ const Projects = () => {
       offset: 100,
       easing: 'ease-in-out'
     });
-  }, []);
-
-  const handleScroll = () => {
-    setShowBackToTop(window.scrollY > 200);
-  };
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
   }, []);
 
   const filteredProjects = projects
@@ -73,20 +57,8 @@ const Projects = () => {
   }
 
   return (
-    <div className="animate-fade-in">
-      <Sidebar
-        isSidebarActive={isSidebarActive}
-        setIsSidebarActive={setIsSidebarActive}
-        setIsNavLinksActive={setIsNavLinksActive}
-        activePage="projects"
-      />
-      <Header
-        isSidebarActive={isSidebarActive}
-        setIsSidebarActive={setIsSidebarActive}
-        isNavLinksActive={isNavLinksActive}
-        setIsNavLinksActive={setIsNavLinksActive}
-        activePage="projects"
-      />
+    <PageLayout>
+      <div className="animate-fade-in">
       <div className="projects-container">
         <h1 data-aos="fade-up">Our Projects</h1>
         <div className="controls-container" data-aos="fade-up" data-aos-delay="100">
@@ -199,18 +171,8 @@ const Projects = () => {
           </div>
         </div>
       </div>
-      <Footer />
-      <button
-        id="backToTop"
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        aria-label="Back to top"
-        style={{ display: showBackToTop ? 'block' : 'none' }}
-        className="hover-lift"
-        data-aos="fade-up"
-      >
-        {'\u2191'}
-      </button>
-    </div>
+      </div>
+    </PageLayout>
   );
 };
 

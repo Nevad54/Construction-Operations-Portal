@@ -51,7 +51,6 @@ const Contact = () => {
 
 
   const handleRecaptchaChange = (token) => {
-    console.log('reCAPTCHA token received');
     if (!token) {
       setErrors(prev => ({ ...prev, captcha: 'reCAPTCHA verification failed. Please try again.' }));
       setIsRecaptchaVerified(false);
@@ -64,7 +63,6 @@ const Contact = () => {
   };
 
   const handleRecaptchaExpired = () => {
-    console.log('reCAPTCHA expired');
     setRecaptchaToken('');
     setIsRecaptchaVerified(false);
     setErrors(prev => ({ ...prev, captcha: 'reCAPTCHA verification expired. Please verify again.' }));
@@ -236,9 +234,12 @@ const Contact = () => {
 
   return (
     <PageLayout>
-      <section className="contact" role="main">
+      <section className="contact">
         <div className="container">
           <h1 data-aos="fade-up">Contact Us</h1>
+          <p className="contact-intro" data-aos="fade-up" data-aos-delay="50">
+            Tell us what you need. Our team will review and respond with next steps.
+          </p>
           <div className="contact-content">
             <div className="contact-form" data-aos="fade-right" data-aos-delay="100">
               <h2>Send Us a Message</h2>
