@@ -4,10 +4,11 @@ import { useProjects } from '../context/ProjectContext';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { DashboardLayout } from './dashboard';
-import { Button, Card, CardHeader, CardTitle, CardContent, Modal, ModalFooter, Input, Textarea, Select, EmptyState, useToast, ToastContainer } from './ui';
+import { Button, Card, CardHeader, CardTitle, CardContent, Modal, ModalFooter, Input, Textarea, Select, EmptyState, Badge, useToast, ToastContainer } from './ui';
 import ProjectCard from './ProjectCard';
 import FileManager from './files/FileManager';
 import AccountSettings from './auth/AccountSettings';
+import { api } from '../services/api';
 
 const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
 
@@ -41,13 +42,15 @@ const Admin = () => {
     const [isFallback, setIsFallback] = useState(false);
     const isProjectsPage = location.pathname === '/admin/dashboard' || location.pathname === '/admin/dashboard/projects';
     const isFilesPage = location.pathname === '/admin/dashboard/files';
+    const isClientsPage = location.pathname === '/admin/dashboard/clients';
+    const isReportsPage = location.pathname === '/admin/dashboard/reports';
     const isSettingsPage = location.pathname === '/admin/dashboard/settings';
     const adminPageMeta = useMemo(() => {
         if (location.pathname === '/admin/dashboard/clients') {
-            return { title: 'Contacts', description: 'Client and inquiry management will appear here.' };
+            return { title: 'User Management', description: 'Manage admin, employee, and client accounts.' };
         }
         if (location.pathname === '/admin/dashboard/reports') {
-            return { title: 'Analytics', description: 'Dashboards and performance reports will appear here.' };
+            return { title: 'Analytics', description: 'Operational metrics and recent activity.' };
         }
         if (location.pathname === '/admin/dashboard/files') {
             return { title: 'File Management', description: 'Centralized files for admin, users, and clients.' };
@@ -57,6 +60,26 @@ const Admin = () => {
         }
         return { title: 'Admin', description: 'This admin section is under construction.' };
     }, [location.pathname]);
+
+    const [adminUsers, setAdminUsers] = useState([]);
+    const [usersLoading, setUsersLoading] = useState(false);
+    const [usersError, setUsersError] = useState('');
+    const [userRoleFilter, setUserRoleFilter] = useState('all');
+    const [userModal, setUserModal] = useState({ open: false, mode: 'create', user: null });
+    const [userSaving, setUserSaving] = useState(false);
+    const [userFormError, setUserFormError] = useState('');
+    const [userForm, setUserForm] = useState({
+        username: '',
+        password: '',
+        role: 'user',
+        projectIds: '',
+    });
+
+    const [reportsLoading, setReportsLoading] = useState(false);
+    const [reportsError, setReportsError] = useState('');
+    const [reportUsers, setReportUsers] = useState([]);
+    const [reportFiles, setReportFiles] = useState([]);
+    const [reportActivity, setReportActivity] = useState([]);
 
     // Initialize AOS
     useEffect(() => {
@@ -388,6 +411,180 @@ const Admin = () => {
         [filteredProjects]
     );
 
+    const parseProjectIds = useCallback((raw) => {
+        return String(raw || '')
+            .split(/[,\n]/)
+            .map((v) => v.trim())
+            .filter(Boolean);
+    }, []);
+
+    const loadAdminUsers = useCallback(async () => {
+        try {
+            setUsersLoading(true);
+            setUsersError('');
+            const list = await api.adminListUsers();
+            setAdminUsers(Array.isArray(list) ? list : []);
+        } catch (err) {
+            setUsersError(err.message || 'Failed to load users');
+        } finally {
+            setUsersLoading(false);
+        }
+    }, []);
+
+    const loadReports = useCallback(async () => {
+        try {
+            setReportsLoading(true);
+            setReportsError('');
+            const [users, files, activity] = await Promise.all([
+                api.adminListUsers(),
+                api.getFiles(),
+                api.getActivityLogs({ limit: 40 }),
+            ]);
+            setReportUsers(Array.isArray(users) ? users : []);
+            setReportFiles(Array.isArray(files) ? files : []);
+            setReportActivity(Array.isArray(activity?.logs) ? activity.logs : []);
+        } catch (err) {
+            setReportsError(err.message || 'Failed to load reports');
+        } finally {
+            setReportsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (isClientsPage || isReportsPage) {
+            loadAdminUsers();
+        }
+    }, [isClientsPage, isReportsPage, loadAdminUsers]);
+
+    useEffect(() => {
+        if (isReportsPage) {
+            loadReports();
+        }
+    }, [isReportsPage, loadReports]);
+
+    const openUserModal = useCallback((mode, user = null) => {
+        setUserFormError('');
+        setUserModal({ open: true, mode, user });
+        if (mode === 'create') {
+            setUserForm({
+                username: '',
+                password: '',
+                role: 'user',
+                projectIds: '',
+            });
+            return;
+        }
+        if (mode === 'edit' && user) {
+            setUserForm({
+                username: user.username || '',
+                password: '',
+                role: user.role || 'user',
+                projectIds: Array.isArray(user.projectIds) ? user.projectIds.join(', ') : '',
+            });
+            return;
+        }
+        setUserForm({
+            username: user?.username || '',
+            password: '',
+            role: user?.role || 'user',
+            projectIds: '',
+        });
+    }, []);
+
+    const closeUserModal = useCallback(() => {
+        if (userSaving) return;
+        setUserModal({ open: false, mode: 'create', user: null });
+        setUserFormError('');
+    }, [userSaving]);
+
+    const handleUserSave = useCallback(async (e) => {
+        e.preventDefault();
+        const mode = userModal.mode;
+        const targetUser = userModal.user;
+        const username = String(userForm.username || '').trim();
+        const role = String(userForm.role || 'user').trim();
+        const password = String(userForm.password || '');
+        const projectIds = parseProjectIds(userForm.projectIds);
+
+        if (mode === 'create') {
+            if (!username || !password) {
+                setUserFormError('Username and password are required.');
+                return;
+            }
+        } else if (mode === 'reset') {
+            if (!password || password.length < 4) {
+                setUserFormError('Please enter a new password (minimum 4 characters).');
+                return;
+            }
+        } else if (!username) {
+            setUserFormError('Username is required.');
+            return;
+        }
+
+        try {
+            setUserSaving(true);
+            setUserFormError('');
+            if (mode === 'create') {
+                await api.adminCreateUser({ username, password, role });
+                success('User created');
+            } else if (mode === 'edit' && targetUser?.id) {
+                await api.adminUpdateUser(targetUser.id, { username, role, projectIds });
+                success('User updated');
+            } else if (mode === 'reset' && targetUser?.id) {
+                await api.adminResetUserPassword(targetUser.id, password);
+                success('Password reset');
+            }
+            await loadAdminUsers();
+            if (isReportsPage) await loadReports();
+            closeUserModal();
+        } catch (err) {
+            setUserFormError(err.message || 'Failed to save user');
+        } finally {
+            setUserSaving(false);
+        }
+    }, [closeUserModal, isReportsPage, loadAdminUsers, loadReports, parseProjectIds, success, userForm, userModal]);
+
+    const handleDeleteUser = useCallback(async (user) => {
+        if (!user?.id) return;
+        const confirmed = window.confirm(`Delete user "${user.username}"?`);
+        if (!confirmed) return;
+        try {
+            await api.adminDeleteUser(user.id);
+            success('User deleted');
+            await loadAdminUsers();
+            if (isReportsPage) await loadReports();
+        } catch (err) {
+            error(err.message || 'Failed to delete user');
+        }
+    }, [error, isReportsPage, loadAdminUsers, loadReports, success]);
+
+    const visibleUsers = useMemo(() => {
+        if (userRoleFilter === 'all') return adminUsers;
+        return adminUsers.filter((u) => String(u.role || '') === userRoleFilter);
+    }, [adminUsers, userRoleFilter]);
+
+    const reportsOverview = useMemo(() => {
+        const byRole = reportUsers.reduce((acc, user) => {
+            const role = String(user.role || 'unknown');
+            acc[role] = (acc[role] || 0) + 1;
+            return acc;
+        }, {});
+        const byVisibility = reportFiles.reduce((acc, file) => {
+            const visibility = String(file.visibility || 'private');
+            acc[visibility] = (acc[visibility] || 0) + 1;
+            return acc;
+        }, {});
+        return {
+            usersTotal: reportUsers.length,
+            usersByRole: byRole,
+            filesTotal: reportFiles.length,
+            filesByVisibility: byVisibility,
+            projectsTotal: projects.length,
+            ongoingTotal: projects.filter((p) => p.status === 'ongoing').length,
+            completedTotal: projects.filter((p) => p.status === 'completed').length,
+        };
+    }, [projects, reportFiles, reportUsers]);
+
 
     return (
         <DashboardLayout searchQuery={searchQuery} onSearchChange={setSearchQuery}>
@@ -400,7 +597,198 @@ const Admin = () => {
                     <AccountSettings mode="admin" />
                 )}
 
-                {!isProjectsPage && !isFilesPage && !isSettingsPage && (
+                {isClientsPage && (
+                    <>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" data-aos="fade-up">
+                            <div>
+                                <h1 className="text-2xl font-bold text-text-primary dark:text-gray-100">User Management</h1>
+                                <p className="text-sm text-text-secondary dark:text-gray-400">
+                                    Manage admin, employee, and client access.
+                                </p>
+                            </div>
+                            <Button
+                                onClick={() => openUserModal('create')}
+                                icon={(
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                )}
+                            >
+                                Add User
+                            </Button>
+                        </div>
+
+                        <Card data-aos="fade-up" data-aos-delay="80">
+                            <CardHeader className="flex-col items-start sm:flex-row sm:items-center sm:justify-between">
+                                <CardTitle>Accounts</CardTitle>
+                                <div className="flex items-center gap-2">
+                                    <Select
+                                        value={userRoleFilter}
+                                        onChange={(e) => setUserRoleFilter(e.target.value)}
+                                        options={[
+                                            { value: 'all', label: 'All roles' },
+                                            { value: 'admin', label: 'Admins' },
+                                            { value: 'user', label: 'Employees' },
+                                            { value: 'client', label: 'Clients' },
+                                        ]}
+                                    />
+                                    <Button variant="outline" size="sm" onClick={loadAdminUsers} loading={usersLoading}>
+                                        Refresh
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                {usersLoading ? (
+                                    <p className="text-text-secondary dark:text-gray-400">Loading users...</p>
+                                ) : usersError ? (
+                                    <div className="space-y-3">
+                                        <p className="text-feedback-error">{usersError}</p>
+                                        <Button variant="outline" size="sm" onClick={loadAdminUsers}>
+                                            Retry
+                                        </Button>
+                                    </div>
+                                ) : visibleUsers.length === 0 ? (
+                                    <EmptyState
+                                        title="No users found"
+                                        description="Create your first user account to grant dashboard access."
+                                        action={<Button onClick={() => openUserModal('create')}>Add User</Button>}
+                                    />
+                                ) : (
+                                    <div className="space-y-2">
+                                        {visibleUsers.map((user) => (
+                                            <div
+                                                key={user.id}
+                                                className="rounded-lg border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                                            >
+                                                <div className="min-w-0">
+                                                    <p className="font-medium text-text-primary dark:text-gray-100 truncate">{user.username}</p>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <Badge
+                                                            size="sm"
+                                                            variant={user.role === 'admin' ? 'warning' : user.role === 'client' ? 'info' : 'secondary'}
+                                                        >
+                                                            {String(user.role || 'user')}
+                                                        </Badge>
+                                                        <span className="text-xs text-text-muted dark:text-gray-500">
+                                                            {Array.isArray(user.projectIds) ? user.projectIds.length : 0} project assignments
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <Button variant="ghost" size="sm" onClick={() => openUserModal('edit', user)}>
+                                                        Edit
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" onClick={() => openUserModal('reset', user)}>
+                                                        Reset Password
+                                                    </Button>
+                                                    <Button variant="danger" size="sm" onClick={() => handleDeleteUser(user)}>
+                                                        Delete
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </>
+                )}
+
+                {isReportsPage && (
+                    <>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" data-aos="fade-up">
+                            <div>
+                                <h1 className="text-2xl font-bold text-text-primary dark:text-gray-100">Analytics</h1>
+                                <p className="text-sm text-text-secondary dark:text-gray-400">
+                                    Snapshot of projects, users, files, and recent admin activity.
+                                </p>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={loadReports} loading={reportsLoading}>
+                                Refresh Report
+                            </Button>
+                        </div>
+
+                        {reportsError && (
+                            <Card>
+                                <CardContent className="space-y-3">
+                                    <p className="text-feedback-error">{reportsError}</p>
+                                    <Button variant="outline" size="sm" onClick={loadReports}>
+                                        Retry
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {!reportsError && (
+                            <>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4" data-aos="fade-up" data-aos-delay="80">
+                                    <Card>
+                                        <CardHeader><CardTitle size="sm">Projects</CardTitle></CardHeader>
+                                        <CardContent className="space-y-1">
+                                            <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportsOverview.projectsTotal}</p>
+                                            <p className="text-sm text-text-secondary dark:text-gray-400">
+                                                {reportsOverview.ongoingTotal} ongoing • {reportsOverview.completedTotal} completed
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader><CardTitle size="sm">Users</CardTitle></CardHeader>
+                                        <CardContent className="space-y-1">
+                                            <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportsOverview.usersTotal}</p>
+                                            <p className="text-sm text-text-secondary dark:text-gray-400">
+                                                {reportsOverview.usersByRole.admin || 0} admin • {reportsOverview.usersByRole.user || 0} employee • {reportsOverview.usersByRole.client || 0} client
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader><CardTitle size="sm">Files</CardTitle></CardHeader>
+                                        <CardContent className="space-y-1">
+                                            <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportsOverview.filesTotal}</p>
+                                            <p className="text-sm text-text-secondary dark:text-gray-400">
+                                                {reportsOverview.filesByVisibility.private || 0} private • {reportsOverview.filesByVisibility.team || 0} team • {reportsOverview.filesByVisibility.client || 0} client
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader><CardTitle size="sm">Activity Logs</CardTitle></CardHeader>
+                                        <CardContent className="space-y-1">
+                                            <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportActivity.length}</p>
+                                            <p className="text-sm text-text-secondary dark:text-gray-400">Most recent events (last 40)</p>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+
+                                <Card data-aos="fade-up" data-aos-delay="120">
+                                    <CardHeader>
+                                        <CardTitle>Recent Activity</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {reportActivity.length === 0 ? (
+                                            <p className="text-text-secondary dark:text-gray-400">No activity recorded yet.</p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {reportActivity.slice(0, 12).map((item) => (
+                                                    <div
+                                                        key={item._id || `${item.action}-${item.createdAt}`}
+                                                        className="rounded-lg border border-stroke dark:border-gray-700 p-3 bg-surface-card dark:bg-gray-900"
+                                                    >
+                                                        <p className="text-sm font-medium text-text-primary dark:text-gray-100">{item.action || 'activity'}</p>
+                                                        <p className="text-sm text-text-secondary dark:text-gray-400">{item.details || 'No details'}</p>
+                                                        <p className="text-xs text-text-muted dark:text-gray-500 mt-1">
+                                                            {item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </>
+                        )}
+                    </>
+                )}
+
+                {!isProjectsPage && !isFilesPage && !isSettingsPage && !isClientsPage && !isReportsPage && (
                     <Card>
                         <CardHeader>
                             <CardTitle>{adminPageMeta.title}</CardTitle>
@@ -665,6 +1053,75 @@ const Admin = () => {
                     </ModalFooter>
                 </form>
             </Modal>
+            )}
+
+            {isClientsPage && userModal.open && (
+                <Modal
+                    isOpen={userModal.open}
+                    onClose={closeUserModal}
+                    title={
+                        userModal.mode === 'create'
+                            ? 'Create User'
+                            : userModal.mode === 'edit'
+                                ? `Edit ${userModal.user?.username || 'User'}`
+                                : `Reset Password: ${userModal.user?.username || 'User'}`
+                    }
+                    size="md"
+                >
+                    <form onSubmit={handleUserSave} className="space-y-4">
+                        {userModal.mode !== 'reset' && (
+                            <>
+                                <Input
+                                    label="Username"
+                                    value={userForm.username}
+                                    onChange={(e) => setUserForm((prev) => ({ ...prev, username: e.target.value }))}
+                                    required
+                                />
+                                <Select
+                                    label="Role"
+                                    value={userForm.role}
+                                    onChange={(e) => setUserForm((prev) => ({ ...prev, role: e.target.value }))}
+                                    options={[
+                                        { value: 'admin', label: 'Admin' },
+                                        { value: 'user', label: 'Employee' },
+                                        { value: 'client', label: 'Client' },
+                                    ]}
+                                />
+                                {userModal.mode === 'edit' && (
+                                    <Input
+                                        label="Assigned Project IDs"
+                                        helperText="Comma-separated project IDs"
+                                        value={userForm.projectIds}
+                                        onChange={(e) => setUserForm((prev) => ({ ...prev, projectIds: e.target.value }))}
+                                    />
+                                )}
+                            </>
+                        )}
+
+                        {(userModal.mode === 'create' || userModal.mode === 'reset') && (
+                            <Input
+                                label={userModal.mode === 'create' ? 'Password' : 'New Password'}
+                                type="password"
+                                value={userForm.password}
+                                onChange={(e) => setUserForm((prev) => ({ ...prev, password: e.target.value }))}
+                                required
+                            />
+                        )}
+
+                        {userFormError && (
+                            <p className="text-sm text-feedback-error">{userFormError}</p>
+                        )}
+
+                        <ModalFooter>
+                            <Button variant="secondary" onClick={closeUserModal} disabled={userSaving}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" loading={userSaving}>
+                                {userModal.mode === 'create' ? 'Create User' : userModal.mode === 'edit' ? 'Save Changes' : 'Reset Password'}
+                            </Button>
+                        </ModalFooter>
+                    </form>
+                </Modal>
             )}
 
             {/* Toast Container */}
