@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import ReCAPTCHA from 'react-google-recaptcha';
-import Sidebar from './Sidebar';
-import Header from './Header';
-import Footer from './Footer';
+import PageLayout from './components/PageLayout';
 import './styles.css';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -19,24 +16,10 @@ const Contact = () => {
     });
   }, []);
 
-  console.log('Contact component rendering');
-  // Update API URL to point to the backend service
-  const API_BASE_URL = 'https://mastertech3.netlify.app';
-  const IMAGE_BASE_URL = API_BASE_URL;
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://mastertech3.netlify.app';
   // Use environment variable for reCAPTCHA site key with fallback
   const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa';
-  
-  console.log('Using API URL:', API_BASE_URL);
 
-  console.log('Environment variables:', {
-    API_BASE_URL,
-    RECAPTCHA_SITE_KEY,
-    NODE_ENV: process.env.NODE_ENV
-  });
-
-  const [isSidebarActive, setIsSidebarActive] = useState(false);
-  const [isNavLinksActive, setIsNavLinksActive] = useState(false);
-  const [showBackToTop, setShowBackToTop] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -65,59 +48,7 @@ const Contact = () => {
   });
   const [timeUntilReset, setTimeUntilReset] = useState(null);
 
-  const location = useLocation();
 
-  const getActivePage = () => {
-    const path = location.pathname;
-    console.log('Current path:', path); // Debug log
-    if (path === '/') return 'home';
-    if (path === '/about') return 'about';
-    if (path === '/services') return 'services';
-    if (path === '/vision-mission') return 'vision-mission';
-    if (path === '/core-values') return 'core-values';
-    if (path === '/safety') return 'safety';
-    if (path === '/projects') return 'projects';
-    if (path === '/contact') return 'contact';
-    return 'home';
-  };
-  const activePage = getActivePage();
-
-  const handleOutsideClick = (event) => {
-    const sidebar = document.getElementById('sidebar');
-    const hamburger = document.querySelector('.hamburger');
-    const navLinks = document.querySelector('.nav-links');
-    const isSmallScreen = window.innerWidth < 768;
-    const isClickOutsideSidebar = sidebar && hamburger && !sidebar.contains(event.target) && !hamburger.contains(event.target);
-    const isClickInsideNavLinks = navLinks && navLinks.contains(event.target);
-
-    if (isSmallScreen && isSidebarActive && isClickOutsideSidebar && !isClickInsideNavLinks) {
-      setIsSidebarActive(false);
-      setIsNavLinksActive(false);
-    }
-  };
-
-  const handleResize = () => {
-    if (window.innerWidth >= 768 && isSidebarActive) {
-      setIsSidebarActive(false);
-      setIsNavLinksActive(false);
-    }
-  };
-
-  const handleScroll = () => {
-    setShowBackToTop(window.scrollY > 200);
-  };
-
-  useEffect(() => {
-    document.addEventListener('click', handleOutsideClick);
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('scroll', handleScroll);
-
-    return () => {
-      document.removeEventListener('click', handleOutsideClick);
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [isSidebarActive]);
 
   const handleRecaptchaChange = (token) => {
     console.log('reCAPTCHA token received');
@@ -304,20 +235,7 @@ const Contact = () => {
   }, [RECAPTCHA_SITE_KEY]);
 
   return (
-    <div>
-      <Sidebar
-        isSidebarActive={isSidebarActive}
-        setIsSidebarActive={setIsSidebarActive}
-        setIsNavLinksActive={setIsNavLinksActive}
-        activePage={activePage}
-      />
-      <Header
-        isSidebarActive={isSidebarActive}
-        setIsSidebarActive={setIsSidebarActive}
-        isNavLinksActive={isNavLinksActive}
-        setIsNavLinksActive={setIsNavLinksActive}
-        activePage={activePage}
-      />
+    <PageLayout>
       <section className="contact" role="main">
         <div className="container">
           <h1 data-aos="fade-up">Contact Us</h1>
@@ -463,23 +381,7 @@ const Contact = () => {
           </div>
         </div>
       </section>
-      
-      <button
-        id="backToTop"
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        aria-label="Back to top"
-        style={{ display: showBackToTop ? 'block' : 'none' }}
-        data-aos="fade-up"
-      >
-        ↑
-      </button>
-      {/* Footer */}
-      <footer role="contentinfo">
-        <div className="container_footer">
-          <p> 2025 MASTERTECH INTERGROUPPE INC. All Rights Reserved.</p>
-        </div>
-      </footer>
-    </div>
+    </PageLayout>
   );
 };
 

@@ -1,6 +1,5 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
-import Footer from './Footer';
 import PageLayout from './components/PageLayout';
 import './styles.css';
 
@@ -88,7 +87,6 @@ const Home = memo(() => {
       {/* Services Section */}
       <section
         className="services"
-        role="region"
         aria-labelledby="services-heading"
       >
         <h2 id="services-heading">Our Services</h2>
@@ -122,7 +120,6 @@ const Home = memo(() => {
           </li>
         </ul>
       </section>
-      <Footer />
     </PageLayout>
   );
 });

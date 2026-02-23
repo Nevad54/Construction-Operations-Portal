@@ -2,42 +2,19 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const Dropdown = ({ isActive, closeSidebar, closeNavLinks }) => {
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  
-    const handleToggle = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('Dropdown toggle triggered, event type:', e.type); // Debug: Check if click or touch event
-      setIsDropdownOpen((prev) => {
-        console.log('Sidebar dropdown state updated to:', !prev);
-        console.log('Window width:', window.innerWidth);
-        return !prev;
-      });
-    };
-  
-    const handleKeyDown = (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDropdownOpen((prev) => {
-          console.log('Sidebar dropdown state updated to (key):', !prev);
-          return !prev;
-        });
-      }
-    };
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
     <li className={`dropdown ${isDropdownOpen ? 'open' : ''}`}>
-      <a
-        onClick={handleToggle}
-        onTouchStart={handleToggle} // Use the same handler for touch and click
-        onKeyDown={handleKeyDown}
+      <button
+        type="button"
+        onClick={() => setIsDropdownOpen((prev) => !prev)}
+        className="sidebar-dropdown-trigger"
         aria-expanded={isDropdownOpen}
         aria-haspopup="true"
-        role="button"
       >
         <i className="fas fa-handshake"></i> Commitment
-      </a>
+      </button>
       <div className="dropdown-content">
         <Link
           to="/vision-mission"

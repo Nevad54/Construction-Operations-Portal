@@ -8,21 +8,9 @@ const Header = ({ isSidebarActive, setIsSidebarActive, isNavLinksActive, setIsNa
   const { theme, toggleTheme } = useTheme();
 
   const toggleSidebar = () => {
-    setIsSidebarActive(!isSidebarActive);
-    setIsNavLinksActive(!isNavLinksActive);
+    setIsSidebarActive((prev) => !prev);
+    setIsNavLinksActive(false);
     if (isDropdownOpen) setIsDropdownOpen(false);
-  };
-
-  const toggleDropdown = (e) => {
-    e.preventDefault();
-    setIsDropdownOpen(!isDropdownOpen);
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      setIsDropdownOpen(!isDropdownOpen);
-    }
   };
 
   return (
@@ -30,9 +18,18 @@ const Header = ({ isSidebarActive, setIsSidebarActive, isNavLinksActive, setIsNa
       <a href="#main" className="skip-link">Skip to main content</a>
       <header role="banner">
         <div className="container">
-          <div className="hamburger" onClick={toggleSidebar} aria-label="Toggle navigation">
-            <i className="fas fa-bars"></i>
-          </div>
+          <button
+            type="button"
+            className={`hamburger-btn ${isSidebarActive ? 'active' : ''}`}
+            onClick={toggleSidebar}
+            aria-label={isSidebarActive ? 'Close navigation' : 'Open navigation'}
+            aria-controls="sidebar"
+            aria-expanded={isSidebarActive}
+          >
+            <span className="hamburger-line" />
+            <span className="hamburger-line" />
+            <span className="hamburger-line" />
+          </button>
           <Link to="/" className="logo-link">
             <img src="/Uploads/logo.png" alt="MASTERTECH INTERGROUPPE INC. Logo" className="logo" loading="lazy" />
           </Link>
@@ -67,16 +64,15 @@ const Header = ({ isSidebarActive, setIsSidebarActive, isNavLinksActive, setIsNa
               </li>
 
               <li className={`dropdown ${isDropdownOpen ? 'open' : ''}`}>
-                <a
-                  href="#"
-                  onClick={toggleDropdown}
-                  onKeyDown={handleKeyDown}
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen((prev) => !prev)}
+                  className="nav-dropdown-trigger"
                   aria-expanded={isDropdownOpen}
                   aria-haspopup="true"
-                  role="button"
                 >
                   <i className="fas fa-handshake"></i> Commitment
-                </a>
+                </button>
                 <div className="dropdown-content">
                   <Link
                     to="/vision-mission"

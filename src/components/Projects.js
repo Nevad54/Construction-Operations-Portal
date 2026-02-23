@@ -208,10 +208,12 @@ const Projects = () => {
         className="hover-lift"
         data-aos="fade-up"
       >
-        ↑
+        {'\u2191'}
       </button>
     </div>
   );
 };
 
 export default Projects;
+
+

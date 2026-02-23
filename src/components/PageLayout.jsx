@@ -36,49 +36,48 @@ export default function PageLayout({ children }) {
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
-  const handleOutsideClick = (event) => {
-    const sidebar = document.getElementById('sidebar');
-    const hamburger = document.querySelector('.hamburger');
-    const navLinks = document.querySelector('.nav-links');
-    const isSmallScreen = window.innerWidth < 768;
-    const isClickOutsideSidebar =
-      sidebar &&
-      hamburger &&
-      !sidebar.contains(event.target) &&
-      !hamburger.contains(event.target);
-    const isClickInsideNavLinks = navLinks && navLinks.contains(event.target);
-
-    if (
-      isSmallScreen &&
-      isSidebarActive &&
-      isClickOutsideSidebar &&
-      !isClickInsideNavLinks
-    ) {
-      setIsSidebarActive(false);
-      setIsNavLinksActive(false);
-    }
-  };
-
-  const handleResize = () => {
-    if (window.innerWidth >= 768 && isSidebarActive) {
-      setIsSidebarActive(false);
-      setIsNavLinksActive(false);
-    }
-  };
-
-  const handleScroll = () => {
-    setShowBackToTop(window.scrollY > 200);
-  };
-
   useEffect(() => {
-    document.addEventListener('click', handleOutsideClick);
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsSidebarActive(false);
+        setIsNavLinksActive(false);
+      }
+    };
+
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 200);
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsSidebarActive(false);
+        setIsNavLinksActive(false);
+      }
+    };
+
     window.addEventListener('resize', handleResize);
     window.addEventListener('scroll', handleScroll);
+    document.addEventListener('keydown', handleEscape);
 
     return () => {
-      document.removeEventListener('click', handleOutsideClick);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
+
+  useEffect(() => {
+    setIsSidebarActive(false);
+    setIsNavLinksActive(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) return undefined;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = isSidebarActive ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = previous;
     };
   }, [isSidebarActive]);
 
@@ -105,8 +104,10 @@ export default function PageLayout({ children }) {
         aria-label="Back to top"
         style={{ display: showBackToTop ? 'block' : 'none' }}
       >
-        ↑
+        {'\u2191'}
       </button>
     </>
   );
 }
+
+

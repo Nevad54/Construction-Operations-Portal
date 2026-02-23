@@ -1,14 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Dropdown from './Dropdown';
+import { useTheme } from './context/ThemeContext';
 
 const Sidebar = ({ isSidebarActive, setIsSidebarActive, setIsNavLinksActive, activePage }) => {
+  const { theme, toggleTheme } = useTheme();
+
   const closeSidebar = () => {
-    console.log('Closing sidebar, isSidebarActive:', false);
     setIsSidebarActive(false);
+    setIsNavLinksActive(false);
   };
   const closeNavLinks = () => {
-    console.log('Closing nav links, isNavLinksActive:', false);
     setIsNavLinksActive(false);
   };
 
@@ -23,6 +25,18 @@ const Sidebar = ({ isSidebarActive, setIsSidebarActive, setIsNavLinksActive, act
       />
       <div className={`sidebar ${isSidebarActive ? 'active' : ''}`} id="sidebar" role="navigation" aria-label="Main navigation">
       <ul>
+        <li className="sidebar-theme-item">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="sidebar-theme-toggle"
+            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+          >
+            <i className={`fas ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
+            {theme === 'light' ? 'Dark mode' : 'Light mode'}
+          </button>
+        </li>
         <li>
           <Link to="/" onClick={closeSidebar} className={activePage === 'home' ? 'active' : ''}>
             <i className="fas fa-home"></i> Home
