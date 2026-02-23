@@ -50,53 +50,33 @@ header .container {
 
 .hamburger-btn {
     display: none;
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     cursor: pointer;
-    color: var(--primary-700);
-    border: 1px solid var(--border-color);
-    background: var(--white);
-    border-radius: var(--radius-md);
-    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+    color: var(--text-muted);
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-lg);
+    transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
     align-items: center;
     justify-content: center;
-    gap: 4px;
     padding: 0;
 }
 .hamburger-btn:hover {
     background: var(--neutral-100);
-    color: var(--primary-900);
-    border-color: var(--primary-300);
+    color: var(--text-primary);
 }
 .hamburger-btn:active {
-    transform: scale(0.96) translateY(1px);
     background: var(--neutral-200);
 }
 .hamburger-btn:focus-visible {
-    outline: 2px solid var(--primary-400);
+    outline: 2px solid var(--primary-300);
     outline-offset: 2px;
 }
 
-.hamburger-line {
-    display: block;
-    width: 18px;
-    height: 2px;
-    border-radius: 999px;
-    background: currentColor;
-    transition: transform 220ms var(--ease-out), opacity 220ms var(--ease-out);
-    transform-origin: center;
-}
-
-.hamburger-btn.active .hamburger-line:nth-child(1) {
-    transform: translateY(6px) rotate(45deg);
-}
-
-.hamburger-btn.active .hamburger-line:nth-child(2) {
-    opacity: 0;
-}
-
-.hamburger-btn.active .hamburger-line:nth-child(3) {
-    transform: translateY(-6px) rotate(-45deg);
+.hamburger-icon {
+    width: 24px;
+    height: 24px;
 }
 
 .nav-links {
@@ -1796,8 +1776,8 @@ footer {
 
 @media (max-width: 430px) {
     .hamburger-btn {
-        width: 42px;
-        height: 42px;
+        width: 40px;
+        height: 40px;
     }
 
     .hero-content h1 {
@@ -2148,7 +2128,7 @@ footer {
 
   .sidebar,
   .sidebar-overlay,
-  .hamburger-line,
+  .hamburger-icon,
   .sidebar ul li,
   .sidebar.active ul li {
     transition: none !important;
