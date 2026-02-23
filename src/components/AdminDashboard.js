@@ -80,6 +80,14 @@ const Admin = () => {
     const [reportUsers, setReportUsers] = useState([]);
     const [reportFiles, setReportFiles] = useState([]);
     const [reportActivity, setReportActivity] = useState([]);
+    const [inquiries, setInquiries] = useState([]);
+    const [inquiriesLoading, setInquiriesLoading] = useState(false);
+    const [inquiriesError, setInquiriesError] = useState('');
+    const [inquiryStatusFilter, setInquiryStatusFilter] = useState('all');
+    const [inquirySearch, setInquirySearch] = useState('');
+    const [inquiryModal, setInquiryModal] = useState({ open: false, inquiry: null });
+    const [inquiryForm, setInquiryForm] = useState({ status: 'new', notes: '' });
+    const [inquirySaving, setInquirySaving] = useState(false);
 
     // Initialize AOS
     useEffect(() => {
@@ -435,14 +443,16 @@ const Admin = () => {
         try {
             setReportsLoading(true);
             setReportsError('');
-            const [users, files, activity] = await Promise.all([
+            const [users, files, activity, inquiriesList] = await Promise.all([
                 api.adminListUsers(),
                 api.getFiles(),
                 api.getActivityLogs({ limit: 40 }),
+                api.adminListInquiries({ status: 'all' }),
             ]);
             setReportUsers(Array.isArray(users) ? users : []);
             setReportFiles(Array.isArray(files) ? files : []);
             setReportActivity(Array.isArray(activity?.logs) ? activity.logs : []);
+            setInquiries(Array.isArray(inquiriesList) ? inquiriesList : []);
         } catch (err) {
             setReportsError(err.message || 'Failed to load reports');
         } finally {
@@ -450,11 +460,33 @@ const Admin = () => {
         }
     }, []);
 
+    const loadInquiries = useCallback(async () => {
+        try {
+            setInquiriesLoading(true);
+            setInquiriesError('');
+            const list = await api.adminListInquiries({
+                status: inquiryStatusFilter,
+                q: inquirySearch,
+            });
+            setInquiries(Array.isArray(list) ? list : []);
+        } catch (err) {
+            setInquiriesError(err.message || 'Failed to load inquiries');
+        } finally {
+            setInquiriesLoading(false);
+        }
+    }, [inquirySearch, inquiryStatusFilter]);
+
     useEffect(() => {
         if (isClientsPage || isReportsPage) {
             loadAdminUsers();
         }
     }, [isClientsPage, isReportsPage, loadAdminUsers]);
+
+    useEffect(() => {
+        if (isClientsPage) {
+            loadInquiries();
+        }
+    }, [isClientsPage, loadInquiries]);
 
     useEffect(() => {
         if (isReportsPage) {
@@ -558,6 +590,55 @@ const Admin = () => {
         }
     }, [error, isReportsPage, loadAdminUsers, loadReports, success]);
 
+    const openInquiryModal = useCallback((inquiry) => {
+        if (!inquiry) return;
+        setInquiryModal({ open: true, inquiry });
+        setInquiryForm({
+            status: String(inquiry.status || 'new'),
+            notes: String(inquiry.notes || ''),
+        });
+    }, []);
+
+    const closeInquiryModal = useCallback(() => {
+        if (inquirySaving) return;
+        setInquiryModal({ open: false, inquiry: null });
+    }, [inquirySaving]);
+
+    const handleSaveInquiry = useCallback(async (e) => {
+        e.preventDefault();
+        const id = inquiryModal?.inquiry?.id;
+        if (!id) return;
+        try {
+            setInquirySaving(true);
+            await api.adminUpdateInquiry(id, {
+                status: inquiryForm.status,
+                notes: inquiryForm.notes,
+            });
+            success('Inquiry updated');
+            await loadInquiries();
+            if (isReportsPage) await loadReports();
+            closeInquiryModal();
+        } catch (err) {
+            error(err.message || 'Failed to update inquiry');
+        } finally {
+            setInquirySaving(false);
+        }
+    }, [closeInquiryModal, error, inquiryForm.notes, inquiryForm.status, inquiryModal?.inquiry?.id, isReportsPage, loadInquiries, loadReports, success]);
+
+    const handleDeleteInquiry = useCallback(async (inquiry) => {
+        if (!inquiry?.id) return;
+        const confirmed = window.confirm(`Delete inquiry from "${inquiry.name}"?`);
+        if (!confirmed) return;
+        try {
+            await api.adminDeleteInquiry(inquiry.id);
+            success('Inquiry deleted');
+            await loadInquiries();
+            if (isReportsPage) await loadReports();
+        } catch (err) {
+            error(err.message || 'Failed to delete inquiry');
+        }
+    }, [error, isReportsPage, loadInquiries, loadReports, success]);
+
     const visibleUsers = useMemo(() => {
         if (userRoleFilter === 'all') return adminUsers;
         return adminUsers.filter((u) => String(u.role || '') === userRoleFilter);
@@ -574,16 +655,23 @@ const Admin = () => {
             acc[visibility] = (acc[visibility] || 0) + 1;
             return acc;
         }, {});
+        const inquiriesByStatus = inquiries.reduce((acc, item) => {
+            const key = String(item.status || 'new');
+            acc[key] = (acc[key] || 0) + 1;
+            return acc;
+        }, {});
         return {
             usersTotal: reportUsers.length,
             usersByRole: byRole,
             filesTotal: reportFiles.length,
             filesByVisibility: byVisibility,
+            inquiriesTotal: inquiries.length,
+            inquiriesByStatus,
             projectsTotal: projects.length,
             ongoingTotal: projects.filter((p) => p.status === 'ongoing').length,
             completedTotal: projects.filter((p) => p.status === 'completed').length,
         };
-    }, [projects, reportFiles, reportUsers]);
+    }, [inquiries, projects, reportFiles, reportUsers]);
 
 
     return (
@@ -691,6 +779,100 @@ const Admin = () => {
                                 )}
                             </CardContent>
                         </Card>
+
+                        <Card data-aos="fade-up" data-aos-delay="120">
+                            <CardHeader className="flex-col items-start sm:flex-row sm:items-center sm:justify-between">
+                                <CardTitle>Contact Inquiries</CardTitle>
+                                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                                    <Input
+                                        className="sm:w-56"
+                                        placeholder="Search name/email/message"
+                                        value={inquirySearch}
+                                        onChange={(e) => setInquirySearch(e.target.value)}
+                                    />
+                                    <Select
+                                        value={inquiryStatusFilter}
+                                        onChange={(e) => setInquiryStatusFilter(e.target.value)}
+                                        options={[
+                                            { value: 'all', label: 'All statuses' },
+                                            { value: 'new', label: 'New' },
+                                            { value: 'in_progress', label: 'In Progress' },
+                                            { value: 'resolved', label: 'Resolved' },
+                                            { value: 'spam', label: 'Spam' },
+                                        ]}
+                                    />
+                                    <Button variant="outline" size="sm" onClick={loadInquiries} loading={inquiriesLoading}>
+                                        Refresh
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                {inquiriesLoading ? (
+                                    <p className="text-text-secondary dark:text-gray-400">Loading inquiries...</p>
+                                ) : inquiriesError ? (
+                                    <div className="space-y-3">
+                                        <p className="text-feedback-error">{inquiriesError}</p>
+                                        <Button variant="outline" size="sm" onClick={loadInquiries}>
+                                            Retry
+                                        </Button>
+                                    </div>
+                                ) : inquiries.length === 0 ? (
+                                    <EmptyState
+                                        title="No inquiries found"
+                                        description="New contact submissions will appear here."
+                                    />
+                                ) : (
+                                    <div className="space-y-2">
+                                        {inquiries.map((inquiry) => (
+                                            <div
+                                                key={inquiry.id}
+                                                className="rounded-lg border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 p-3"
+                                            >
+                                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                                                    <div className="min-w-0">
+                                                        <p className="font-medium text-text-primary dark:text-gray-100 truncate">{inquiry.name}</p>
+                                                        <p className="text-sm text-text-secondary dark:text-gray-400 truncate">{inquiry.email}{inquiry.phone ? ` • ${inquiry.phone}` : ''}</p>
+                                                        <p className="text-xs text-text-muted dark:text-gray-500 mt-1">
+                                                            {inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleString() : '-'}
+                                                        </p>
+                                                    </div>
+                                                    <Badge
+                                                        size="sm"
+                                                        variant={
+                                                            inquiry.status === 'resolved'
+                                                                ? 'success'
+                                                                : inquiry.status === 'in_progress'
+                                                                    ? 'warning'
+                                                                    : inquiry.status === 'spam'
+                                                                        ? 'error'
+                                                                        : 'info'
+                                                        }
+                                                    >
+                                                        {String(inquiry.status || 'new').replace('_', ' ')}
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-sm text-text-secondary dark:text-gray-300 mt-2 whitespace-pre-wrap break-words">
+                                                    {inquiry.message || 'No message'}
+                                                </p>
+                                                {inquiry.notes ? (
+                                                    <p className="text-xs text-text-muted dark:text-gray-500 mt-2">
+                                                        Notes: {inquiry.notes}
+                                                    </p>
+                                                ) : null}
+                                                <div className="flex flex-wrap gap-2 mt-3">
+                                                    <Button variant="ghost" size="sm" onClick={() => openInquiryModal(inquiry)}>
+                                                        Update
+                                                    </Button>
+                                                    <Button variant="danger" size="sm" onClick={() => handleDeleteInquiry(inquiry)}>
+                                                        Delete
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
                     </>
                 )}
 
@@ -754,6 +936,15 @@ const Admin = () => {
                                         <CardContent className="space-y-1">
                                             <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportActivity.length}</p>
                                             <p className="text-sm text-text-secondary dark:text-gray-400">Most recent events (last 40)</p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader><CardTitle size="sm">Inquiries</CardTitle></CardHeader>
+                                        <CardContent className="space-y-1">
+                                            <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportsOverview.inquiriesTotal}</p>
+                                            <p className="text-sm text-text-secondary dark:text-gray-400">
+                                                {reportsOverview.inquiriesByStatus.new || 0} new • {reportsOverview.inquiriesByStatus.in_progress || 0} in progress • {reportsOverview.inquiriesByStatus.resolved || 0} resolved
+                                            </p>
                                         </CardContent>
                                     </Card>
                                 </div>
@@ -1118,6 +1309,44 @@ const Admin = () => {
                             </Button>
                             <Button type="submit" loading={userSaving}>
                                 {userModal.mode === 'create' ? 'Create User' : userModal.mode === 'edit' ? 'Save Changes' : 'Reset Password'}
+                            </Button>
+                        </ModalFooter>
+                    </form>
+                </Modal>
+            )}
+
+            {isClientsPage && inquiryModal.open && (
+                <Modal
+                    isOpen={inquiryModal.open}
+                    onClose={closeInquiryModal}
+                    title={`Update Inquiry: ${inquiryModal.inquiry?.name || 'Contact'}`}
+                    size="md"
+                >
+                    <form onSubmit={handleSaveInquiry} className="space-y-4">
+                        <Select
+                            label="Status"
+                            value={inquiryForm.status}
+                            onChange={(e) => setInquiryForm((prev) => ({ ...prev, status: e.target.value }))}
+                            options={[
+                                { value: 'new', label: 'New' },
+                                { value: 'in_progress', label: 'In Progress' },
+                                { value: 'resolved', label: 'Resolved' },
+                                { value: 'spam', label: 'Spam' },
+                            ]}
+                        />
+                        <Textarea
+                            label="Internal Notes"
+                            rows={4}
+                            placeholder="Add handling notes for this inquiry"
+                            value={inquiryForm.notes}
+                            onChange={(e) => setInquiryForm((prev) => ({ ...prev, notes: e.target.value }))}
+                        />
+                        <ModalFooter>
+                            <Button variant="secondary" onClick={closeInquiryModal} disabled={inquirySaving}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" loading={inquirySaving}>
+                                Save Inquiry
                             </Button>
                         </ModalFooter>
                     </form>

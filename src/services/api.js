@@ -196,6 +196,45 @@ export const api = {
         return handleResponse(response);
     },
 
+    adminListInquiries: async (params = {}) => {
+        const qs = new URLSearchParams();
+        if (params.status) qs.set('status', String(params.status));
+        if (params.q) qs.set('q', String(params.q));
+        const suffix = qs.toString() ? `?${qs.toString()}` : '';
+        const response = await fetch(`${API_PREFIX}/admin/inquiries${suffix}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            },
+            credentials: 'include',
+        });
+        return handleResponse(response);
+    },
+
+    adminUpdateInquiry: async (id, updates = {}) => {
+        const response = await fetch(`${API_PREFIX}/admin/inquiries/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify(updates || {}),
+        });
+        return handleResponse(response);
+    },
+
+    adminDeleteInquiry: async (id) => {
+        const response = await fetch(`${API_PREFIX}/admin/inquiries/${encodeURIComponent(id)}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+            },
+            credentials: 'include',
+        });
+        return handleResponse(response);
+    },
+
     // Test function
     test: async () => {
         const isNetlifyHost = API_BASE_URL.includes('netlify.app') || API_BASE_URL.includes('netlify.com');

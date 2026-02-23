@@ -30,6 +30,7 @@ try {
 const Project = require('./models/Projects');
 const FileItem = require('./models/FileItem');
 const ActivityLog = require('./models/ActivityLog');
+const Inquiry = require('./models/Inquiry');
 
 // In-memory fallback storage for development when MongoDB is unavailable
 const fallbackFile = path.join(__dirname, 'dev_projects.json');
@@ -76,6 +77,17 @@ try {
   console.error('Error loading fallback folders:', e);
   fallbackFolders = [];
 }
+const fallbackInquiriesPath = path.join(__dirname, 'dev_inquiries.json');
+let fallbackInquiries = [];
+try {
+  if (fs.existsSync(fallbackInquiriesPath)) {
+    const data = fs.readFileSync(fallbackInquiriesPath, 'utf8');
+    fallbackInquiries = JSON.parse(data || '[]');
+  }
+} catch (e) {
+  console.error('Error loading fallback inquiries:', e);
+  fallbackInquiries = [];
+}
 // Try to use MongoDB Atlas by default; fall back to file storage if connection fails
 // The app will work either way - online with cloud sync or offline with local storage
 const useFallback = process.env.USE_MONGODB === 'false';
@@ -99,6 +111,13 @@ const persistFallbackFolders = () => {
     fs.writeFileSync(fallbackFoldersPath, JSON.stringify(fallbackFolders, null, 2));
   } catch (e) {
     console.error('Failed writing fallback folders file', e);
+  }
+};
+const persistFallbackInquiries = () => {
+  try {
+    fs.writeFileSync(fallbackInquiriesPath, JSON.stringify(fallbackInquiries, null, 2));
+  } catch (e) {
+    console.error('Failed writing fallback inquiries file', e);
   }
 };
 
@@ -523,6 +542,59 @@ const requireRoles = (roles) => (req, res, next) => {
   next();
 };
 
+const normalizeInquiryStatus = (value) => {
+  const v = String(value || '').trim().toLowerCase();
+  if (['new', 'in_progress', 'resolved', 'spam'].includes(v)) return v;
+  return 'new';
+};
+
+const sanitizeInquiry = (item) => ({
+  id: String(item.id || item._id || ''),
+  name: String(item.name || ''),
+  email: String(item.email || ''),
+  phone: String(item.phone || ''),
+  message: String(item.message || ''),
+  source: String(item.source || 'contact_form'),
+  ipAddress: String(item.ipAddress || ''),
+  status: normalizeInquiryStatus(item.status),
+  notes: String(item.notes || ''),
+  handledBy: String(item.handledBy || ''),
+  handledAt: item.handledAt || null,
+  createdAt: item.createdAt || null,
+  updatedAt: item.updatedAt || null,
+});
+
+const createInquiryRecord = async ({ name, email, phone, message, ipAddress = '' }) => {
+  const payload = {
+    name: String(name || '').trim(),
+    email: String(email || '').trim(),
+    phone: String(phone || '').trim(),
+    message: String(message || '').trim(),
+    source: 'contact_form',
+    ipAddress: String(ipAddress || '').trim(),
+    status: 'new',
+    notes: '',
+    handledBy: '',
+    handledAt: null,
+  };
+
+  if (useFallback || mongoose.connection.readyState !== 1) {
+    const created = {
+      _id: `${Date.now()}-${Math.round(Math.random() * 1e6)}`,
+      ...payload,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    fallbackInquiries.unshift(created);
+    fallbackInquiries = fallbackInquiries.slice(0, 2000);
+    persistFallbackInquiries();
+    return sanitizeInquiry(created);
+  }
+
+  const created = await Inquiry.create(payload);
+  return sanitizeInquiry(created.toObject ? created.toObject() : created);
+};
+
 const logActivity = async (req, payload) => {
   const actor = req.authUser || getSessionUser(req);
   if (!actor) return;
@@ -930,6 +1002,142 @@ app.delete('/api/admin/users/:id', requireAuth, requireRoles(['admin']), async (
     return res.json({ ok: true });
   } catch (err) {
     console.error('Delete user failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/admin/inquiries', requireAuth, requireRoles(['admin']), async (req, res) => {
+  try {
+    const statusFilter = String(req.query.status || '').trim().toLowerCase();
+    const q = String(req.query.q || '').trim().toLowerCase();
+
+    if (useFallback || mongoose.connection.readyState !== 1) {
+      let list = [...fallbackInquiries];
+      if (statusFilter && statusFilter !== 'all') {
+        list = list.filter((item) => normalizeInquiryStatus(item.status) === statusFilter);
+      }
+      if (q) {
+        list = list.filter((item) => {
+          const haystack = [item.name, item.email, item.phone, item.message, item.notes]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+          return haystack.includes(q);
+        });
+      }
+      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      return res.json(list.map((item) => sanitizeInquiry(item)));
+    }
+
+    const query = {};
+    if (statusFilter && statusFilter !== 'all') {
+      query.status = statusFilter;
+    }
+    if (q) {
+      query.$or = [
+        { name: { $regex: q, $options: 'i' } },
+        { email: { $regex: q, $options: 'i' } },
+        { phone: { $regex: q, $options: 'i' } },
+        { message: { $regex: q, $options: 'i' } },
+        { notes: { $regex: q, $options: 'i' } },
+      ];
+    }
+    const list = await Inquiry.find(query).sort({ createdAt: -1 }).lean();
+    return res.json(list.map((item) => sanitizeInquiry(item)));
+  } catch (err) {
+    console.error('List inquiries failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/api/admin/inquiries/:id', requireAuth, requireRoles(['admin']), async (req, res) => {
+  const id = String(req.params.id || '').trim();
+  if (!id) return res.status(400).json({ error: 'Inquiry id required' });
+
+  const updates = {};
+  if (req.body.status !== undefined) {
+    updates.status = normalizeInquiryStatus(req.body.status);
+    if (updates.status !== 'new') {
+      updates.handledBy = String(req.authUser.username || req.authUser.id || '');
+      updates.handledAt = new Date();
+    } else {
+      updates.handledBy = '';
+      updates.handledAt = null;
+    }
+  }
+  if (req.body.notes !== undefined) {
+    updates.notes = String(req.body.notes || '').trim();
+  }
+
+  try {
+    if (useFallback || mongoose.connection.readyState !== 1) {
+      const idx = fallbackInquiries.findIndex((item) => String(item._id) === id);
+      if (idx === -1) return res.status(404).json({ error: 'Inquiry not found' });
+      fallbackInquiries[idx] = {
+        ...fallbackInquiries[idx],
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+      persistFallbackInquiries();
+      await logActivity(req, {
+        action: 'inquiry.update',
+        targetType: 'inquiry',
+        targetId: id,
+        details: `Updated inquiry from ${fallbackInquiries[idx].name}`,
+        metadata: updates,
+      });
+      return res.json({ inquiry: sanitizeInquiry(fallbackInquiries[idx]) });
+    }
+
+    const updated = await Inquiry.findByIdAndUpdate(
+      id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+    if (!updated) return res.status(404).json({ error: 'Inquiry not found' });
+    await logActivity(req, {
+      action: 'inquiry.update',
+      targetType: 'inquiry',
+      targetId: String(updated._id),
+      details: `Updated inquiry from ${updated.name}`,
+      metadata: updates,
+    });
+    return res.json({ inquiry: sanitizeInquiry(updated.toObject ? updated.toObject() : updated) });
+  } catch (err) {
+    console.error('Update inquiry failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.delete('/api/admin/inquiries/:id', requireAuth, requireRoles(['admin']), async (req, res) => {
+  const id = String(req.params.id || '').trim();
+  if (!id) return res.status(400).json({ error: 'Inquiry id required' });
+  try {
+    if (useFallback || mongoose.connection.readyState !== 1) {
+      const idx = fallbackInquiries.findIndex((item) => String(item._id) === id);
+      if (idx === -1) return res.status(404).json({ error: 'Inquiry not found' });
+      const [removed] = fallbackInquiries.splice(idx, 1);
+      persistFallbackInquiries();
+      await logActivity(req, {
+        action: 'inquiry.delete',
+        targetType: 'inquiry',
+        targetId: id,
+        details: `Deleted inquiry from ${removed?.name || 'unknown'}`,
+      });
+      return res.json({ ok: true });
+    }
+
+    const deleted = await Inquiry.findByIdAndDelete(id).lean();
+    if (!deleted) return res.status(404).json({ error: 'Inquiry not found' });
+    await logActivity(req, {
+      action: 'inquiry.delete',
+      targetType: 'inquiry',
+      targetId: id,
+      details: `Deleted inquiry from ${deleted?.name || 'unknown'}`,
+    });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('Delete inquiry failed', err);
     return res.status(500).json({ error: 'Server error' });
   }
 });
@@ -2443,6 +2651,19 @@ app.post('/api/contact', async (req, res) => {
           });
         }
       }
+    }
+
+    try {
+      await createInquiryRecord({
+        name,
+        email,
+        phone,
+        message,
+        ipAddress: clientIp || '',
+      });
+    } catch (inquiryErr) {
+      console.error('Failed to persist inquiry record:', inquiryErr);
+      // Continue with email flow even if inquiry persistence fails.
     }
 
     // Check if email configuration is available
