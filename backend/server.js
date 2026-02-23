@@ -1149,6 +1149,28 @@ const normalizeTags = (tagsInput) => {
     .filter(Boolean);
 };
 
+const normalizeStringList = (input) => {
+  if (!input) return [];
+  if (Array.isArray(input)) {
+    return input.map((v) => String(v || '').trim()).filter(Boolean);
+  }
+  return String(input)
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
+};
+
+const normalizeSharedRoles = (input) => {
+  const allowed = new Set(['admin', 'user', 'client']);
+  return normalizeStringList(input).filter((role) => allowed.has(role));
+};
+
+const normalizeLinkAccess = (value) => {
+  const v = String(value || '').trim().toLowerCase();
+  if (v === 'view' || v === 'comment') return v;
+  return 'none';
+};
+
 const normalizeFolderPath = (value) => String(value || '').trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
 
 const joinFolderPath = (base, name) => {
@@ -1555,6 +1577,9 @@ app.post('/api/folders/copy', requireAuth, requireRoles(['admin', 'user']), asyn
           visibility: file.visibility || 'private',
           folder: nextFolder,
           projectId: file.projectId || '',
+          sharedWithUsers: Array.isArray(file.sharedWithUsers) ? file.sharedWithUsers : [],
+          sharedWithRoles: Array.isArray(file.sharedWithRoles) ? normalizeSharedRoles(file.sharedWithRoles) : [],
+          linkAccess: normalizeLinkAccess(file.linkAccess),
           tags: Array.isArray(file.tags) ? file.tags : [],
           notes: file.notes || '',
         };
@@ -1857,6 +1882,9 @@ app.post('/api/files', requireAuth, requireRoles(['admin', 'user']), fileUpload.
       : req.authUser.id;
     const visibility = ['private', 'team', 'client'].includes(req.body.visibility) ? req.body.visibility : 'private';
     const tags = normalizeTags(req.body.tags);
+    const sharedWithUsers = normalizeStringList(req.body.sharedWithUsers);
+    const sharedWithRoles = normalizeSharedRoles(req.body.sharedWithRoles);
+    const linkAccess = normalizeLinkAccess(req.body.linkAccess);
     const cloudMeta = cloudStorageEnabled ? await uploadFileToCloud(req.file) : null;
     if (visibility === 'client' && !requestedProjectId) {
       return res.status(400).json({ error: 'Client shared files must be assigned to a project' });
@@ -1872,6 +1900,9 @@ app.post('/api/files', requireAuth, requireRoles(['admin', 'user']), fileUpload.
       visibility,
       folder: (req.body.folder || '').toString().trim(),
       projectId: requestedProjectId,
+      sharedWithUsers,
+      sharedWithRoles,
+      linkAccess,
       tags,
       notes: (req.body.notes || '').toString(),
       cloudProvider: cloudMeta?.cloudProvider || '',
@@ -1968,6 +1999,9 @@ app.post('/api/files/bulk-copy', requireAuth, requireRoles(['admin', 'user']), a
         visibility: file.visibility || 'private',
         folder: destinationFolder,
         projectId: file.projectId || '',
+        sharedWithUsers: Array.isArray(file.sharedWithUsers) ? file.sharedWithUsers : [],
+        sharedWithRoles: Array.isArray(file.sharedWithRoles) ? normalizeSharedRoles(file.sharedWithRoles) : [],
+        linkAccess: normalizeLinkAccess(file.linkAccess),
         tags: Array.isArray(file.tags) ? file.tags : [],
         notes: file.notes || '',
       };
@@ -2043,6 +2077,15 @@ app.put('/api/files/:id', requireAuth, requireRoles(['admin', 'user']), async (r
     }
     if (typeof req.body.notes === 'string') {
       updates.notes = req.body.notes;
+    }
+    if (req.body.sharedWithUsers !== undefined) {
+      updates.sharedWithUsers = normalizeStringList(req.body.sharedWithUsers);
+    }
+    if (req.body.sharedWithRoles !== undefined) {
+      updates.sharedWithRoles = normalizeSharedRoles(req.body.sharedWithRoles);
+    }
+    if (req.body.linkAccess !== undefined) {
+      updates.linkAccess = normalizeLinkAccess(req.body.linkAccess);
     }
 
     if (updates.visibility === 'client' && !String(updates.projectId || '').trim()) {

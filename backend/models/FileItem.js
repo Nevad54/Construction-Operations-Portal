@@ -15,6 +15,14 @@ const fileItemSchema = new mongoose.Schema(
     },
     folder: { type: String, default: '' },
     projectId: { type: String, default: '' },
+    // ACL foundation (behavior enforcement is handled separately).
+    sharedWithUsers: { type: [String], default: [] },
+    sharedWithRoles: { type: [String], default: [] },
+    linkAccess: {
+      type: String,
+      enum: ['none', 'view', 'comment'],
+      default: 'none',
+    },
     tags: { type: [String], default: [] },
     notes: { type: String, default: '' },
     cloudProvider: { type: String, default: '' },
