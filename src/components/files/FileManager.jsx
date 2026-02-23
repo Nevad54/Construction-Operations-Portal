@@ -296,6 +296,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     folderPath: '',
   });
   const contextMenuRef = useRef(null);
+  const pendingDropRef = useRef(null);
   const [pendingDropChoice, setPendingDropChoice] = useState({
     open: false,
     x: 0,
@@ -1582,6 +1583,22 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   }, [pendingDropChoice.open, closePendingDropChoice]);
 
   useEffect(() => {
+    if (!pendingDropChoice.open || !pendingDropRef.current) return;
+    const rect = pendingDropRef.current.getBoundingClientRect();
+    let nextX = pendingDropChoice.x;
+    let nextY = pendingDropChoice.y;
+    if (rect.right > window.innerWidth - 8) {
+      nextX = Math.max(8, window.innerWidth - rect.width - 8);
+    }
+    if (rect.bottom > window.innerHeight - 8) {
+      nextY = Math.max(8, window.innerHeight - rect.height - 8);
+    }
+    if (nextX !== pendingDropChoice.x || nextY !== pendingDropChoice.y) {
+      setPendingDropChoice((prev) => ({ ...prev, x: nextX, y: nextY }));
+    }
+  }, [pendingDropChoice.open, pendingDropChoice.x, pendingDropChoice.y]);
+
+  useEffect(() => {
     if (!contextMenu.open || !contextMenuRef.current) return;
     const rect = contextMenuRef.current.getBoundingClientRect();
     let nextX = contextMenu.x;
@@ -1843,7 +1860,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                 />
               </div>
 
-              <div className="flex items-center gap-2 lg:justify-end">
+              <div className="flex items-center gap-2 flex-wrap lg:justify-end">
                 <button
                   type="button"
                   aria-label="Refresh files"
@@ -1980,7 +1997,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
           </div>
         </CardHeader>
         <CardContent>
-          <div className={`flex flex-col ${isXlUp ? '' : 'lg:flex-row'} gap-4`}>
+          <div className="flex flex-col gap-4">
             <div
               onContextMenu={(e) => openFolderContextMenu(e, folderFilter === 'all' ? '__root__' : folderFilter)}
               onTouchStart={(e) => {
@@ -2359,7 +2376,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
             </div>
 
             {/* Inline preview for lg screens; on xl+ we move preview into the dashboard right sidebar. */}
-            <aside className="hidden lg:block xl:hidden w-[360px] shrink-0">
+            <aside className="hidden lg:block xl:hidden w-full">
               <div className="sticky top-24">
                 {!inspectorFile ? (
                   <div className="rounded-2xl border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 p-4">
@@ -3346,7 +3363,8 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
 
       {pendingDropChoice.open && createPortal(
         <div
-          className="fixed z-[1001] w-44 rounded-xl border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 shadow-xl p-1 fm-menu-pop"
+          ref={pendingDropRef}
+          className="fixed z-[1001] w-44 max-w-[calc(100vw-1rem)] rounded-xl border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 shadow-xl p-1 fm-menu-pop"
           style={{ top: pendingDropChoice.y, left: pendingDropChoice.x }}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
@@ -3762,7 +3780,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
           title={null}
           showCloseButton={false}
           size="full"
-          className="h-[90vh]"
+          className="h-[92dvh]"
         >
           <div className="-mx-6 -my-4 h-full flex flex-col">
             <div className="flex items-center gap-3 px-4 py-3 border-b border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900">

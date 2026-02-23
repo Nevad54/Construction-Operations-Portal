@@ -8,7 +8,7 @@ const recentActivity = [
 
 export default function DashboardRightSidebar() {
   return (
-    <aside className="hidden xl:flex xl:flex-col w-80 flex-shrink-0 px-4 py-8">
+    <aside className="hidden xl:flex xl:flex-col w-72 2xl:w-80 flex-shrink-0 px-3 2xl:px-4 py-6 2xl:py-8">
       <div className="sticky top-24 space-y-4">
         {/* Slot for FileManager's inspector preview (portal target). */}
         <div id="dashboard-right-sidebar-slot" className="space-y-4" />

@@ -14,6 +14,7 @@ export default function DashboardTopNav({
   currentUser = null,
 }) {
   const [searchFocused, setSearchFocused] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -26,6 +27,10 @@ export default function DashboardTopNav({
   const loginPath = isAdminArea ? '/login/admin' : '/login/user';
   const profileInitial = String(currentUser?.username || 'A').charAt(0).toUpperCase();
   const showTopBrand = isMobile;
+
+  useEffect(() => {
+    if (!isMobile) setMobileSearchOpen(false);
+  }, [isMobile]);
 
   useEffect(() => {
     const onClickOutside = (event) => {
@@ -52,8 +57,8 @@ export default function DashboardTopNav({
   };
 
   return (
-    <div role="banner" className="fixed top-0 left-0 right-0 h-16 bg-surface-card dark:bg-gray-900 border-b border-stroke dark:border-gray-700 z-50 flex items-center px-4 shadow-sm transition-colors duration-fast">
-      <div className="flex items-center justify-between w-full max-w-[1920px] mx-auto">
+    <div role="banner" className="fixed top-0 left-0 right-0 min-h-16 bg-surface-card dark:bg-gray-900 border-b border-stroke dark:border-gray-700 z-50 px-3 sm:px-4 shadow-sm transition-colors duration-fast">
+      <div className="flex items-center justify-between w-full max-w-[1920px] mx-auto h-16">
         {/* Left: menu + logo + collapse button */}
         <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
           <button
@@ -129,6 +134,7 @@ export default function DashboardTopNav({
           {/* Search button (mobile) */}
           <button
             type="button"
+            onClick={() => setMobileSearchOpen((v) => !v)}
             className="sm:hidden flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-text-muted dark:text-gray-400 hover:text-text-primary dark:hover:text-gray-200 hover:bg-surface-muted dark:hover:bg-gray-800 active:bg-surface-interactive dark:active:bg-gray-700 transition-colors duration-fast"
             aria-label="Search"
           >
@@ -183,7 +189,7 @@ export default function DashboardTopNav({
             </button>
 
             {profileOpen && (
-              <div className="absolute right-0 mt-2 w-64 rounded-xl border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 shadow-lg z-50 p-3 space-y-3">
+              <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-1rem)] rounded-xl border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 shadow-lg z-50 p-3 space-y-3">
                 <div className="pb-2 border-b border-stroke dark:border-gray-700">
                   <p className="text-sm font-semibold text-text-primary dark:text-gray-100">
                     {currentUser?.username || 'Unknown User'}
@@ -212,6 +218,26 @@ export default function DashboardTopNav({
           </div>
         </div>
       </div>
+
+      {mobileSearchOpen && (
+        <div className="sm:hidden fixed top-16 left-0 right-0 z-40 px-3 pb-3 bg-surface-card dark:bg-gray-900 border-b border-stroke dark:border-gray-700 shadow-sm">
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted dark:text-gray-400 pointer-events-none">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
+            <input
+              type="search"
+              placeholder="Search projects..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full h-10 pl-10 pr-4 rounded-lg bg-surface-muted dark:bg-gray-800 border border-transparent dark:border-gray-700 text-text-primary dark:text-gray-100 placeholder:text-text-muted dark:placeholder:text-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 dark:focus:ring-brand/30"
+              aria-label="Search projects"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

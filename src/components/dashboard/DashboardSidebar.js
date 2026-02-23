@@ -69,7 +69,7 @@ export default function DashboardSidebar({
           fixed top-0 left-0 bottom-0 z-50 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl
           transform transition-all duration-300 ease-in-out flex flex-col
           ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${collapsed ? 'lg:w-20' : 'w-64'}
+          ${collapsed ? 'lg:w-20' : 'w-[85vw] max-w-[20rem] sm:w-64'}
         `}
         role="navigation"
         aria-label="Main navigation"

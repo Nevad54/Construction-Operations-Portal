@@ -17,12 +17,14 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isXlUp, setIsXlUp] = useState(false);
   const [authUser, setAuthUser] = useState(null);
 
   // Detect mobile screen size
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
+      setIsXlUp(window.innerWidth >= 1280);
       if (window.innerWidth >= 1024) {
         setSidebarOpen(false); // Close mobile sidebar on desktop
       }
@@ -85,11 +87,11 @@ export default function DashboardLayout({
         `}
       >
         <div className="flex-1 min-w-0 w-full flex flex-col">
-          <div className="flex-1 px-4 py-6 lg:px-8 lg:py-8 max-w-7xl mx-auto w-full">
+          <div className="flex-1 px-3 py-4 sm:px-4 sm:py-6 lg:px-8 lg:py-8 max-w-7xl mx-auto w-full">
             {children}
           </div>
         </div>
-        {!isMobile && (rightSidebar || <DashboardRightSidebar />)}
+        {isXlUp && (rightSidebar || <DashboardRightSidebar />)}
       </main>
     </div>
   );
