@@ -3,3 +3,8 @@ node_modules/
 build/
 .netlify/
 backend/uploads/
+.agents/
+.continue/
+.cursor/
+.windsurf/
+skills/
