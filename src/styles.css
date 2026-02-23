@@ -81,6 +81,8 @@ header .container {
 .hamburger-icon {
     width: 24px;
     height: 24px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .nav-links {
