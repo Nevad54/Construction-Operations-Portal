@@ -296,6 +296,14 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     folderPath: '',
   });
   const contextMenuRef = useRef(null);
+  const [pendingDropChoice, setPendingDropChoice] = useState({
+    open: false,
+    x: 0,
+    y: 0,
+    destinationFolder: '',
+    fileIds: [],
+    folderPath: '',
+  });
   const [previewFile, setPreviewFile] = useState(null);
   const [previewQueue, setPreviewQueue] = useState([]);
   const [previewIndex, setPreviewIndex] = useState(-1);
@@ -1156,6 +1164,43 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     await loadFolders();
   };
 
+  const closePendingDropChoice = useCallback(() => {
+    setPendingDropChoice({ open: false, x: 0, y: 0, destinationFolder: '', fileIds: [], folderPath: '' });
+  }, []);
+
+  const getDragModeFromEvent = (event) => {
+    if (event?.button === 2) return 'ask';
+    if (event?.ctrlKey || event?.metaKey) return 'copy';
+    if (event?.shiftKey) return 'move';
+    return 'move';
+  };
+
+  const getDraggedFileIds = (dataTransfer) => {
+    const raw = dataTransfer?.getData('text/mti-file-ids');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed.map((v) => String(v || '')).filter(Boolean);
+      } catch (_) {
+        // ignore and fall back
+      }
+    }
+    const single = String(dataTransfer?.getData('text/mti-file-id') || '').trim();
+    return single ? [single] : [];
+  };
+
+  const executeDragDropAction = async ({ mode, destinationFolder, fileIds, sourceFolder }) => {
+    if (fileIds.length) {
+      if (mode === 'copy') await executeFileCopy(fileIds, destinationFolder);
+      else await executeFileMove(fileIds, destinationFolder);
+      return;
+    }
+    if (sourceFolder) {
+      if (mode === 'copy') await executeFolderCopy(sourceFolder, destinationFolder);
+      else await executeFolderMove(sourceFolder, destinationFolder);
+    }
+  };
+
   const handlePasteIntoFolder = async (destinationFolder = '') => {
     try {
       if (clipboard.type === 'files' && clipboard.ids.length) {
@@ -1363,7 +1408,11 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const handleDriveDragOver = (event) => {
     if (!canManage) return;
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'copy';
+    if (event.ctrlKey || event.metaKey) {
+      event.dataTransfer.dropEffect = 'copy';
+    } else {
+      event.dataTransfer.dropEffect = 'move';
+    }
     setDragActive(true);
   };
 
@@ -1387,16 +1436,29 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       return;
     }
 
-    const draggedFileId = event.dataTransfer?.getData('text/mti-file-id');
+    const draggedFileIds = getDraggedFileIds(event.dataTransfer);
     const draggedFolderPath = event.dataTransfer?.getData('text/mti-folder-path');
+    const dragMode = String(event.dataTransfer?.getData('text/mti-drag-mode') || '').trim() || 'move';
     const destinationFolder = folderFilter === 'all' ? '' : folderFilter;
 
     try {
-      if (draggedFileId) {
-        await executeFileMove([draggedFileId], destinationFolder);
-      } else if (draggedFolderPath) {
-        await executeFolderMove(draggedFolderPath, destinationFolder);
+      if (dragMode === 'ask' && (draggedFileIds.length || draggedFolderPath)) {
+        setPendingDropChoice({
+          open: true,
+          x: event.clientX,
+          y: event.clientY,
+          destinationFolder,
+          fileIds: draggedFileIds,
+          folderPath: draggedFolderPath || '',
+        });
+        return;
       }
+      await executeDragDropAction({
+        mode: dragMode === 'copy' ? 'copy' : 'move',
+        destinationFolder,
+        fileIds: draggedFileIds,
+        sourceFolder: draggedFolderPath || '',
+      });
     } catch (err) {
       setError(err.message || 'Drag and drop failed');
     }
@@ -1435,25 +1497,46 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   };
 
   const onDragStartFile = (event, fileId) => {
+    const ids = selectedIds.includes(fileId) && selectedIds.length > 1 ? selectedIds : [fileId];
+    const mode = getDragModeFromEvent(event);
     event.dataTransfer.setData('text/mti-file-id', fileId);
-    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/mti-file-ids', JSON.stringify(ids));
+    event.dataTransfer.setData('text/mti-drag-mode', mode);
+    event.dataTransfer.effectAllowed = mode === 'copy' ? 'copy' : 'copyMove';
+    event.dataTransfer.dropEffect = mode === 'copy' ? 'copy' : 'move';
   };
 
   const onDragStartFolder = (event, folderPath) => {
+    const mode = getDragModeFromEvent(event);
     event.dataTransfer.setData('text/mti-folder-path', folderPath);
-    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/mti-drag-mode', mode);
+    event.dataTransfer.effectAllowed = mode === 'copy' ? 'copy' : 'copyMove';
+    event.dataTransfer.dropEffect = mode === 'copy' ? 'copy' : 'move';
   };
 
   const onDropToFolder = async (event, destinationFolder) => {
     event.preventDefault();
-    const fileId = event.dataTransfer.getData('text/mti-file-id');
+    const fileIds = getDraggedFileIds(event.dataTransfer);
     const sourceFolder = event.dataTransfer.getData('text/mti-folder-path');
+    const dragMode = String(event.dataTransfer?.getData('text/mti-drag-mode') || '').trim() || 'move';
     try {
-      if (fileId) {
-        await executeFileMove([fileId], destinationFolder);
-      } else if (sourceFolder) {
-        await executeFolderMove(sourceFolder, destinationFolder);
+      if (dragMode === 'ask' && (fileIds.length || sourceFolder)) {
+        setPendingDropChoice({
+          open: true,
+          x: event.clientX,
+          y: event.clientY,
+          destinationFolder,
+          fileIds,
+          folderPath: sourceFolder || '',
+        });
+        return;
       }
+      await executeDragDropAction({
+        mode: dragMode === 'copy' ? 'copy' : 'move',
+        destinationFolder,
+        fileIds,
+        sourceFolder: sourceFolder || '',
+      });
     } catch (err) {
       setError(err.message || 'Drag and drop failed');
     }
@@ -1483,6 +1566,20 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
       window.removeEventListener('scroll', onScroll, true);
     };
   }, [contextMenu.open, closeContextMenu]);
+
+  useEffect(() => {
+    if (!pendingDropChoice.open) return;
+    const onDown = () => closePendingDropChoice();
+    const onEsc = (event) => {
+      if (event.key === 'Escape') closePendingDropChoice();
+    };
+    window.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onEsc);
+    return () => {
+      window.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onEsc);
+    };
+  }, [pendingDropChoice.open, closePendingDropChoice]);
 
   useEffect(() => {
     if (!contextMenu.open || !contextMenuRef.current) return;
@@ -1810,7 +1907,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
 
           {canManage && (
             <p className="text-xs text-text-secondary dark:text-gray-400">
-              Right-click a folder card in grid for copy/cut/paste, drag files to folders to move.
+              Right-click folders for options. Drag with Ctrl to copy, Shift to move. Right-button drag opens Move/Copy chooser on drop.
             </p>
           )}
 
@@ -3243,6 +3340,65 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
               )}
             </>
           )}
+        </div>,
+        document.body
+      )}
+
+      {pendingDropChoice.open && createPortal(
+        <div
+          className="fixed z-[1001] w-44 rounded-xl border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 shadow-xl p-1 fm-menu-pop"
+          style={{ top: pendingDropChoice.y, left: pendingDropChoice.x }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <button
+            type="button"
+            className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-surface-muted dark:hover:bg-gray-800"
+            onClick={async () => {
+              try {
+                await executeDragDropAction({
+                  mode: 'move',
+                  destinationFolder: pendingDropChoice.destinationFolder,
+                  fileIds: pendingDropChoice.fileIds,
+                  sourceFolder: pendingDropChoice.folderPath,
+                });
+              } catch (err) {
+                setError(err.message || 'Move failed');
+              } finally {
+                closePendingDropChoice();
+              }
+            }}
+          >
+            Move here
+          </button>
+          <button
+            type="button"
+            className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-surface-muted dark:hover:bg-gray-800"
+            onClick={async () => {
+              try {
+                await executeDragDropAction({
+                  mode: 'copy',
+                  destinationFolder: pendingDropChoice.destinationFolder,
+                  fileIds: pendingDropChoice.fileIds,
+                  sourceFolder: pendingDropChoice.folderPath,
+                });
+              } catch (err) {
+                setError(err.message || 'Copy failed');
+              } finally {
+                closePendingDropChoice();
+              }
+            }}
+          >
+            Copy here
+          </button>
+          <button
+            type="button"
+            className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-surface-muted dark:hover:bg-gray-800"
+            onClick={closePendingDropChoice}
+          >
+            Cancel
+          </button>
         </div>,
         document.body
       )}
