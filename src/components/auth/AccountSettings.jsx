@@ -322,37 +322,67 @@ export default function AccountSettings({ mode = 'user' }) {
             {createError && <p className="text-feedback-error text-sm">{createError}</p>}
 
             <div className="rounded-xl border border-stroke dark:border-gray-700 overflow-hidden">
-              <div className="grid grid-cols-12 bg-surface-muted dark:bg-gray-800 px-4 py-2 text-xs font-semibold text-text-secondary dark:text-gray-300">
-                <div className="col-span-4">Username</div>
-                <div className="col-span-2">Role</div>
-                <div className="col-span-3">Projects</div>
-                <div className="col-span-3 text-right">Actions</div>
-              </div>
               {usersLoading ? (
                 <div className="px-4 py-3 text-sm text-text-secondary dark:text-gray-400">Loading users...</div>
               ) : users.length ? (
-                users.map((u) => (
-                  <div key={u.id} className="grid grid-cols-12 px-4 py-3 text-sm border-t border-stroke dark:border-gray-700 items-center">
-                    <div className="col-span-4 min-w-0">
-                      <p className="font-medium text-text-primary dark:text-gray-100 truncate">{u.username}</p>
-                    </div>
-                    <div className="col-span-2 capitalize text-text-secondary dark:text-gray-300">{u.role}</div>
-                    <div className="col-span-3 text-text-secondary dark:text-gray-300">
-                      {Array.isArray(u.projectIds) && u.projectIds.length ? `${u.projectIds.length} assigned` : 'None'}
-                    </div>
-                    <div className="col-span-3 flex items-center justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => openProjects(u)}>
-                        Assign
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => openReset(u)}>
-                        Reset Password
-                      </Button>
-                      <Button variant="danger" size="sm" onClick={() => onDeleteUser(u)}>
-                        Delete
-                      </Button>
-                    </div>
+                <>
+                  <div className="hidden md:grid grid-cols-12 bg-surface-muted dark:bg-gray-800 px-4 py-2 text-xs font-semibold text-text-secondary dark:text-gray-300">
+                    <div className="col-span-4">Username</div>
+                    <div className="col-span-2">Role</div>
+                    <div className="col-span-3">Projects</div>
+                    <div className="col-span-3 text-right">Actions</div>
                   </div>
-                ))
+                  <div className="hidden md:block">
+                    {users.map((u) => (
+                      <div key={`desktop-${u.id}`} className="grid grid-cols-12 px-4 py-3 text-sm border-t border-stroke dark:border-gray-700 items-center">
+                        <div className="col-span-4 min-w-0">
+                          <p className="font-medium text-text-primary dark:text-gray-100 truncate">{u.username}</p>
+                        </div>
+                        <div className="col-span-2 capitalize text-text-secondary dark:text-gray-300">{u.role}</div>
+                        <div className="col-span-3 text-text-secondary dark:text-gray-300">
+                          {Array.isArray(u.projectIds) && u.projectIds.length ? `${u.projectIds.length} assigned` : 'None'}
+                        </div>
+                        <div className="col-span-3 flex items-center justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => openProjects(u)}>
+                            Assign
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => openReset(u)}>
+                            Reset Password
+                          </Button>
+                          <Button variant="danger" size="sm" onClick={() => onDeleteUser(u)}>
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="md:hidden divide-y divide-stroke dark:divide-gray-700">
+                    {users.map((u) => (
+                      <div key={`mobile-${u.id}`} className="px-4 py-3 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-medium text-text-primary dark:text-gray-100 truncate">{u.username}</p>
+                            <p className="text-xs text-text-secondary dark:text-gray-400 capitalize">{u.role}</p>
+                          </div>
+                          <span className="text-xs text-text-secondary dark:text-gray-400">
+                            {Array.isArray(u.projectIds) && u.projectIds.length ? `${u.projectIds.length} assigned` : 'No projects'}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button variant="outline" size="sm" onClick={() => openProjects(u)}>
+                            Assign
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => openReset(u)}>
+                            Reset Password
+                          </Button>
+                          <Button variant="danger" size="sm" onClick={() => onDeleteUser(u)}>
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <div className="px-4 py-3 text-sm text-text-secondary dark:text-gray-400">No users found.</div>
               )}
