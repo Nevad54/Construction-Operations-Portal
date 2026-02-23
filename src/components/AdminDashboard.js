@@ -454,7 +454,7 @@ const Admin = () => {
 
                 {/* Ongoing Projects */}
                 <Card data-aos="fade-up" data-aos-delay="100">
-                    <CardHeader>
+                    <CardHeader className="flex-col items-start sm:flex-row sm:items-center sm:justify-between">
                         <CardTitle>Ongoing Projects</CardTitle>
                         <div className="flex flex-wrap gap-2">
                             <Button
@@ -511,7 +511,7 @@ const Admin = () => {
 
                 {/* Completed Projects */}
                 <Card data-aos="fade-up" data-aos-delay="150">
-                    <CardHeader>
+                    <CardHeader className="flex-col items-start sm:flex-row sm:items-center sm:justify-between">
                         <CardTitle>Completed Projects</CardTitle>
                         <div className="flex flex-wrap gap-2">
                             <Button

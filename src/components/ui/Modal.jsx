@@ -125,12 +125,12 @@ export default function Modal({
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
-    full: 'max-w-full mx-4',
+    full: 'max-w-full',
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
@@ -147,7 +147,7 @@ export default function Modal({
         ref={modalRef}
         className={cn(
           'relative w-full bg-surface-card dark:bg-gray-900 rounded-xl shadow-elevated border border-stroke dark:border-gray-700',
-          'max-h-[90vh] overflow-hidden flex flex-col',
+          'max-h-[94dvh] sm:max-h-[90vh] overflow-hidden flex flex-col',
           'transform transition-all duration-300 ease-out',
           'animate-scale-in',
           sizeClasses[size],
@@ -157,11 +157,11 @@ export default function Modal({
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-stroke dark:border-gray-700">
+          <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-stroke dark:border-gray-700">
             {title && (
               <h2 
                 id="modal-title"
-                className="text-lg font-semibold text-text-primary dark:text-gray-100"
+                className="text-base sm:text-lg font-semibold text-text-primary dark:text-gray-100 pr-2"
               >
                 {title}
               </h2>
@@ -181,7 +181,7 @@ export default function Modal({
         )}
         
         {/* Content */}
-        <div className="flex-1 px-6 py-4 overflow-y-auto">
+        <div className="flex-1 px-4 sm:px-6 py-4 overflow-y-auto">
           {children}
         </div>
       </div>
@@ -192,7 +192,7 @@ export default function Modal({
 export function ModalFooter({ children, className = '', ...props }) {
   return (
     <div 
-      className={cn('flex items-center justify-end gap-3 px-6 py-4 border-t border-stroke dark:border-gray-700', className)} 
+      className={cn('flex flex-wrap items-center justify-end gap-2 sm:gap-3 px-4 sm:px-6 py-4 border-t border-stroke dark:border-gray-700', className)} 
       role="group"
       aria-label="Modal actions"
       {...props}
