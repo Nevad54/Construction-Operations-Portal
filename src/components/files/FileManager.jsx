@@ -51,6 +51,51 @@ const formatShortDateTime = (value) => {
   });
 };
 
+const sameStringSet = (a = [], b = []) => {
+  const sa = new Set((Array.isArray(a) ? a : []).map((v) => String(v || '').trim()).filter(Boolean));
+  const sb = new Set((Array.isArray(b) ? b : []).map((v) => String(v || '').trim()).filter(Boolean));
+  if (sa.size !== sb.size) return false;
+  for (const value of sa) {
+    if (!sb.has(value)) return false;
+  }
+  return true;
+};
+
+const isPermissionUpdateLog = (log) => String(log?.action || '') === 'file.permissions_update';
+
+const getPermissionDetailsText = (log) => {
+  const before = log?.metadata?.before || {};
+  const after = log?.metadata?.after || {};
+  const beforeUsers = Array.isArray(before.sharedWithUsers) ? before.sharedWithUsers : [];
+  const afterUsers = Array.isArray(after.sharedWithUsers) ? after.sharedWithUsers : [];
+  const beforeRoles = Array.isArray(before.sharedWithRoles) ? before.sharedWithRoles : [];
+  const afterRoles = Array.isArray(after.sharedWithRoles) ? after.sharedWithRoles : [];
+  const beforeLink = String(before.linkAccess || 'none');
+  const afterLink = String(after.linkAccess || 'none');
+
+  const parts = [];
+  if (!sameStringSet(beforeUsers, afterUsers)) {
+    parts.push(`Users: ${afterUsers.join(', ') || 'none'}`);
+  }
+  if (!sameStringSet(beforeRoles, afterRoles)) {
+    parts.push(`Roles: ${afterRoles.join(', ') || 'none'}`);
+  }
+  if (beforeLink !== afterLink) {
+    parts.push(`Link: ${afterLink}`);
+  }
+  return parts.join(' | ') || String(log?.details || '');
+};
+
+const matchesActivityFilter = (log, filter) => {
+  const action = String(log?.action || '');
+  if (filter === 'file') return action.startsWith('file.');
+  if (filter === 'folder') return action.startsWith('folder.');
+  if (filter === 'auth') return action.startsWith('auth.');
+  if (filter === 'user') return action.startsWith('user.');
+  if (filter === 'permissions') return action === 'file.permissions_update';
+  return true;
+};
+
 const sortFiles = (list, sortBy) => {
   const items = [...list];
   if (sortBy === 'oldest') return items.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
@@ -220,7 +265,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const [files, setFiles] = useState([]);
   const [folders, setFolders] = useState([]);
   const [activityLogs, setActivityLogs] = useState([]);
-  const [activityFilter, setActivityFilter] = useState('all'); // 'all' | 'file' | 'folder' | 'auth' | 'user'
+  const [activityFilter, setActivityFilter] = useState('all'); // 'all' | 'file' | 'folder' | 'auth' | 'user' | 'permissions'
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [activityFeed, setActivityFeed] = useState([]);
   const [activityFeedLoading, setActivityFeedLoading] = useState(false);
@@ -624,12 +669,13 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     }
   }, [authUser]);
 
-  const activityActionPrefix = useMemo(() => {
-    if (activityFilter === 'file') return 'file.';
-    if (activityFilter === 'folder') return 'folder.';
-    if (activityFilter === 'auth') return 'auth.';
-    if (activityFilter === 'user') return 'user.';
-    return '';
+  const activityQuery = useMemo(() => {
+    if (activityFilter === 'file') return { actionPrefix: 'file.' };
+    if (activityFilter === 'folder') return { actionPrefix: 'folder.' };
+    if (activityFilter === 'auth') return { actionPrefix: 'auth.' };
+    if (activityFilter === 'user') return { actionPrefix: 'user.' };
+    if (activityFilter === 'permissions') return { permissionChanges: true };
+    return {};
   }, [activityFilter]);
 
   const loadActivityFeedPage = useCallback(async ({ reset = false } = {}) => {
@@ -644,7 +690,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
         setActivityFeedHasMore(true);
       }
       const skip = reset ? 0 : activityFeed.length;
-      const page = await api.getActivityLogs({ limit: activityPageSize, skip, actionPrefix: activityActionPrefix });
+      const page = await api.getActivityLogs({ limit: activityPageSize, skip, ...activityQuery });
       const items = Array.isArray(page) ? page : [];
       if (reqId !== activityFeedReqIdRef.current) return;
       setActivityFeed((prev) => (reset ? items : [...prev, ...items]));
@@ -654,12 +700,12 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     } finally {
       setActivityFeedLoading(false);
     }
-  }, [activityActionPrefix, activityFeed.length, activityFeedLoading, activityPageSize, authUser]);
+  }, [activityFeed.length, activityFeedLoading, activityPageSize, activityQuery, authUser]);
 
   useEffect(() => {
     if (!showActivityModal) return;
     loadActivityFeedPage({ reset: true });
-  }, [activityActionPrefix, loadActivityFeedPage, showActivityModal]);
+  }, [activityQuery, loadActivityFeedPage, showActivityModal]);
 
   useEffect(() => {
     loadAuthUser();
@@ -2555,7 +2601,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                                     <span className="font-semibold">{log.actorRole}</span> - {log.action}
                                   </p>
                                   <p className="text-xs text-text-secondary dark:text-gray-400">
-                                    {log.details || log.targetType} - {formatDate(log.createdAt)}
+                                    {isPermissionUpdateLog(log) ? getPermissionDetailsText(log) : (log.details || log.targetType)} - {formatDate(log.createdAt)}
                                   </p>
                                 </li>
                               ))}
@@ -2585,6 +2631,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                     options={[
                       { value: 'all', label: 'All' },
                       { value: 'file', label: 'Files' },
+                      { value: 'permissions', label: 'Permission changes' },
                       { value: 'folder', label: 'Folders' },
                       { value: 'auth', label: 'Auth' },
                       { value: 'user', label: 'Users' },
@@ -2603,10 +2650,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
             ) : (
               <ul className="space-y-2">
                 {activityLogs
-                  .filter((log) => {
-                    if (!activityActionPrefix) return true;
-                    return String(log.action || '').startsWith(activityActionPrefix);
-                  })
+                  .filter((log) => matchesActivityFilter(log, activityFilter))
                   .slice(0, 8)
                   .map((log) => (
                   <li key={log._id} className="border-b border-stroke/60 dark:border-gray-700/60 pb-2 last:border-0">
@@ -2614,7 +2658,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                       <span className="font-semibold">{log.actorRole}</span> - {log.action}
                     </p>
                     <p className="text-xs text-text-secondary dark:text-gray-400">
-                      {log.details || log.targetType} - {formatDate(log.createdAt)}
+                      {isPermissionUpdateLog(log) ? getPermissionDetailsText(log) : (log.details || log.targetType)} - {formatDate(log.createdAt)}
                     </p>
                   </li>
                 ))}
@@ -2641,6 +2685,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                   options={[
                     { value: 'all', label: 'All activity' },
                     { value: 'file', label: 'File actions' },
+                    { value: 'permissions', label: 'Permission changes' },
                     { value: 'folder', label: 'Folder actions' },
                     { value: 'auth', label: 'Auth actions' },
                     { value: 'user', label: 'User actions' },
@@ -2673,7 +2718,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                           <span className="font-semibold">{log.actorRole}</span> · <span className="font-mono text-xs">{log.action}</span>
                         </p>
                         <p className="text-xs text-text-secondary dark:text-gray-400 mt-1 break-words">
-                          {log.details || log.targetType}
+                          {isPermissionUpdateLog(log) ? getPermissionDetailsText(log) : (log.details || log.targetType)}
                         </p>
                       </div>
                       <p className="text-xs text-text-muted dark:text-gray-500 shrink-0">
@@ -2687,7 +2732,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
 
             <div className="flex items-center justify-between pt-1">
               <p className="text-xs text-text-muted dark:text-gray-500">
-                Showing {activityFeed.length} log{activityFeed.length === 1 ? '' : 's'}{activityActionPrefix ? ` (${activityFilter})` : ''}.
+                Showing {activityFeed.length} log{activityFeed.length === 1 ? '' : 's'}{activityFilter !== 'all' ? ` (${activityFilter})` : ''}.
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -3540,7 +3585,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                             <span className="font-semibold">{log.actorRole}</span> - {log.action}
                           </p>
                           <p className="text-xs text-text-secondary dark:text-gray-400">
-                            {log.details || log.targetType} - {formatDate(log.createdAt)}
+                            {isPermissionUpdateLog(log) ? getPermissionDetailsText(log) : (log.details || log.targetType)} - {formatDate(log.createdAt)}
                           </p>
                         </li>
                       ))}

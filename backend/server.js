@@ -1365,6 +1365,40 @@ const normalizeProjectIds = (value) => {
     .filter(Boolean);
 };
 
+const sameStringSet = (a, b) => {
+  const sa = new Set(normalizeStringList(a));
+  const sb = new Set(normalizeStringList(b));
+  if (sa.size !== sb.size) return false;
+  for (const val of sa) if (!sb.has(val)) return false;
+  return true;
+};
+
+const summarizePermissionChanges = (before, after) => {
+  const nextUsers = normalizeStringList(after?.sharedWithUsers);
+  const nextRoles = normalizeSharedRoles(after?.sharedWithRoles);
+  const nextLink = normalizeLinkAccess(after?.linkAccess);
+  const prevUsers = normalizeStringList(before?.sharedWithUsers);
+  const prevRoles = normalizeSharedRoles(before?.sharedWithRoles);
+  const prevLink = normalizeLinkAccess(before?.linkAccess);
+
+  const changedUsers = !sameStringSet(prevUsers, nextUsers);
+  const changedRoles = !sameStringSet(prevRoles, nextRoles);
+  const changedLink = prevLink !== nextLink;
+  if (!changedUsers && !changedRoles && !changedLink) return null;
+
+  const parts = [];
+  if (changedUsers) parts.push(`users: ${nextUsers.join(', ') || 'none'}`);
+  if (changedRoles) parts.push(`roles: ${nextRoles.join(', ') || 'none'}`);
+  if (changedLink) parts.push(`link: ${nextLink}`);
+  return parts.join('; ');
+};
+
+const buildPermissionSnapshot = (file = {}) => ({
+  sharedWithUsers: normalizeStringList(file.sharedWithUsers),
+  sharedWithRoles: normalizeSharedRoles(file.sharedWithRoles),
+  linkAccess: normalizeLinkAccess(file.linkAccess),
+});
+
 const hasAclAccess = (file, auth = {}) => {
   const role = String(auth.role || '').trim();
   const userId = String(auth.id || '').trim();
@@ -1632,6 +1666,7 @@ app.get('/api/activity-logs', requireAuth, requireRoles(['admin']), async (req, 
     const skip = Math.max(0, Number(req.query.skip || 0));
     const actionPrefix = String(req.query.actionPrefix || '').trim();
     const action = String(req.query.action || '').trim();
+    const permissionChanges = String(req.query.permissionChanges || '').trim() === 'true';
     const targetId = String(req.query.targetId || '').trim();
     const targetType = String(req.query.targetType || '').trim();
 
@@ -1645,6 +1680,7 @@ app.get('/api/activity-logs', requireAuth, requireRoles(['admin']), async (req, 
 
     if (useFallback || mongoose.connection.readyState !== 1) {
       const items = fallbackActivityLogs.filter((l) => {
+        if (permissionChanges && String(l.action || '') !== 'file.permissions_update') return false;
         if (!actionMatch(l.action)) return false;
         if (targetType && String(l.targetType || '') !== targetType) return false;
         if (targetId) {
@@ -1658,8 +1694,11 @@ app.get('/api/activity-logs', requireAuth, requireRoles(['admin']), async (req, 
     }
 
     const query = {};
-    if (actionPrefix) query.action = { $regex: `^${actionPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}` };
-    else if (action && action.endsWith('*')) {
+    if (permissionChanges) {
+      query.action = 'file.permissions_update';
+    } else if (actionPrefix) {
+      query.action = { $regex: `^${actionPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}` };
+    } else if (action && action.endsWith('*')) {
       const prefix = action.slice(0, -1);
       query.action = { $regex: `^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}` };
     } else if (action) {
@@ -2136,6 +2175,7 @@ app.put('/api/files/:id', requireAuth, requireRoles(['admin', 'user']), async (r
       if (req.authUser.role !== 'admin' && fallbackFiles[idx].ownerId !== req.authUser.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
+      const before = fallbackFiles[idx];
       fallbackFiles[idx] = { ...fallbackFiles[idx], ...updates, updatedAt: new Date().toISOString() };
       persistFallbackFiles();
       await logActivity(req, {
@@ -2145,6 +2185,21 @@ app.put('/api/files/:id', requireAuth, requireRoles(['admin', 'user']), async (r
         details: `Updated ${fallbackFiles[idx].originalName}`,
         metadata: updates,
       });
+      const permissionSummary = summarizePermissionChanges(before, fallbackFiles[idx]);
+      if (permissionSummary) {
+        const beforePerms = buildPermissionSnapshot(before);
+        const afterPerms = buildPermissionSnapshot(fallbackFiles[idx]);
+        await logActivity(req, {
+          action: 'file.permissions_update',
+          targetType: 'file',
+          targetId: req.params.id,
+          details: `Access updated for ${fallbackFiles[idx].originalName}: ${permissionSummary}`,
+          metadata: {
+            before: beforePerms,
+            after: afterPerms,
+          },
+        });
+      }
       return res.json(fallbackFiles[idx]);
     }
 
@@ -2162,6 +2217,21 @@ app.put('/api/files/:id', requireAuth, requireRoles(['admin', 'user']), async (r
       details: `Updated ${updated.originalName}`,
       metadata: updates,
     });
+    const permissionSummary = summarizePermissionChanges(existing.toObject ? existing.toObject() : existing, updated.toObject ? updated.toObject() : updated);
+    if (permissionSummary) {
+      const beforePerms = buildPermissionSnapshot(existing.toObject ? existing.toObject() : existing);
+      const afterPerms = buildPermissionSnapshot(updated.toObject ? updated.toObject() : updated);
+      await logActivity(req, {
+        action: 'file.permissions_update',
+        targetType: 'file',
+        targetId: updated._id.toString(),
+        details: `Access updated for ${updated.originalName}: ${permissionSummary}`,
+        metadata: {
+          before: beforePerms,
+          after: afterPerms,
+        },
+      });
+    }
     return res.json(updated);
   } catch (err) {
     console.error('Error updating file:', err);

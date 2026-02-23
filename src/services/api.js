@@ -471,6 +471,7 @@ export const api = {
         const skip = options && options.skip != null ? Number(options.skip) : 0;
         const actionPrefix = options && options.actionPrefix ? String(options.actionPrefix) : '';
         const action = options && options.action ? String(options.action) : '';
+        const permissionChanges = Boolean(options && options.permissionChanges);
         const targetId = options && options.targetId ? String(options.targetId) : '';
         const targetType = options && options.targetType ? String(options.targetType) : '';
 
@@ -479,6 +480,7 @@ export const api = {
         if (skip) qs.set('skip', String(skip));
         if (actionPrefix) qs.set('actionPrefix', actionPrefix);
         if (action) qs.set('action', action);
+        if (permissionChanges) qs.set('permissionChanges', 'true');
         if (targetId) qs.set('targetId', targetId);
         if (targetType) qs.set('targetType', targetType);
 
