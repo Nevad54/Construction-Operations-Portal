@@ -395,77 +395,8 @@
   margin: var(--spacing-lg) 0;
 }
 
-/* Footer (project page overrides if needed) */
-.footer-info {
-  background-color: var(--neutral-100);
-  padding: var(--space-10) 0;
-}
-
-.footer-item {
-  margin-bottom: var(--space-8);
-}
-
-.footer-item h2 {
-  color: var(--accent);
-  margin-bottom: var(--space-4);
-}
-
-.map-container {
-  margin-top: 15px;
-}
-
-.certification {
-  max-width: 150px;
-  margin-right: 10px;
-}
-
-footer {
-  background-color: var(--accent-700);
-  color: white;
-  padding: 20px 0;
-  text-align: center;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
-  .sidebar {
-    width: 100%;
-    left: -100%;
-    background-color: var(--neutral-900);
-  }
-
-  .sidebar.open {
-    left: 0;
-  }
-
-  .sidebar.open + .main-content {
-    margin-left: 0;
-  }
-
-  .main-content {
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .hamburger {
-    display: block;
-    background: none;
-    border: none;
-    color: var(--neutral-900);
-    font-size: var(--text-xl);
-    cursor: pointer;
-    padding: var(--spacing-sm);
-    transition: all 0.3s ease;
-  }
-
-  .hamburger:hover {
-    color: var(--accent);
-  }
-
-  .nav-links {
-    display: none;
-  }
-
   .project-filter {
     flex-direction: column;
   }
@@ -495,19 +426,6 @@ footer {
   
   .projects-grid > * {
     animation-delay: 0.1s;
-  }
-
-  .sidebar .dropdown-content {
-    position: static;
-    width: 100%;
-    box-shadow: none;
-    background-color: var(--neutral-800);
-    margin-top: 0;
-  }
-
-  .sidebar .dropdown-content a {
-    text-align: left;
-    padding: var(--spacing-sm) var(--spacing-lg);
   }
 }
 
