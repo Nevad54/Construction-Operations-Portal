@@ -297,6 +297,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   });
   const contextMenuRef = useRef(null);
   const pendingDropRef = useRef(null);
+  const dragModeRef = useRef('move');
   const [pendingDropChoice, setPendingDropChoice] = useState({
     open: false,
     x: 0,
@@ -1170,10 +1171,19 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   }, []);
 
   const getDragModeFromEvent = (event) => {
+    if (event?.altKey) return 'ask';
     if (event?.button === 2) return 'ask';
     if (event?.ctrlKey || event?.metaKey) return 'copy';
     if (event?.shiftKey) return 'move';
     return 'move';
+  };
+
+  const resolveDropMode = (event, fallbackMode = 'move') => {
+    if (event?.altKey) return 'ask';
+    if (event?.button === 2) return 'ask';
+    if (event?.ctrlKey || event?.metaKey) return 'copy';
+    if (event?.shiftKey) return 'move';
+    return fallbackMode || dragModeRef.current || 'move';
   };
 
   const getDraggedFileIds = (dataTransfer) => {
@@ -1409,7 +1419,9 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const handleDriveDragOver = (event) => {
     if (!canManage) return;
     event.preventDefault();
-    if (event.ctrlKey || event.metaKey) {
+    if (event.altKey) {
+      event.dataTransfer.dropEffect = 'move';
+    } else if (event.ctrlKey || event.metaKey) {
       event.dataTransfer.dropEffect = 'copy';
     } else {
       event.dataTransfer.dropEffect = 'move';
@@ -1439,7 +1451,10 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
 
     const draggedFileIds = getDraggedFileIds(event.dataTransfer);
     const draggedFolderPath = event.dataTransfer?.getData('text/mti-folder-path');
-    const dragMode = String(event.dataTransfer?.getData('text/mti-drag-mode') || '').trim() || 'move';
+    const dragMode = resolveDropMode(
+      event,
+      String(event.dataTransfer?.getData('text/mti-drag-mode') || '').trim() || dragModeRef.current || 'move'
+    );
     const destinationFolder = folderFilter === 'all' ? '' : folderFilter;
 
     try {
@@ -1500,6 +1515,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const onDragStartFile = (event, fileId) => {
     const ids = selectedIds.includes(fileId) && selectedIds.length > 1 ? selectedIds : [fileId];
     const mode = getDragModeFromEvent(event);
+    dragModeRef.current = mode;
     event.dataTransfer.setData('text/mti-file-id', fileId);
     event.dataTransfer.setData('text/mti-file-ids', JSON.stringify(ids));
     event.dataTransfer.setData('text/mti-drag-mode', mode);
@@ -1509,6 +1525,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
 
   const onDragStartFolder = (event, folderPath) => {
     const mode = getDragModeFromEvent(event);
+    dragModeRef.current = mode;
     event.dataTransfer.setData('text/mti-folder-path', folderPath);
     event.dataTransfer.setData('text/mti-drag-mode', mode);
     event.dataTransfer.effectAllowed = mode === 'copy' ? 'copy' : 'copyMove';
@@ -1519,7 +1536,10 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     event.preventDefault();
     const fileIds = getDraggedFileIds(event.dataTransfer);
     const sourceFolder = event.dataTransfer.getData('text/mti-folder-path');
-    const dragMode = String(event.dataTransfer?.getData('text/mti-drag-mode') || '').trim() || 'move';
+    const dragMode = resolveDropMode(
+      event,
+      String(event.dataTransfer?.getData('text/mti-drag-mode') || '').trim() || dragModeRef.current || 'move'
+    );
     try {
       if (dragMode === 'ask' && (fileIds.length || sourceFolder)) {
         setPendingDropChoice({
@@ -1924,7 +1944,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
 
           {canManage && (
             <p className="text-xs text-text-secondary dark:text-gray-400">
-              Right-click folders for options. Drag with Ctrl to copy, Shift to move. Right-button drag opens Move/Copy chooser on drop.
+              Right-click folders for options. Drag with Ctrl to copy, Shift to move. Hold Alt while dropping to choose Move or Copy.
             </p>
           )}
 
