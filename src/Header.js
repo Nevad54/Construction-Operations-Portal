@@ -32,7 +32,7 @@ const Header = ({ isSidebarActive, setIsSidebarActive, isNavLinksActive, setIsNa
             </svg>
           </button>
           <Link to="/" className="logo-link" aria-label="Construction Portal">
-            <span className="logo-text">Construction Portal</span>
+            <img src="/Uploads/logo.png" alt="Construction Portal Logo" className="logo" loading="lazy" />
           </Link>
           <nav aria-label="Main menu">
             <ul className={`nav-links ${isNavLinksActive ? 'active' : ''}`}>
