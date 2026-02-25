@@ -2142,10 +2142,12 @@ app.get('/api/activity-logs', requireAuth, requireRoles(['admin']), async (req, 
 });
 
 app.options('/api/files', cors(corsOptions));
-
 app.options('/api/files/:id', cors(corsOptions));
+app.options('/api/files/:id/view', cors(corsOptions));
+app.options('/api/files/:id/download', cors(corsOptions));
+app.options('/api/files/:id/preview', cors(corsOptions));
 
-app.get('/api/files', requireAuth, async (req, res) => {
+app.get('/api/files', cors(corsOptions), requireAuth, async (req, res) => {
   const role = req.authUser.role;
   const userId = req.authUser.id;
   const projectIds = req.authUser.projectIds || [];
@@ -2180,7 +2182,7 @@ function inferCloudinaryResourceType(fileRecord) {
 
 // Signed view/download URL for Cloudinary-backed files.
 // Cloudinary delivery URLs in this account currently return 401, so we redirect to a signed download URL.
-app.get('/api/files/:id/view', requireAuth, async (req, res) => {
+app.get('/api/files/:id/view', cors(corsOptions), requireAuth, async (req, res) => {
   try {
     const fileId = String(req.params.id || '').trim();
     if (!fileId) return res.status(400).json({ error: 'Missing file id' });
@@ -2236,7 +2238,7 @@ app.get('/api/files/:id/view', requireAuth, async (req, res) => {
 });
 
 // Download with a consistent filename (works for Cloudinary + local files).
-app.get('/api/files/:id/download', requireAuth, async (req, res) => {
+app.get('/api/files/:id/download', cors(corsOptions), requireAuth, async (req, res) => {
   try {
     const fileId = String(req.params.id || '').trim();
     if (!fileId) return res.status(400).json({ error: 'Missing file id' });
@@ -2284,7 +2286,7 @@ app.get('/api/files/:id/download', requireAuth, async (req, res) => {
 
 // Office preview: converts Office docs to PDF via CloudConvert and returns a temporary PDF URL.
 // Restricted to admin/user because conversion can incur third-party costs.
-app.post('/api/files/:id/preview', requireAuth, requireRoles(['admin', 'user']), async (req, res) => {
+app.post('/api/files/:id/preview', cors(corsOptions), requireAuth, requireRoles(['admin', 'user']), async (req, res) => {
   try {
     const fileId = String(req.params.id || '').trim();
     if (!fileId) return res.status(400).json({ error: 'Missing file id' });
@@ -2351,7 +2353,7 @@ app.post('/api/files/:id/preview', requireAuth, requireRoles(['admin', 'user']),
   }
 });
 
-app.post('/api/files', requireAuth, requireRoles(['admin', 'user']), fileUpload.single('file'), async (req, res) => {
+app.post('/api/files', cors(corsOptions), requireAuth, requireRoles(['admin', 'user']), fileUpload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'File upload is required' });
