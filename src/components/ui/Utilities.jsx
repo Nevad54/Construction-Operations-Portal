@@ -22,7 +22,7 @@ export function Badge({
     error: 'bg-feedback-error-light text-feedback-error border border-feedback-error/20',
     info: 'bg-feedback-info-light text-feedback-info border border-feedback-info/20',
     secondary: 'bg-surface-muted text-text-secondary border border-stroke/50',
-    gray: 'bg-gray-100 text-gray-700 border border-gray-200',
+    gray: 'bg-gray-100 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700',
   };
 
   const sizeClasses = {
