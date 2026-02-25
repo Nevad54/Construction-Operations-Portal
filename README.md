@@ -1,79 +1,167 @@
-# Mastertech App (React + Tailwind)
+# Mastertech App
 
-## Project Docs
+A full-stack construction company web app with a public marketing site, role-based dashboards, project tracking, file management, and contact inquiry operations.
 
-- File Management System: `FILE_MANAGEMENT_GUIDE.md`
-- Dark Mode docs index: `DARK_MODE_DOCUMENTATION_INDEX.md`
-- Deploy (Netlify + Render): `DEPLOY_NETLIFY.md`
+## Highlights
 
----
+- Public client pages: home, about, services, projects, contact
+- Admin dashboard: projects, contacts/inquiries, analytics, account management, settings
+- User dashboard: assigned projects and workspace
+- Role-based auth: admin, employee (`user`), client
+- Project lifecycle: ongoing/completed, CRUD, media support
+- File management workspace with visibility controls and activity tracking
+- Contact workflow: reCAPTCHA-protected submissions, inquiry status/priority/assignment updates
+- Responsive UI with mobile navigation/sidebar improvements
 
-# Getting Started with Create React App
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Tech Stack
 
-## Available Scripts
+- Frontend: React 18, React Router 6, Tailwind CSS, AOS, Font Awesome
+- Backend: Node.js, Express, Mongoose, Express Session, CORS, Multer, Nodemailer
+- Storage/Services: MongoDB Atlas (or local fallback JSON), optional Cloudinary + CloudConvert
+- Deployment targets: Netlify (frontend), Render (backend)
 
-In the project directory, you can run:
+## Architecture
 
-### `npm start`
+- `src/`: client app (public pages + role dashboards)
+- `backend/server.js`: Express API and auth/session logic
+- `backend/models/`: Mongo models (`User`, `Project`, `FileItem`, `Inquiry`, `ActivityLog`)
+- `backend/scripts/`: utility and smoke scripts
+- `render.yaml` / `netlify.toml`: deployment configs
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Main Routes
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- Public:
+  - `/`
+  - `/about`
+  - `/services`
+  - `/projects`
+  - `/contact`
+- Auth:
+  - `/login/admin`
+  - `/login/user`
+- Admin:
+  - `/admin/dashboard/projects`
+  - `/admin/dashboard/files`
+  - `/admin/dashboard/clients`
+  - `/admin/dashboard/reports`
+  - `/admin/dashboard/settings`
+- User:
+  - `/user/dashboard`
 
-### `npm test`
+## API Surface (selected)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Health: `GET /api/status`
+- Auth: `POST /api/login`, `POST /api/register`, `POST /api/logout`, `GET /api/me`
+- Projects: `GET/POST/PUT/DELETE /api/projects`
+- Admin users:
+  - `GET /api/admin/users`
+  - `POST /api/admin/users`
+  - `PUT /api/admin/users/:id`
+  - `POST /api/admin/users/:id/reset-password`
+  - `DELETE /api/admin/users/:id`
+- Inquiries:
+  - `POST /api/contact` (public submission)
+  - `GET /api/admin/inquiries`
+  - `PUT /api/admin/inquiries/:id`
+  - `DELETE /api/admin/inquiries/:id`
 
-### `npm run build`
+## Local Development
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 1) Install dependencies
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+npm install
+cd backend && npm install
+cd ..
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 2) Configure environment
 
-### `npm run eject`
+Create `.env` in repo root (or copy from deployment templates):
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Required/important keys:
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- `MONGO_URI`
+- `SESSION_SECRET`
+- `CORS_ORIGINS`
+- `ADMIN_USER`, `ADMIN_PASS`
+- `EMP_USER`, `EMP_PASS`
+- `CLIENT_USER`, `CLIENT_PASS`
+- `RECAPTCHA_SECRET_KEY` (for strict contact validation)
+- `EMAIL_USER`, `EMAIL_PASS`, `CONTACT_EMAIL` (for email notifications)
+- Optional cloud/file features:
+  - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+  - `CLOUDCONVERT_API_KEY`
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Frontend optional key:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- `REACT_APP_RECAPTCHA_SITE_KEY`
 
-## Learn More
+Deployment env templates:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- `render.env.template`
+- `netlify.env.template`
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 3) Run app
 
-### Code Splitting
+Run frontend + backend together:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```bash
+npm run dev
+```
 
-### Analyzing the Bundle Size
+This starts:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- backend on `http://localhost:3002`
+- frontend on `http://localhost:3001`
 
-### Making a Progressive Web App
+You can also run frontend only:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```bash
+npm start
+```
 
-### Advanced Configuration
+## Build and Verify
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```bash
+npm run build
+```
 
-### Deployment
+Other useful scripts:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+- `npm run smoke:rbac` (basic RBAC smoke checks)
+- `npm run optimize` (build + bundle analysis)
 
-### `npm run build` fails to minify
+## Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Frontend: Netlify
+- Backend: Render web service
+- Use:
+  - `render.yaml`
+  - `netlify.toml`
+  - `DEPLOY_NETLIFY.md`
+
+Set `BACKEND_API_URL` in Netlify to your Render backend URL.
+
+## Security Notes
+
+- Do not commit real credentials or API keys.
+- Rotate any exposed secrets immediately.
+- Use strong `SESSION_SECRET` and production cookie settings.
+- Configure strict `CORS_ORIGINS` for your deployed frontend domains only.
+
+## Supporting Docs
+
+- `FILE_MANAGEMENT_GUIDE.md`
+- `DARK_MODE_DOCUMENTATION_INDEX.md`
+- `UI_IMPROVEMENTS_SUMMARY.md`
+- `RELEASE_NOTES_v0.1.0-ui-stabilization.md`
+
+## Suggested Portfolio Positioning
+
+For portfolio presentation, frame this as:
+
+- A production-style SMB web platform
+- Practical RBAC + operations dashboard implementation
+- Full workflow from lead capture to operational handling
+- Emphasis on responsive UX, reliability fallback, and deployment-ready setup
