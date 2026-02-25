@@ -13,7 +13,7 @@ const router = express.Router();
 
 // Middleware
 app.use(cors({
-  origin: ['https://mastertech2.netlify.app', 'http://localhost:3000'],
+  origin: ['https://mastertech4.netlify.app', 'https://mastertech2.netlify.app', 'http://localhost:3000'],
   credentials: true
 }));
 app.use(express.json());

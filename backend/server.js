@@ -140,6 +140,7 @@ const allowedOrigins = Array.from(
     [
       'http://localhost:3000',
       'http://127.0.0.1:3000',
+      'https://mastertech4.netlify.app',
       'https://mastertech-frontend-yqjb.onrender.com',
       ...(process.env.CORS_ORIGINS || '')
         .split(',')
