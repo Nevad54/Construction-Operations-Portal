@@ -77,6 +77,7 @@ export default function DashboardSidebar({
         {/* Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800">
           <Link to={homePath} className={`flex items-center gap-3 transition-opacity duration-200 ${collapsed && !isMobile ? 'lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}>
+            <img src="/Uploads/logo.png" alt="Construction Portal Logo" className="w-9 h-9 rounded-xl object-cover shadow-lg" />
             <div className="flex flex-col">
               <span className="font-bold text-gray-900 dark:text-white">Construction Ops</span>
               <span className="text-xs text-gray-500 dark:text-gray-400">Admin Portal</span>

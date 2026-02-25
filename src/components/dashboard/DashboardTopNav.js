@@ -26,7 +26,7 @@ export default function DashboardTopNav({
   const settingsPath = isAdminArea ? '/admin/dashboard/settings' : '/user/dashboard/settings';
   const loginPath = isAdminArea ? '/login/admin' : '/login/user';
   const profileInitial = String(currentUser?.username || 'A').charAt(0).toUpperCase();
-  const showTopBrand = isMobile;
+  const showTopBrand = true;
 
   useEffect(() => {
     if (!isMobile) setMobileSearchOpen(false);

@@ -2132,6 +2132,94 @@ footer {
   }
 }
 
+/* Client dark mode */
+html.dark body,
+html.dark #root,
+html.dark .App {
+  background: #0b1220;
+  color: #e5e7eb;
+}
+
+html.dark header {
+  background: #111827;
+  border-bottom: 1px solid #334155;
+  box-shadow: none;
+}
+
+html.dark .logo-text,
+html.dark .nav-links li a,
+html.dark .nav-dropdown-trigger {
+  color: #e5e7eb;
+}
+
+html.dark .nav-links li a:hover,
+html.dark .nav-dropdown-trigger:hover {
+  background: #1f2937;
+  color: #f8fafc;
+}
+
+html.dark .nav-links .dropdown-content {
+  background: #111827;
+  border-color: #334155;
+}
+
+html.dark .nav-links .dropdown-content a:hover {
+  background: #1f2937;
+}
+
+html.dark .sidebar {
+  background: #0f172a;
+}
+
+html.dark .sidebar ul li {
+  border-bottom-color: rgba(148, 163, 184, 0.2);
+}
+
+html.dark .sidebar ul li a,
+html.dark .sidebar ul li button {
+  color: #e2e8f0;
+}
+
+html.dark .project-categories,
+html.dark .services,
+html.dark .about,
+html.dark .contact,
+html.dark .safety,
+html.dark .footer-info {
+  background: #0f172a;
+  color: #e5e7eb;
+  border-color: #334155;
+}
+
+html.dark .hero-content,
+html.dark .service-item,
+html.dark .about-text,
+html.dark .about-services,
+html.dark .about-location,
+html.dark .contact-form,
+html.dark .contact-info,
+html.dark .footer-item {
+  background: #111827;
+  color: #e5e7eb;
+  border-color: #334155;
+}
+
+html.dark .about p,
+html.dark .about li,
+html.dark .contact p,
+html.dark .services p,
+html.dark .footer-info p {
+  color: #cbd5e1;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background: #0f172a;
+  color: #e5e7eb;
+  border-color: #334155;
+}
+
 @media (max-width: 480px) {
   .contact {
     padding: calc(var(--header-height) + var(--space-3)) var(--space-2) var(--space-6);
