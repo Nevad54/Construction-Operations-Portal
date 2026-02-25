@@ -478,11 +478,45 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     return Math.min(3, Math.max(0.5, next));
   }, []);
 
-  const openFile = useCallback((file) => {
+  // helper for downloading or opening a blob that was fetched from the API
+  const downloadBlob = (blob, filename) => {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename || '';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  };
+
+  const fetchAndDownload = async (url, filename) => {
+    if (!url) return;
+    try {
+      const resp = await fetch(url, { credentials: 'include' });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const blob = await resp.blob();
+      downloadBlob(blob, filename);
+    } catch (err) {
+      console.error('download error', err);
+      setError(err.message || 'Failed to download file');
+    }
+  };
+
+  const openFile = useCallback(async (file) => {
     const url = resolveFileUrl(file);
     if (!url) return;
     setRecentOpenIds((prev) => [file._id, ...prev.filter((id) => id !== file._id)].slice(0, 50));
-    window.open(url, '_blank', 'noopener,noreferrer');
+    try {
+      const resp = await fetch(url, { credentials: 'include' });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const blob = await resp.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch (err) {
+      console.error('open file error', err);
+      setError(err.message || 'Failed to open file');
+    }
   }, []);
 
   const openInspectorFor = useCallback((file) => {
@@ -1691,13 +1725,9 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     }
     if (action === 'download') {
       const url = resolveFileUrl(file, { download: true });
+      // use fetch-based download so credentials work across domains
       if (url) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = file.originalName || '';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        fetchAndDownload(url, file.originalName || '');
       }
       closeContextMenu();
       return;
@@ -3931,7 +3961,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                   onClick={() => {
                     const url = resolveFileUrl(previewFile, { download: true });
                     if (!url) return;
-                    window.open(url, '_blank', 'noopener,noreferrer');
+                    fetchAndDownload(url, previewFile.originalName || '');
                   }}
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -4053,7 +4083,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                               onClick={() => {
                                 const dl = resolveFileUrl(previewFile, { download: true });
                                 if (!dl) return;
-                                window.open(dl, '_blank', 'noopener,noreferrer');
+                                fetchAndDownload(dl, previewFile.originalName || '');
                               }}
                             >
                               Download
