@@ -10,7 +10,7 @@ A full-stack construction company web app with a public marketing site, role-bas
 
 ## Screenshots
 
-Add these to a `docs/screenshots/` folder and link them below:
+Place screenshots in `docs/screenshots/` using the exact filenames below.
 
 - `docs/screenshots/home-light.png` - Public homepage (light mode)
 - `docs/screenshots/home-dark.png` - Public homepage (dark mode)
@@ -20,6 +20,23 @@ Add these to a `docs/screenshots/` folder and link them below:
 - `docs/screenshots/admin-inquiries.png` - Inquiry status/priority management
 - `docs/screenshots/admin-reports.png` - Analytics cards and activity
 - `docs/screenshots/mobile-nav.png` - Mobile navigation and responsive layout
+
+### Public Experience
+
+![Home Light](docs/screenshots/home-light.png)
+![Home Dark](docs/screenshots/home-dark.png)
+![Projects List](docs/screenshots/projects-list.png)
+![Contact Form](docs/screenshots/contact-form.png)
+
+### Admin Experience
+
+![Admin Dashboard](docs/screenshots/admin-dashboard.png)
+![Admin Inquiries](docs/screenshots/admin-inquiries.png)
+![Admin Reports](docs/screenshots/admin-reports.png)
+
+### Mobile
+
+![Mobile Navigation](docs/screenshots/mobile-nav.png)
 
 ## Highlights
 
