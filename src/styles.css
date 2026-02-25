@@ -2239,6 +2239,27 @@ html.dark .footer-info {
   border-color: #334155;
 }
 
+html.dark main#main {
+  background:
+    radial-gradient(circle at 8% -10%, rgba(71, 140, 30, 0.14), transparent 38%),
+    radial-gradient(circle at 90% 0%, rgba(47, 107, 63, 0.16), transparent 30%),
+    #0b1220;
+}
+
+html.dark .hero-content {
+  border-color: rgba(148, 163, 184, 0.35);
+  background: linear-gradient(120deg, rgba(15, 23, 42, 0.58), rgba(15, 23, 42, 0.34));
+}
+
+html.dark .project-categories {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.9));
+  border-color: #334155;
+}
+
+html.dark .category-card {
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
 html.dark .hero-content,
 html.dark .service-item,
 html.dark .about-text,
