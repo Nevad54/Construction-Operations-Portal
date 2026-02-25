@@ -30,13 +30,13 @@ const Footer = () => {
           <div className="footer-item">
             <h2>Certifications</h2>
             <img
-              src="/Uploads/certification1.jpg"
+              src="/Uploads/showcase1.png"
               alt="ISO 9001 Certification"
               className="certification"
               loading="lazy"
             />
             <img
-              src="/Uploads/certification2.jpg"
+              src="/Uploads/showcase2.png"
               alt="Safety Compliance Certification"
               className="certification"
               loading="lazy"

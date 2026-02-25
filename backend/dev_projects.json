@@ -5,8 +5,8 @@
     "description": "Retrofit works for aging bridge components, including deck strengthening and railing upgrades.",
     "location": "North District",
     "owner": "City Infrastructure Office",
-    "image": "/uploads/sample-bridge.jpg",
-    "date": "2026-01-15T00:00:00.000Z",
+    "image": "/Uploads/1743831808997.jpg",
+    "date": "2026-02-15T05:37:12.178Z",
     "status": "ongoing",
     "featured": true
   },
@@ -16,8 +16,8 @@
     "description": "Design-build expansion with structural steel, slab extension, and stormwater improvements.",
     "location": "Logistics Park",
     "owner": "LogiBuild Partners",
-    "image": "/uploads/sample-warehouse.jpg",
-    "date": "2025-11-20T00:00:00.000Z",
+    "image": "/Uploads/1743831841970.png",
+    "date": "2026-01-28T05:37:12.179Z",
     "status": "ongoing",
     "featured": false
   },
@@ -27,9 +27,108 @@
     "description": "Road widening, concrete paving, drainage channels, and traffic safety markings.",
     "location": "West Access Road",
     "owner": "Municipal Engineering Office",
-    "image": "/uploads/sample-road.jpg",
-    "date": "2025-08-05T00:00:00.000Z",
+    "image": "/Uploads/1743832533762.jpg",
+    "date": "2026-01-10T05:37:12.179Z",
+    "status": "ongoing",
+    "featured": false
+  },
+  {
+    "_id": "prj-sample-004",
+    "title": "Site Drainage Upgrade",
+    "description": "Installation of drain lines, catch basins, and pavement tie-ins to improve stormwater flow.",
+    "location": "South Utility Zone",
+    "owner": "Regional Public Works",
+    "image": "/Uploads/1743834690463.jpg",
+    "date": "2025-12-23T05:37:12.179Z",
+    "status": "ongoing",
+    "featured": true
+  },
+  {
+    "_id": "prj-sample-005",
+    "title": "Plant Utility Piping Renewal",
+    "description": "Replacement of old utility pipe racks, supports, and valves in active production zones.",
+    "location": "Industrial Strip A",
+    "owner": "Apex Manufacturing",
+    "image": "/Uploads/1743835745185.jpg",
+    "date": "2025-12-05T05:37:12.179Z",
+    "status": "ongoing",
+    "featured": false
+  },
+  {
+    "_id": "prj-sample-006",
+    "title": "Commercial Fit-Out Package",
+    "description": "Interior fit-out for office and retail units with MEP coordination and compliance checks.",
+    "location": "Central Commercial Block",
+    "owner": "BlueStone Properties",
+    "image": "/Uploads/1743836043614.jpg",
+    "date": "2025-11-17T05:37:12.179Z",
+    "status": "ongoing",
+    "featured": false
+  },
+  {
+    "_id": "prj-sample-007",
+    "title": "Concrete Pavement Rehabilitation",
+    "description": "Concrete panel replacement, joint resealing, and surface correction for heavy traffic lanes.",
+    "location": "Cargo Access Road",
+    "owner": "Port Logistics Authority",
+    "image": "/Uploads/1743831808997.jpg",
+    "date": "2025-10-30T05:37:12.179Z",
     "status": "completed",
     "featured": true
+  },
+  {
+    "_id": "prj-sample-008",
+    "title": "Flood Control Channel Works",
+    "description": "Channel lining, embankment stabilization, and culvert tie-ins for seasonal flood reduction.",
+    "location": "Riverside Sector",
+    "owner": "Provincial Engineering Unit",
+    "image": "/Uploads/1743831841970.png",
+    "date": "2025-10-12T05:37:12.179Z",
+    "status": "completed",
+    "featured": false
+  },
+  {
+    "_id": "prj-sample-009",
+    "title": "Substation Civil Works",
+    "description": "Foundation, cable trenching, and equipment pads for substation upgrade.",
+    "location": "Power Corridor East",
+    "owner": "Grid Services Contractor",
+    "image": "/Uploads/1743832533762.jpg",
+    "date": "2025-09-24T05:37:12.179Z",
+    "status": "completed",
+    "featured": false
+  },
+  {
+    "_id": "prj-sample-010",
+    "title": "Factory Ventilation Upgrade",
+    "description": "Duct routing, fan support structures, and airflow balancing works in production halls.",
+    "location": "Plant Zone 3",
+    "owner": "Northline Fabrication",
+    "image": "/Uploads/1743834690463.jpg",
+    "date": "2025-09-06T05:37:12.179Z",
+    "status": "completed",
+    "featured": true
+  },
+  {
+    "_id": "prj-sample-011",
+    "title": "School Building Retrofit",
+    "description": "Structural strengthening and accessibility upgrades for academic facilities.",
+    "location": "Education District",
+    "owner": "School Facilities Board",
+    "image": "/Uploads/1743835745185.jpg",
+    "date": "2025-08-19T05:37:12.179Z",
+    "status": "completed",
+    "featured": false
+  },
+  {
+    "_id": "prj-sample-012",
+    "title": "Water Line Distribution Upgrade",
+    "description": "Mainline replacement and branch tie-ins to improve pressure and reliability.",
+    "location": "South Residential Cluster",
+    "owner": "Waterworks Operations",
+    "image": "/Uploads/1743836043614.jpg",
+    "date": "2025-08-01T05:37:12.179Z",
+    "status": "completed",
+    "featured": false
   }
 ]

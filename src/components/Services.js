@@ -99,7 +99,7 @@ const Services = () => {
             <button className="hamburger" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               <FontAwesomeIcon icon={faBars} />
             </button>
-            <img src="/Uploads/logo.png" alt="Construction Portal Logo" className="logo" />
+            <img src="/assets/logo.svg" alt="Construction Portal Logo" className="logo" />
             <nav>
               <ul className="nav-links">
                 <li><a href="/"><FontAwesomeIcon icon={faHome} /> Home</a></li>

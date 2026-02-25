@@ -241,14 +241,20 @@ if (fs.existsSync(publicAssetsPath)) {
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Serve image assets for legacy client paths (/Uploads/*).
+const publicUploadsPath = path.join(__dirname, '../public/Uploads');
+if (fs.existsSync(publicUploadsPath)) {
+  app.use('/Uploads', express.static(publicUploadsPath));
+}
+
 // Serve assets with fallback
 const assetsPath = path.join(__dirname, '../assets');
 if (fs.existsSync(assetsPath)) {
-    app.use('/Uploads', express.static(assetsPath));
+  app.use('/Uploads', express.static(assetsPath));
 } else {
-    console.log('Assets directory not found. Creating it...');
-    fs.mkdirSync(assetsPath, { recursive: true });
-    app.use('/Uploads', express.static(assetsPath));
+  console.log('Assets directory not found. Creating it...');
+  fs.mkdirSync(assetsPath, { recursive: true });
+  app.use('/Uploads', express.static(assetsPath));
 }
 
 // Static file paths

@@ -232,7 +232,7 @@
   overflow: hidden;
   transition: var(--transition-normal);
   cursor: default;
-  background: white;
+  background: var(--bg-section);
   animation: slideIn 0.5s ease-out;
   animation-fill-mode: both;
   display: flex;

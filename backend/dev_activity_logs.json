@@ -5,12 +5,82 @@
     "actorRole": "admin",
     "action": "data.sanitized",
     "targetType": "system",
-    "targetId": "sample-seed",
-    "details": "Demo data refreshed and asset references removed.",
+    "targetId": "sample-1",
+    "details": "Sample activity created for data.sanitized.",
     "metadata": {
       "source": "sanitize-demo-data"
     },
-    "createdAt": "2026-02-25T04:53:38.037Z",
-    "updatedAt": "2026-02-25T04:53:38.037Z"
+    "createdAt": "2026-02-25T05:37:12.180Z",
+    "updatedAt": "2026-02-25T05:37:12.180Z"
+  },
+  {
+    "_id": "act-sample-002",
+    "actorId": "admin-1",
+    "actorRole": "admin",
+    "action": "project.seeded",
+    "targetType": "system",
+    "targetId": "sample-2",
+    "details": "Sample activity created for project.seeded.",
+    "metadata": {
+      "source": "sanitize-demo-data"
+    },
+    "createdAt": "2026-02-24T05:37:12.180Z",
+    "updatedAt": "2026-02-24T05:37:12.180Z"
+  },
+  {
+    "_id": "act-sample-003",
+    "actorId": "admin-1",
+    "actorRole": "admin",
+    "action": "file.seeded",
+    "targetType": "system",
+    "targetId": "sample-3",
+    "details": "Sample activity created for file.seeded.",
+    "metadata": {
+      "source": "sanitize-demo-data"
+    },
+    "createdAt": "2026-02-23T05:37:12.180Z",
+    "updatedAt": "2026-02-23T05:37:12.180Z"
+  },
+  {
+    "_id": "act-sample-004",
+    "actorId": "admin-1",
+    "actorRole": "admin",
+    "action": "inquiry.seeded",
+    "targetType": "system",
+    "targetId": "sample-4",
+    "details": "Sample activity created for inquiry.seeded.",
+    "metadata": {
+      "source": "sanitize-demo-data"
+    },
+    "createdAt": "2026-02-22T05:37:12.180Z",
+    "updatedAt": "2026-02-22T05:37:12.180Z"
+  },
+  {
+    "_id": "act-sample-005",
+    "actorId": "admin-1",
+    "actorRole": "admin",
+    "action": "report.generated",
+    "targetType": "system",
+    "targetId": "sample-5",
+    "details": "Sample activity created for report.generated.",
+    "metadata": {
+      "source": "sanitize-demo-data"
+    },
+    "createdAt": "2026-02-21T05:37:12.180Z",
+    "updatedAt": "2026-02-21T05:37:12.180Z"
+  },
+  {
+    "_id": "act-sample-006",
+    "actorId": "admin-1",
+    "actorRole": "admin",
+    "action": "dashboard.refresh",
+    "targetType": "system",
+    "targetId": "sample-6",
+    "details": "Sample activity created for dashboard.refresh.",
+    "metadata": {
+      "source": "sanitize-demo-data"
+    },
+    "createdAt": "2026-02-20T05:37:12.180Z",
+    "updatedAt": "2026-02-20T05:37:12.180Z"
   }
 ]

@@ -1,11 +1,11 @@
 [
   {
     "_id": "file-sample-001",
-    "originalName": "bridge-inspection-summary.pdf",
-    "storedName": "bridge-inspection-summary.pdf",
-    "path": "/samples/bridge-inspection-summary.pdf",
+    "originalName": "project-1-package.pdf",
+    "storedName": "project-1-package.pdf",
+    "path": "/samples/project-1-package.pdf",
     "mimeType": "application/pdf",
-    "size": 142321,
+    "size": 65000,
     "ownerId": "admin-1",
     "visibility": "team",
     "folder": "Projects/Ongoing",
@@ -17,27 +17,27 @@
     ],
     "linkAccess": "view",
     "tags": [
-      "bridge",
-      "inspection"
+      "construction",
+      "ongoing"
     ],
-    "notes": "Sample redacted document for demo use.",
+    "notes": "Sample operational document for demo use.",
     "cloudProvider": "",
     "cloudPublicId": "",
     "previewProvider": "",
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-15T04:53:38.036Z",
-    "updatedAt": "2026-02-23T04:53:38.036Z"
+    "createdAt": "2026-02-20T05:37:12.179Z",
+    "updatedAt": "2026-02-25T05:37:12.179Z"
   },
   {
     "_id": "file-sample-002",
-    "originalName": "warehouse-safety-plan.pdf",
-    "storedName": "warehouse-safety-plan.pdf",
-    "path": "/samples/warehouse-safety-plan.pdf",
-    "mimeType": "application/pdf",
-    "size": 98111,
-    "ownerId": "admin-1",
+    "originalName": "project-2-package.xlsx",
+    "storedName": "project-2-package.xlsx",
+    "path": "/samples/project-2-package.xlsx",
+    "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "size": 70173,
+    "ownerId": "user-1",
     "visibility": "client",
     "folder": "Projects/Ongoing",
     "projectId": "prj-sample-002",
@@ -48,45 +48,327 @@
     ],
     "linkAccess": "view",
     "tags": [
-      "safety",
-      "warehouse"
+      "construction",
+      "ongoing"
     ],
-    "notes": "Sample safety plan for client sharing.",
+    "notes": "Sample operational document for demo use.",
     "cloudProvider": "",
     "cloudPublicId": "",
     "previewProvider": "",
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-16T04:53:38.036Z",
-    "updatedAt": "2026-02-24T04:53:38.036Z"
+    "createdAt": "2026-02-19T05:37:12.179Z",
+    "updatedAt": "2026-02-24T05:37:12.179Z"
   },
   {
     "_id": "file-sample-003",
-    "originalName": "road-qa-checklist.xlsx",
-    "storedName": "road-qa-checklist.xlsx",
-    "path": "/samples/road-qa-checklist.xlsx",
-    "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "size": 54210,
+    "originalName": "project-3-package.pdf",
+    "storedName": "project-3-package.pdf",
+    "path": "/samples/project-3-package.pdf",
+    "mimeType": "application/pdf",
+    "size": 75346,
     "ownerId": "user-1",
     "visibility": "private",
-    "folder": "Projects/Completed",
+    "folder": "Projects/Ongoing",
     "projectId": "prj-sample-003",
     "sharedWithUsers": [],
-    "sharedWithRoles": [],
+    "sharedWithRoles": [
+      "admin",
+      "user"
+    ],
     "linkAccess": "none",
     "tags": [
-      "qa",
-      "road"
+      "construction",
+      "ongoing"
     ],
-    "notes": "Internal QA checklist sample.",
+    "notes": "Sample operational document for demo use.",
     "cloudProvider": "",
     "cloudPublicId": "",
     "previewProvider": "",
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-10T04:53:38.036Z",
-    "updatedAt": "2026-02-20T04:53:38.036Z"
+    "createdAt": "2026-02-18T05:37:12.179Z",
+    "updatedAt": "2026-02-23T05:37:12.179Z"
+  },
+  {
+    "_id": "file-sample-004",
+    "originalName": "project-4-package.xlsx",
+    "storedName": "project-4-package.xlsx",
+    "path": "/samples/project-4-package.xlsx",
+    "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "size": 80519,
+    "ownerId": "admin-1",
+    "visibility": "team",
+    "folder": "Projects/Ongoing",
+    "projectId": "prj-sample-004",
+    "sharedWithUsers": [],
+    "sharedWithRoles": [
+      "admin",
+      "user"
+    ],
+    "linkAccess": "view",
+    "tags": [
+      "construction",
+      "ongoing"
+    ],
+    "notes": "Sample operational document for demo use.",
+    "cloudProvider": "",
+    "cloudPublicId": "",
+    "previewProvider": "",
+    "previewUrl": "",
+    "previewMimeType": "",
+    "previewExpiresAt": null,
+    "createdAt": "2026-02-17T05:37:12.179Z",
+    "updatedAt": "2026-02-22T05:37:12.179Z"
+  },
+  {
+    "_id": "file-sample-005",
+    "originalName": "project-5-package.pdf",
+    "storedName": "project-5-package.pdf",
+    "path": "/samples/project-5-package.pdf",
+    "mimeType": "application/pdf",
+    "size": 85692,
+    "ownerId": "user-1",
+    "visibility": "client",
+    "folder": "Projects/Ongoing",
+    "projectId": "prj-sample-005",
+    "sharedWithUsers": [],
+    "sharedWithRoles": [
+      "admin",
+      "client"
+    ],
+    "linkAccess": "view",
+    "tags": [
+      "construction",
+      "ongoing"
+    ],
+    "notes": "Sample operational document for demo use.",
+    "cloudProvider": "",
+    "cloudPublicId": "",
+    "previewProvider": "",
+    "previewUrl": "",
+    "previewMimeType": "",
+    "previewExpiresAt": null,
+    "createdAt": "2026-02-16T05:37:12.179Z",
+    "updatedAt": "2026-02-25T05:37:12.179Z"
+  },
+  {
+    "_id": "file-sample-006",
+    "originalName": "project-6-package.xlsx",
+    "storedName": "project-6-package.xlsx",
+    "path": "/samples/project-6-package.xlsx",
+    "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "size": 90865,
+    "ownerId": "user-1",
+    "visibility": "private",
+    "folder": "Projects/Ongoing",
+    "projectId": "prj-sample-006",
+    "sharedWithUsers": [],
+    "sharedWithRoles": [
+      "admin",
+      "user"
+    ],
+    "linkAccess": "none",
+    "tags": [
+      "construction",
+      "ongoing"
+    ],
+    "notes": "Sample operational document for demo use.",
+    "cloudProvider": "",
+    "cloudPublicId": "",
+    "previewProvider": "",
+    "previewUrl": "",
+    "previewMimeType": "",
+    "previewExpiresAt": null,
+    "createdAt": "2026-02-15T05:37:12.179Z",
+    "updatedAt": "2026-02-24T05:37:12.179Z"
+  },
+  {
+    "_id": "file-sample-007",
+    "originalName": "project-7-package.pdf",
+    "storedName": "project-7-package.pdf",
+    "path": "/samples/project-7-package.pdf",
+    "mimeType": "application/pdf",
+    "size": 96038,
+    "ownerId": "admin-1",
+    "visibility": "team",
+    "folder": "Projects/Completed",
+    "projectId": "prj-sample-007",
+    "sharedWithUsers": [],
+    "sharedWithRoles": [
+      "admin",
+      "user"
+    ],
+    "linkAccess": "view",
+    "tags": [
+      "construction",
+      "completed"
+    ],
+    "notes": "Sample operational document for demo use.",
+    "cloudProvider": "",
+    "cloudPublicId": "",
+    "previewProvider": "",
+    "previewUrl": "",
+    "previewMimeType": "",
+    "previewExpiresAt": null,
+    "createdAt": "2026-02-14T05:37:12.179Z",
+    "updatedAt": "2026-02-23T05:37:12.179Z"
+  },
+  {
+    "_id": "file-sample-008",
+    "originalName": "project-8-package.xlsx",
+    "storedName": "project-8-package.xlsx",
+    "path": "/samples/project-8-package.xlsx",
+    "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "size": 101211,
+    "ownerId": "user-1",
+    "visibility": "client",
+    "folder": "Projects/Completed",
+    "projectId": "prj-sample-008",
+    "sharedWithUsers": [],
+    "sharedWithRoles": [
+      "admin",
+      "client"
+    ],
+    "linkAccess": "view",
+    "tags": [
+      "construction",
+      "completed"
+    ],
+    "notes": "Sample operational document for demo use.",
+    "cloudProvider": "",
+    "cloudPublicId": "",
+    "previewProvider": "",
+    "previewUrl": "",
+    "previewMimeType": "",
+    "previewExpiresAt": null,
+    "createdAt": "2026-02-13T05:37:12.179Z",
+    "updatedAt": "2026-02-22T05:37:12.179Z"
+  },
+  {
+    "_id": "file-sample-009",
+    "originalName": "project-9-package.pdf",
+    "storedName": "project-9-package.pdf",
+    "path": "/samples/project-9-package.pdf",
+    "mimeType": "application/pdf",
+    "size": 106384,
+    "ownerId": "user-1",
+    "visibility": "private",
+    "folder": "Projects/Completed",
+    "projectId": "prj-sample-009",
+    "sharedWithUsers": [],
+    "sharedWithRoles": [
+      "admin",
+      "user"
+    ],
+    "linkAccess": "none",
+    "tags": [
+      "construction",
+      "completed"
+    ],
+    "notes": "Sample operational document for demo use.",
+    "cloudProvider": "",
+    "cloudPublicId": "",
+    "previewProvider": "",
+    "previewUrl": "",
+    "previewMimeType": "",
+    "previewExpiresAt": null,
+    "createdAt": "2026-02-12T05:37:12.179Z",
+    "updatedAt": "2026-02-25T05:37:12.179Z"
+  },
+  {
+    "_id": "file-sample-010",
+    "originalName": "project-10-package.xlsx",
+    "storedName": "project-10-package.xlsx",
+    "path": "/samples/project-10-package.xlsx",
+    "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "size": 111557,
+    "ownerId": "admin-1",
+    "visibility": "team",
+    "folder": "Projects/Completed",
+    "projectId": "prj-sample-010",
+    "sharedWithUsers": [],
+    "sharedWithRoles": [
+      "admin",
+      "user"
+    ],
+    "linkAccess": "view",
+    "tags": [
+      "construction",
+      "completed"
+    ],
+    "notes": "Sample operational document for demo use.",
+    "cloudProvider": "",
+    "cloudPublicId": "",
+    "previewProvider": "",
+    "previewUrl": "",
+    "previewMimeType": "",
+    "previewExpiresAt": null,
+    "createdAt": "2026-02-11T05:37:12.179Z",
+    "updatedAt": "2026-02-24T05:37:12.179Z"
+  },
+  {
+    "_id": "file-sample-011",
+    "originalName": "project-11-package.pdf",
+    "storedName": "project-11-package.pdf",
+    "path": "/samples/project-11-package.pdf",
+    "mimeType": "application/pdf",
+    "size": 116730,
+    "ownerId": "user-1",
+    "visibility": "client",
+    "folder": "Projects/Completed",
+    "projectId": "prj-sample-011",
+    "sharedWithUsers": [],
+    "sharedWithRoles": [
+      "admin",
+      "client"
+    ],
+    "linkAccess": "view",
+    "tags": [
+      "construction",
+      "completed"
+    ],
+    "notes": "Sample operational document for demo use.",
+    "cloudProvider": "",
+    "cloudPublicId": "",
+    "previewProvider": "",
+    "previewUrl": "",
+    "previewMimeType": "",
+    "previewExpiresAt": null,
+    "createdAt": "2026-02-10T05:37:12.179Z",
+    "updatedAt": "2026-02-23T05:37:12.179Z"
+  },
+  {
+    "_id": "file-sample-012",
+    "originalName": "project-12-package.xlsx",
+    "storedName": "project-12-package.xlsx",
+    "path": "/samples/project-12-package.xlsx",
+    "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "size": 121903,
+    "ownerId": "user-1",
+    "visibility": "private",
+    "folder": "Projects/Completed",
+    "projectId": "prj-sample-012",
+    "sharedWithUsers": [],
+    "sharedWithRoles": [
+      "admin",
+      "user"
+    ],
+    "linkAccess": "none",
+    "tags": [
+      "construction",
+      "completed"
+    ],
+    "notes": "Sample operational document for demo use.",
+    "cloudProvider": "",
+    "cloudPublicId": "",
+    "previewProvider": "",
+    "previewUrl": "",
+    "previewMimeType": "",
+    "previewExpiresAt": null,
+    "createdAt": "2026-02-09T05:37:12.179Z",
+    "updatedAt": "2026-02-22T05:37:12.179Z"
   }
 ]

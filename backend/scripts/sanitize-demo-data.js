@@ -36,123 +36,95 @@ function nowIso(offsetDays = 0) {
   return d.toISOString();
 }
 
+function getSampleUploadImages() {
+  const uploadsDir = path.join(repoRoot, 'public', 'Uploads');
+  const fallback = ['/Uploads/industrial.jpg', '/Uploads/commercial.jpg', '/Uploads/renovation.jpg'];
+  if (!fs.existsSync(uploadsDir)) return fallback;
+
+  const deny = new Set([
+    'logo.png',
+    'logo-removebg-preview.png',
+    'background.jpg',
+    'background1.jpg',
+    'background1.png',
+    'cat.jpg',
+    'dog.jpg',
+    'bird.jpg',
+  ]);
+
+  const allowedExt = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp']);
+  const files = fs
+    .readdirSync(uploadsDir)
+    .filter((name) => allowedExt.has(path.extname(name).toLowerCase()))
+    .filter((name) => !deny.has(name.toLowerCase()))
+    .slice(0, 6)
+    .map((name) => `/Uploads/${name}`);
+
+  if (files.length < 3) return fallback;
+  return files;
+}
+
 function buildSampleProjects() {
-  return [
-    {
-      _id: 'prj-sample-001',
-      title: 'Bridge Retrofit Program',
-      description: 'Retrofit works for aging bridge components, including deck strengthening and railing upgrades.',
-      location: 'North District',
-      owner: 'City Infrastructure Office',
-      image: '/uploads/sample-bridge.jpg',
-      date: new Date('2026-01-15T00:00:00.000Z').toISOString(),
-      status: 'ongoing',
-      featured: true,
-    },
-    {
-      _id: 'prj-sample-002',
-      title: 'Warehouse Expansion Phase 1',
-      description: 'Design-build expansion with structural steel, slab extension, and stormwater improvements.',
-      location: 'Logistics Park',
-      owner: 'LogiBuild Partners',
-      image: '/uploads/sample-warehouse.jpg',
-      date: new Date('2025-11-20T00:00:00.000Z').toISOString(),
-      status: 'ongoing',
-      featured: false,
-    },
-    {
-      _id: 'prj-sample-003',
-      title: 'Municipal Road Improvement',
-      description: 'Road widening, concrete paving, drainage channels, and traffic safety markings.',
-      location: 'West Access Road',
-      owner: 'Municipal Engineering Office',
-      image: '/uploads/sample-road.jpg',
-      date: new Date('2025-08-05T00:00:00.000Z').toISOString(),
-      status: 'completed',
-      featured: true,
-    },
+  const sampleImages = getSampleUploadImages();
+  const templates = [
+    ['Bridge Retrofit Program', 'Retrofit works for aging bridge components, including deck strengthening and railing upgrades.', 'North District', 'City Infrastructure Office'],
+    ['Warehouse Expansion Phase 1', 'Design-build expansion with structural steel, slab extension, and stormwater improvements.', 'Logistics Park', 'LogiBuild Partners'],
+    ['Municipal Road Improvement', 'Road widening, concrete paving, drainage channels, and traffic safety markings.', 'West Access Road', 'Municipal Engineering Office'],
+    ['Site Drainage Upgrade', 'Installation of drain lines, catch basins, and pavement tie-ins to improve stormwater flow.', 'South Utility Zone', 'Regional Public Works'],
+    ['Plant Utility Piping Renewal', 'Replacement of old utility pipe racks, supports, and valves in active production zones.', 'Industrial Strip A', 'Apex Manufacturing'],
+    ['Commercial Fit-Out Package', 'Interior fit-out for office and retail units with MEP coordination and compliance checks.', 'Central Commercial Block', 'BlueStone Properties'],
+    ['Concrete Pavement Rehabilitation', 'Concrete panel replacement, joint resealing, and surface correction for heavy traffic lanes.', 'Cargo Access Road', 'Port Logistics Authority'],
+    ['Flood Control Channel Works', 'Channel lining, embankment stabilization, and culvert tie-ins for seasonal flood reduction.', 'Riverside Sector', 'Provincial Engineering Unit'],
+    ['Substation Civil Works', 'Foundation, cable trenching, and equipment pads for substation upgrade.', 'Power Corridor East', 'Grid Services Contractor'],
+    ['Factory Ventilation Upgrade', 'Duct routing, fan support structures, and airflow balancing works in production halls.', 'Plant Zone 3', 'Northline Fabrication'],
+    ['School Building Retrofit', 'Structural strengthening and accessibility upgrades for academic facilities.', 'Education District', 'School Facilities Board'],
+    ['Water Line Distribution Upgrade', 'Mainline replacement and branch tie-ins to improve pressure and reliability.', 'South Residential Cluster', 'Waterworks Operations'],
   ];
+
+  return templates.map((t, idx) => ({
+    _id: `prj-sample-${String(idx + 1).padStart(3, '0')}`,
+    title: t[0],
+    description: t[1],
+    location: t[2],
+    owner: t[3],
+    image: sampleImages[idx % sampleImages.length],
+    date: nowIso(-(idx * 18 + 10)),
+    status: idx < 6 ? 'ongoing' : 'completed',
+    featured: idx % 3 === 0,
+  }));
 }
 
 function buildSampleFiles(projectIds) {
-  const [p1, p2, p3] = projectIds;
-  return [
-    {
-      _id: 'file-sample-001',
-      originalName: 'bridge-inspection-summary.pdf',
-      storedName: 'bridge-inspection-summary.pdf',
-      path: '/samples/bridge-inspection-summary.pdf',
-      mimeType: 'application/pdf',
-      size: 142321,
-      ownerId: 'admin-1',
-      visibility: 'team',
-      folder: 'Projects/Ongoing',
-      projectId: String(p1 || ''),
+  const visibilities = ['team', 'client', 'private'];
+  return projectIds.slice(0, 12).map((pid, idx) => {
+    const ext = idx % 2 === 0 ? 'pdf' : 'xlsx';
+    const fileName = `project-${idx + 1}-package.${ext}`;
+    return {
+      _id: `file-sample-${String(idx + 1).padStart(3, '0')}`,
+      originalName: fileName,
+      storedName: fileName,
+      path: `/samples/${fileName}`,
+      mimeType: ext === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      size: 65000 + (idx * 5173),
+      ownerId: idx % 3 === 0 ? 'admin-1' : 'user-1',
+      visibility: visibilities[idx % visibilities.length],
+      folder: idx < 6 ? 'Projects/Ongoing' : 'Projects/Completed',
+      projectId: String(pid || ''),
       sharedWithUsers: [],
-      sharedWithRoles: ['admin', 'user'],
-      linkAccess: 'view',
-      tags: ['bridge', 'inspection'],
-      notes: 'Sample redacted document for demo use.',
+      sharedWithRoles: idx % 3 === 1 ? ['admin', 'client'] : ['admin', 'user'],
+      linkAccess: idx % 3 === 2 ? 'none' : 'view',
+      tags: ['construction', idx < 6 ? 'ongoing' : 'completed'],
+      notes: 'Sample operational document for demo use.',
       cloudProvider: '',
       cloudPublicId: '',
       previewProvider: '',
       previewUrl: '',
       previewMimeType: '',
       previewExpiresAt: null,
-      createdAt: nowIso(-10),
-      updatedAt: nowIso(-2),
-    },
-    {
-      _id: 'file-sample-002',
-      originalName: 'warehouse-safety-plan.pdf',
-      storedName: 'warehouse-safety-plan.pdf',
-      path: '/samples/warehouse-safety-plan.pdf',
-      mimeType: 'application/pdf',
-      size: 98111,
-      ownerId: 'admin-1',
-      visibility: 'client',
-      folder: 'Projects/Ongoing',
-      projectId: String(p2 || ''),
-      sharedWithUsers: [],
-      sharedWithRoles: ['admin', 'client'],
-      linkAccess: 'view',
-      tags: ['safety', 'warehouse'],
-      notes: 'Sample safety plan for client sharing.',
-      cloudProvider: '',
-      cloudPublicId: '',
-      previewProvider: '',
-      previewUrl: '',
-      previewMimeType: '',
-      previewExpiresAt: null,
-      createdAt: nowIso(-9),
-      updatedAt: nowIso(-1),
-    },
-    {
-      _id: 'file-sample-003',
-      originalName: 'road-qa-checklist.xlsx',
-      storedName: 'road-qa-checklist.xlsx',
-      path: '/samples/road-qa-checklist.xlsx',
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      size: 54210,
-      ownerId: 'user-1',
-      visibility: 'private',
-      folder: 'Projects/Completed',
-      projectId: String(p3 || ''),
-      sharedWithUsers: [],
-      sharedWithRoles: [],
-      linkAccess: 'none',
-      tags: ['qa', 'road'],
-      notes: 'Internal QA checklist sample.',
-      cloudProvider: '',
-      cloudPublicId: '',
-      previewProvider: '',
-      previewUrl: '',
-      previewMimeType: '',
-      previewExpiresAt: null,
-      createdAt: nowIso(-15),
-      updatedAt: nowIso(-5),
-    },
-  ];
+      createdAt: nowIso(-(idx + 5)),
+      updatedAt: nowIso(-(idx % 4)),
+    };
+  });
 }
 
 function buildSampleFolders() {
@@ -164,59 +136,56 @@ function buildSampleFolders() {
 }
 
 function buildSampleInquiries() {
-  return [
-    {
-      _id: 'inq-sample-001',
-      name: 'Jordan Reyes',
-      email: 'jordan.reyes@example.com',
-      phone: '+1 555 0142',
-      message: 'Need a budgetary quote for a warehouse slab and drainage upgrade.',
-      source: 'contact_form',
-      ipAddress: '0.0.0.0',
-      status: 'new',
-      priority: 'normal',
-      assignedTo: 'estimating-team',
-      notes: 'Sample inquiry only. No real personal data.',
-      handledBy: '',
-      handledAt: null,
-      createdAt: nowIso(-3),
-      updatedAt: nowIso(-3),
-    },
-    {
-      _id: 'inq-sample-002',
-      name: 'Casey Morgan',
-      email: 'casey.morgan@example.com',
-      phone: '+1 555 0199',
-      message: 'Requesting timeline and method statement for a concrete road widening project.',
-      source: 'contact_form',
-      ipAddress: '0.0.0.0',
-      status: 'in_progress',
-      priority: 'high',
-      assignedTo: 'project-controls',
-      notes: 'Sent sample response draft.',
-      handledBy: 'admin',
-      handledAt: nowIso(-1),
-      createdAt: nowIso(-8),
-      updatedAt: nowIso(-1),
-    },
+  const rows = [
+    ['Jordan Reyes', 'jordan.reyes@example.com', '+1 555 0142', 'Need a budgetary quote for a warehouse slab and drainage upgrade.', 'new', 'normal', 'estimating-team'],
+    ['Casey Morgan', 'casey.morgan@example.com', '+1 555 0199', 'Requesting timeline and method statement for a concrete road widening project.', 'in_progress', 'high', 'project-controls'],
+    ['Avery Shaw', 'avery.shaw@example.com', '+1 555 0103', 'Can you provide BOQ support for a plant utility renewal project?', 'new', 'normal', 'estimating-team'],
+    ['Riley Cruz', 'riley.cruz@example.com', '+1 555 0190', 'Looking for civil works contractor for substation foundation package.', 'in_progress', 'urgent', 'tender-desk'],
+    ['Jamie Park', 'jamie.park@example.com', '+1 555 0185', 'Need inspection and rehabilitation options for an older bridge.', 'resolved', 'high', 'engineering-review'],
+    ['Morgan Lee', 'morgan.lee@example.com', '+1 555 0132', 'Please send capability statement for flood control channel works.', 'new', 'low', 'biz-dev'],
+    ['Taylor Quinn', 'taylor.quinn@example.com', '+1 555 0158', 'Seeking design-build partner for warehouse fit-out and MEP works.', 'resolved', 'normal', 'project-controls'],
+    ['Dakota Miles', 'dakota.miles@example.com', '+1 555 0117', 'Require shortlisting support for municipal drainage project.', 'in_progress', 'high', 'estimating-team'],
   ];
+  return rows.map((r, idx) => ({
+    _id: `inq-sample-${String(idx + 1).padStart(3, '0')}`,
+    name: r[0],
+    email: r[1],
+    phone: r[2],
+    message: r[3],
+    source: 'contact_form',
+    ipAddress: '0.0.0.0',
+    status: r[4],
+    priority: r[5],
+    assignedTo: r[6],
+    notes: 'Sample inquiry only. No real personal data.',
+    handledBy: r[4] === 'resolved' ? 'admin' : '',
+    handledAt: r[4] === 'resolved' ? nowIso(-(idx % 3 + 1)) : null,
+    createdAt: nowIso(-(idx + 3)),
+    updatedAt: nowIso(-(idx % 4)),
+  }));
 }
 
 function buildSampleActivity() {
-  return [
-    {
-      _id: 'act-sample-001',
-      actorId: 'admin-1',
-      actorRole: 'admin',
-      action: 'data.sanitized',
-      targetType: 'system',
-      targetId: 'sample-seed',
-      details: 'Demo data refreshed and asset references removed.',
-      metadata: { source: 'sanitize-demo-data' },
-      createdAt: nowIso(0),
-      updatedAt: nowIso(0),
-    },
+  const actions = [
+    'data.sanitized',
+    'project.seeded',
+    'file.seeded',
+    'inquiry.seeded',
+    'report.generated',
+    'dashboard.refresh',
   ];
+  return actions.map((action, idx) => ({
+    _id: `act-sample-${String(idx + 1).padStart(3, '0')}`,
+    actorId: 'admin-1',
+    actorRole: 'admin',
+    action,
+    targetType: 'system',
+    targetId: `sample-${idx + 1}`,
+    details: `Sample activity created for ${action}.`,
+    metadata: { source: 'sanitize-demo-data' },
+    createdAt: nowIso(-idx),
+    updatedAt: nowIso(-idx),
+  }));
 }
 
 function writeJson(filePath, data) {

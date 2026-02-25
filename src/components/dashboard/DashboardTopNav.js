@@ -102,7 +102,7 @@ export default function DashboardTopNav({
             aria-hidden={!showTopBrand}
             tabIndex={showTopBrand ? 0 : -1}
           >
-            <img src="/Uploads/logo.png" alt="Construction Portal Logo" className="h-9 w-auto object-contain flex-shrink-0" />
+            <img src="/assets/logo.svg" alt="Construction Portal Logo" className="h-9 w-auto object-contain flex-shrink-0" />
             <span className="inline text-sm sm:text-base font-bold text-text-primary dark:text-gray-100 truncate">Construction Ops</span>
           </Link>
         </div>

@@ -4,8 +4,6 @@ import PageLayout from './components/PageLayout';
 import './styles.css';
 
 const Home = memo(() => {
-  const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
-
   return (
       <PageLayout>
         <section className="hero" role="banner">
@@ -36,7 +34,7 @@ const Home = memo(() => {
               className="category-card fade-in"
             >
               <img
-                src={`${IMAGE_BASE_URL}/uploads/industrial.jpg`}
+                src="/Uploads/industrial.jpg"
                 alt="Industrial Projects"
                 loading="lazy"
               />
@@ -49,7 +47,7 @@ const Home = memo(() => {
               className="category-card fade-in"
             >
               <img
-                src={`${IMAGE_BASE_URL}/uploads/residential.jpg`}
+                src="/Uploads/residential.jpg"
                 alt="Residential Projects"
                 loading="lazy"
               />
@@ -62,7 +60,7 @@ const Home = memo(() => {
               className="category-card fade-in"
             >
               <img
-                src={`${IMAGE_BASE_URL}/uploads/commercial.jpg`}
+                src="/Uploads/commercial.jpg"
                 alt="Commercial Projects"
                 loading="lazy"
               />
@@ -75,7 +73,7 @@ const Home = memo(() => {
               className="category-card fade-in"
             >
               <img
-                src={`${IMAGE_BASE_URL}/uploads/renovation.jpg`}
+                src="/Uploads/renovation.jpg"
                 alt="Renovation Projects"
                 loading="lazy"
               />

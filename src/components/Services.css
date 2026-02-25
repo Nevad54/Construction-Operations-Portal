@@ -140,7 +140,7 @@
 
 .footer-item {
   padding: 20px;
-  background: white;
+  background: var(--bg-section);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   opacity: 0;
@@ -232,7 +232,7 @@ footer {
 .dropdown-content {
   display: none;
   position: absolute;
-  background: white;
+  background: var(--bg-section);
   min-width: 200px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   border-radius: 4px;
