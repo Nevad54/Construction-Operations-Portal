@@ -16,10 +16,10 @@ const About = memo(() => {
             <div className="about-text fade-in">
               <h2>Company Overview</h2>
               <p className="about-lead">
-                Built for long-term partnerships, Mastertech combines construction expertise and industrial support
+                Built for long-term partnerships, our team combines construction expertise and industrial support
                 to help clients deliver critical projects with confidence.
               </p>
-              <p>Mastertech Intergrouppe Inc. was duly incorporated and registered with the Securities and Exchange Commission (SEC) on February 13, 2014, under SEC Certificate No. CS201402904.</p>
+              <p>Our construction group delivers engineering-led project execution with a strong focus on safety, schedule reliability, and quality control.</p>
               <p>The Company is primarily engaged in General Construction Services, including but not limited to:</p>
               <ul>
                 <li>Structural, Civil, and Architectural Works</li>
@@ -29,7 +29,7 @@ const About = memo(() => {
               </ul>
             </div>
             <div className="about-image fade-in">
-              <img src="/Uploads/about-image.png" alt="MASTERTECH Headquarters" loading="lazy" />
+              <img src="/Uploads/about-image.png" alt="Construction team on site" loading="lazy" />
             </div>
           </div>
           <div className="about-services fade-in">

@@ -11,7 +11,7 @@ export default function DashboardLayout({
   sidebarMenuItems,
   sidebarHomePath = '/admin/dashboard',
   sidebarProfileName = 'Admin',
-  sidebarProfileEmail = 'admin@mastertech',
+  sidebarProfileEmail = 'admin@construction.local',
   rightSidebar = null,
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -78,7 +78,7 @@ export default function DashboardLayout({
         menuItems={sidebarMenuItems}
         homePath={sidebarHomePath}
         profileName={authUser?.username || sidebarProfileName}
-        profileEmail={authUser ? `${authUser.role}@mastertech` : sidebarProfileEmail}
+        profileEmail={authUser ? `${authUser.role}@construction.local` : sidebarProfileEmail}
       />
       <main 
         className={`

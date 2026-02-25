@@ -32,7 +32,7 @@ export default function UserDashboard() {
       sidebarHomePath="/user/dashboard"
       sidebarMenuItems={userMenuItems}
       sidebarProfileName="Employee"
-      sidebarProfileEmail="employee@mastertech"
+      sidebarProfileEmail="employee@construction.local"
     >
       {isFilesPage ? (
         <FileManager expectedRole="user" title="User File Management" />

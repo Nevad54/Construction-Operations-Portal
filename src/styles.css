@@ -48,6 +48,13 @@ header .container {
 }
 .logo-link:hover { opacity: 0.9; }
 
+.logo-text {
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--text-primary);
+}
+
 .hamburger-btn {
     display: none;
     width: 40px;
@@ -2000,6 +2007,12 @@ footer {
   height: 50px;
   width: auto;
   display: block;
+}
+
+.logo-text {
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  font-weight: 800;
+  color: var(--text-primary);
 }
 
 /* Contact page polish: mobile-first overrides */

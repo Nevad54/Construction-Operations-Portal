@@ -31,8 +31,8 @@ const Header = ({ isSidebarActive, setIsSidebarActive, isNavLinksActive, setIsNa
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.25} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <Link to="/" className="logo-link">
-            <img src="/Uploads/logo.png" alt="MASTERTECH INTERGROUPPE INC. Logo" className="logo" loading="lazy" />
+          <Link to="/" className="logo-link" aria-label="Construction Portal">
+            <span className="logo-text">Construction Portal</span>
           </Link>
           <nav aria-label="Main menu">
             <ul className={`nav-links ${isNavLinksActive ? 'active' : ''}`}>

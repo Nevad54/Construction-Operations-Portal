@@ -1,20 +1,20 @@
 [
   {
-    "_id": "folder-1770970467360",
-    "path": "Test/Docs",
+    "_id": "folder-sample-001",
+    "path": "Projects/Ongoing",
     "ownerId": "admin-1",
-    "createdAt": "2026-02-13T08:14:27.360Z"
+    "createdAt": "2026-02-05T04:53:38.037Z"
   },
   {
-    "_id": "folder-1770970568769",
-    "path": "pdf",
+    "_id": "folder-sample-002",
+    "path": "Projects/Completed",
     "ownerId": "admin-1",
-    "createdAt": "2026-02-13T08:16:08.769Z"
+    "createdAt": "2026-02-05T04:53:38.037Z"
   },
   {
-    "_id": "folder-1770970833150",
-    "path": "Drive/NewFolder",
+    "_id": "folder-sample-003",
+    "path": "Documents/Permits",
     "ownerId": "admin-1",
-    "createdAt": "2026-02-13T08:20:33.150Z"
+    "createdAt": "2026-02-07T04:53:38.037Z"
   }
 ]

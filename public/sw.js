@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mastertech-cache-v1';
+const CACHE_NAME = 'construction-cache-v1';
 const urlsToCache = [
   '/',
   '/static/js/main.js',

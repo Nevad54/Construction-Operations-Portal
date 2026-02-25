@@ -17,7 +17,7 @@ const Home = () => {
     <div className="home">
       <section className="hero">
         <div className="hero-content" data-aos="fade-up">
-          <h1>Welcome to Mastertech Intergrouppe Inc.</h1>
+          <h1>Welcome to Construction Operations Group</h1>
           <p className="hero-subtitle">Your Partner in Engineering Excellence</p>
           <a href="/contact" className="btn">Get Started</a>
         </div>
@@ -46,7 +46,7 @@ const Home = () => {
           <div className="about-content">
             <div className="about-text" data-aos="fade-right">
               <h2>About Us</h2>
-              <p>Mastertech Intergrouppe Inc. is your trusted partner in engineering and construction excellence.</p>
+              <p>We are your trusted partner in engineering and construction excellence.</p>
               <a href="/about" className="btn">Learn More</a>
             </div>
             <div className="about-image" data-aos="fade-left">

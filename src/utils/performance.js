@@ -154,7 +154,7 @@ export function registerServiceWorker() {
  * Cache API responses
  */
 export class CacheManager {
-  constructor(cacheName = 'mastertech-cache-v1') {
+  constructor(cacheName = 'construction-cache-v1') {
     this.cacheName = cacheName;
   }
 

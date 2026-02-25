@@ -99,7 +99,7 @@ const Services = () => {
             <button className="hamburger" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               <FontAwesomeIcon icon={faBars} />
             </button>
-            <img src="/Uploads/logo.png" alt="MASTERTECH Logo" className="logo" />
+            <span className="logo" style={{ fontWeight: 800 }}>Construction Ops</span>
             <nav>
               <ul className="nav-links">
                 <li><a href="/"><FontAwesomeIcon icon={faHome} /> Home</a></li>
@@ -252,7 +252,7 @@ const Services = () => {
 
         <footer>
           <div className="container_footer">
-            <p>© 2025 MASTERTECH INTERGROUPPE INC. All Rights Reserved.</p>
+            <p>© 2025 Construction Operations Group. All Rights Reserved.</p>
           </div>
         </footer>
       </div>

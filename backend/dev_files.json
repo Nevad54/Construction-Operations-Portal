@@ -1,0 +1,92 @@
+[
+  {
+    "_id": "file-sample-001",
+    "originalName": "bridge-inspection-summary.pdf",
+    "storedName": "bridge-inspection-summary.pdf",
+    "path": "/samples/bridge-inspection-summary.pdf",
+    "mimeType": "application/pdf",
+    "size": 142321,
+    "ownerId": "admin-1",
+    "visibility": "team",
+    "folder": "Projects/Ongoing",
+    "projectId": "prj-sample-001",
+    "sharedWithUsers": [],
+    "sharedWithRoles": [
+      "admin",
+      "user"
+    ],
+    "linkAccess": "view",
+    "tags": [
+      "bridge",
+      "inspection"
+    ],
+    "notes": "Sample redacted document for demo use.",
+    "cloudProvider": "",
+    "cloudPublicId": "",
+    "previewProvider": "",
+    "previewUrl": "",
+    "previewMimeType": "",
+    "previewExpiresAt": null,
+    "createdAt": "2026-02-15T04:53:38.036Z",
+    "updatedAt": "2026-02-23T04:53:38.036Z"
+  },
+  {
+    "_id": "file-sample-002",
+    "originalName": "warehouse-safety-plan.pdf",
+    "storedName": "warehouse-safety-plan.pdf",
+    "path": "/samples/warehouse-safety-plan.pdf",
+    "mimeType": "application/pdf",
+    "size": 98111,
+    "ownerId": "admin-1",
+    "visibility": "client",
+    "folder": "Projects/Ongoing",
+    "projectId": "prj-sample-002",
+    "sharedWithUsers": [],
+    "sharedWithRoles": [
+      "admin",
+      "client"
+    ],
+    "linkAccess": "view",
+    "tags": [
+      "safety",
+      "warehouse"
+    ],
+    "notes": "Sample safety plan for client sharing.",
+    "cloudProvider": "",
+    "cloudPublicId": "",
+    "previewProvider": "",
+    "previewUrl": "",
+    "previewMimeType": "",
+    "previewExpiresAt": null,
+    "createdAt": "2026-02-16T04:53:38.036Z",
+    "updatedAt": "2026-02-24T04:53:38.036Z"
+  },
+  {
+    "_id": "file-sample-003",
+    "originalName": "road-qa-checklist.xlsx",
+    "storedName": "road-qa-checklist.xlsx",
+    "path": "/samples/road-qa-checklist.xlsx",
+    "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "size": 54210,
+    "ownerId": "user-1",
+    "visibility": "private",
+    "folder": "Projects/Completed",
+    "projectId": "prj-sample-003",
+    "sharedWithUsers": [],
+    "sharedWithRoles": [],
+    "linkAccess": "none",
+    "tags": [
+      "qa",
+      "road"
+    ],
+    "notes": "Internal QA checklist sample.",
+    "cloudProvider": "",
+    "cloudPublicId": "",
+    "previewProvider": "",
+    "previewUrl": "",
+    "previewMimeType": "",
+    "previewExpiresAt": null,
+    "createdAt": "2026-02-10T04:53:38.036Z",
+    "updatedAt": "2026-02-20T04:53:38.036Z"
+  }
+]

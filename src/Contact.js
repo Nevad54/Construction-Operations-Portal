@@ -16,7 +16,7 @@ const Contact = () => {
     });
   }, []);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://mastertech3.netlify.app';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || '';
   // Use environment variable for reCAPTCHA site key with fallback
   const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa';
 
@@ -363,7 +363,7 @@ const Contact = () => {
                   <a href="tel:+639669369678">0966 936 9678 - Melissa</a><br />
                   <a href="tel:+639171668344">0917 166 8344 - Marlon</a><br />
                   <a href="tel:+639178214720">0917 821 4720 - Gemma</a><br />
-                  <a href="mailto:inquiry@mastertech.com.ph">inquiry@mastertech.com.ph</a>
+                  <a href="mailto:inquiry@construction-ops.com">inquiry@construction-ops.com</a>
                 </p>
               </div>
               <div className="map-container" data-aos="fade-up" data-aos-delay="500">

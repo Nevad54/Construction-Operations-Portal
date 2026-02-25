@@ -17,7 +17,7 @@ const About = () => {
     <div className="about-page">
       <section className="about-hero">
         <div className="hero-content" data-aos="fade-up">
-          <h1>About Mastertech Intergrouppe Inc.</h1>
+          <h1>About Construction Operations Group</h1>
           <p>Building Excellence Through Innovation</p>
         </div>
       </section>
@@ -27,7 +27,7 @@ const About = () => {
           <div className="story-content">
             <div className="story-text" data-aos="fade-right">
               <h2>Our Story</h2>
-              <p>Founded with a vision to revolutionize the engineering and construction industry, Mastertech Intergrouppe Inc. has grown to become a leading force in delivering innovative solutions.</p>
+              <p>Founded with a vision to improve engineering and construction delivery, our team has grown into a reliable execution partner for complex projects.</p>
             </div>
             <div className="story-image" data-aos="fade-left">
               <img src="/images/our-story.jpg" alt="Our Story" loading="lazy" />

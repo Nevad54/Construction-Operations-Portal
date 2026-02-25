@@ -1,0 +1,36 @@
+[
+  {
+    "_id": "inq-sample-001",
+    "name": "Jordan Reyes",
+    "email": "jordan.reyes@example.com",
+    "phone": "+1 555 0142",
+    "message": "Need a budgetary quote for a warehouse slab and drainage upgrade.",
+    "source": "contact_form",
+    "ipAddress": "0.0.0.0",
+    "status": "new",
+    "priority": "normal",
+    "assignedTo": "estimating-team",
+    "notes": "Sample inquiry only. No real personal data.",
+    "handledBy": "",
+    "handledAt": null,
+    "createdAt": "2026-02-22T04:53:38.037Z",
+    "updatedAt": "2026-02-22T04:53:38.037Z"
+  },
+  {
+    "_id": "inq-sample-002",
+    "name": "Casey Morgan",
+    "email": "casey.morgan@example.com",
+    "phone": "+1 555 0199",
+    "message": "Requesting timeline and method statement for a concrete road widening project.",
+    "source": "contact_form",
+    "ipAddress": "0.0.0.0",
+    "status": "in_progress",
+    "priority": "high",
+    "assignedTo": "project-controls",
+    "notes": "Sent sample response draft.",
+    "handledBy": "admin",
+    "handledAt": "2026-02-24T04:53:38.037Z",
+    "createdAt": "2026-02-17T04:53:38.037Z",
+    "updatedAt": "2026-02-24T04:53:38.037Z"
+  }
+]

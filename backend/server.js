@@ -302,7 +302,7 @@ app.get('/', (req, res) => {
     }
     return res.json({
       ok: true,
-      service: 'mastertech-backend',
+      service: 'construction-backend',
       status: '/api/status',
     });
 });
@@ -1450,7 +1450,7 @@ const uploadFileToCloud = async (file) => {
   if (!cloudStorageEnabled || !file || !file.buffer) return null;
   const ext = path.extname(file.originalname || '').toLowerCase();
   const base = path.basename(file.originalname || `file-${Date.now()}`, ext).replace(/[^a-zA-Z0-9-_]/g, '-');
-  const publicId = `mastertech-files/${Date.now()}-${base || 'file'}`;
+  const publicId = `construction-files/${Date.now()}-${base || 'file'}`;
   const resourceType = (file.mimetype || '').startsWith('video/') ? 'video' : 'auto';
 
   const uploaded = await new Promise((resolve, reject) => {

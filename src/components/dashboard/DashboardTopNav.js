@@ -95,15 +95,14 @@ export default function DashboardTopNav({
             </button>
           )}
           
-          {/* Logo */}
+          {/* Brand */}
           <Link
             to="/"
             className={`flex items-center gap-2.5 min-w-0 hover:opacity-80 transition-opacity duration-fast ${showTopBrand ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none w-0 overflow-hidden'}`}
             aria-hidden={!showTopBrand}
             tabIndex={showTopBrand ? 0 : -1}
           >
-            <img src="/Uploads/logo.png" alt="Mastertech" className="h-9 w-auto object-contain flex-shrink-0" />
-            <span className="hidden sm:inline text-base font-bold text-text-primary dark:text-gray-100 truncate">Mastertech</span>
+            <span className="inline text-sm sm:text-base font-bold text-text-primary dark:text-gray-100 truncate">Construction Ops</span>
           </Link>
         </div>
 

@@ -9,7 +9,7 @@ const Footer = () => {
           <div className="footer-item">
             <h2>Send Us a Message</h2>
             <p>If you have any questions or need a quote, feel free to contact us!</p>
-            <a href="mailto:inquiry@mastertech.com.ph" className="btn" aria-label="Send us an email">Email Us</a>
+            <a href="mailto:inquiry@construction-ops.com" className="btn" aria-label="Send us an email">Email Us</a>
           </div>
           <div className="footer-item">
             <h2>Our Location</h2>
@@ -23,7 +23,7 @@ const Footer = () => {
                 allowFullScreen=""
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="MASTERTECH Location Map"
+                title="Construction Office Location Map"
               ></iframe>
             </div>
           </div>
@@ -47,7 +47,7 @@ const Footer = () => {
 
       <footer role="contentinfo">
         <div className="container_footer">
-          <p>&copy; 2025 MASTERTECH INTERGROUPPE INC. All Rights Reserved.</p>
+          <p>&copy; 2025 Construction Operations Group. All Rights Reserved.</p>
         </div>
       </footer>
     </>
