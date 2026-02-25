@@ -1,6 +1,25 @@
-# Mastertech App
+# Construction Operations Platform
 
 A full-stack construction company web app with a public marketing site, role-based dashboards, project tracking, file management, and contact inquiry operations.
+
+## Demo
+
+- Live app: `ADD_LIVE_FRONTEND_URL`
+- API status endpoint: `ADD_LIVE_BACKEND_URL/api/status`
+- Demo video (2-3 min): `ADD_VIDEO_LINK`
+
+## Screenshots
+
+Add these to a `docs/screenshots/` folder and link them below:
+
+- `docs/screenshots/home-light.png` - Public homepage (light mode)
+- `docs/screenshots/home-dark.png` - Public homepage (dark mode)
+- `docs/screenshots/projects-list.png` - Projects listing with filters
+- `docs/screenshots/contact-form.png` - Contact + reCAPTCHA flow
+- `docs/screenshots/admin-dashboard.png` - Admin overview dashboard
+- `docs/screenshots/admin-inquiries.png` - Inquiry status/priority management
+- `docs/screenshots/admin-reports.png` - Analytics cards and activity
+- `docs/screenshots/mobile-nav.png` - Mobile navigation and responsive layout
 
 ## Highlights
 
@@ -165,3 +184,20 @@ For portfolio presentation, frame this as:
 - Practical RBAC + operations dashboard implementation
 - Full workflow from lead capture to operational handling
 - Emphasis on responsive UX, reliability fallback, and deployment-ready setup
+
+## Engineering Challenges Solved
+
+- Built role-scoped workspaces with route protection and server-side authorization checks.
+- Stabilized client and dashboard navigation across desktop/mobile, including hamburger/sidebar behavior.
+- Implemented inquiry lifecycle operations (search, paging, update, delete safety checks, reporting rollups).
+- Added resilient data strategy with fallback JSON mode and MongoDB mode for demos and unreliable environments.
+- Improved visual consistency with full client dark mode tokenization and page-level overrides.
+
+## Release Checklist
+
+- [ ] Live frontend deployed and linked
+- [ ] Live backend deployed and linked
+- [ ] Demo video uploaded
+- [ ] Screenshot set added to `docs/screenshots`
+- [ ] Demo credentials verified
+- [ ] Final smoke test on production URLs
