@@ -502,21 +502,23 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     }
   };
 
-  const openFile = useCallback(async (file) => {
+  const openFile = useCallback((file) => {
     const url = resolveFileUrl(file);
     if (!url) return;
     setRecentOpenIds((prev) => [file._id, ...prev.filter((id) => id !== file._id)].slice(0, 50));
-    try {
-      const resp = await fetch(url, { credentials: 'include' });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const blob = await resp.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, '_blank', 'noopener,noreferrer');
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-    } catch (err) {
-      console.error('open file error', err);
-      setError(err.message || 'Failed to open file');
-    }
+    (async () => {
+      try {
+        const resp = await fetch(url, { credentials: 'include' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const blob = await resp.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank', 'noopener,noreferrer');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      } catch (err) {
+        console.error('open file error', err);
+        setError(err.message || 'Failed to open file');
+      }
+    })();
   }, []);
 
   const openInspectorFor = useCallback((file) => {
