@@ -548,6 +548,12 @@ const normalizeInquiryStatus = (value) => {
   return 'new';
 };
 
+const normalizeInquiryPriority = (value) => {
+  const v = String(value || '').trim().toLowerCase();
+  if (['low', 'normal', 'high', 'urgent'].includes(v)) return v;
+  return 'normal';
+};
+
 const sanitizeInquiry = (item) => ({
   id: String(item.id || item._id || ''),
   name: String(item.name || ''),
@@ -557,6 +563,8 @@ const sanitizeInquiry = (item) => ({
   source: String(item.source || 'contact_form'),
   ipAddress: String(item.ipAddress || ''),
   status: normalizeInquiryStatus(item.status),
+  priority: normalizeInquiryPriority(item.priority),
+  assignedTo: String(item.assignedTo || ''),
   notes: String(item.notes || ''),
   handledBy: String(item.handledBy || ''),
   handledAt: item.handledAt || null,
@@ -573,6 +581,8 @@ const createInquiryRecord = async ({ name, email, phone, message, ipAddress = ''
     source: 'contact_form',
     ipAddress: String(ipAddress || '').trim(),
     status: 'new',
+    priority: 'normal',
+    assignedTo: '',
     notes: '',
     handledBy: '',
     handledAt: null,
@@ -1094,6 +1104,12 @@ app.put('/api/admin/inquiries/:id', requireAuth, requireRoles(['admin']), async 
   }
   if (req.body.notes !== undefined) {
     updates.notes = String(req.body.notes || '').trim();
+  }
+  if (req.body.priority !== undefined) {
+    updates.priority = normalizeInquiryPriority(req.body.priority);
+  }
+  if (req.body.assignedTo !== undefined) {
+    updates.assignedTo = String(req.body.assignedTo || '').trim();
   }
 
   try {

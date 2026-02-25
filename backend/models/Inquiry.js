@@ -13,6 +13,12 @@ const inquirySchema = new mongoose.Schema(
       enum: ['new', 'in_progress', 'resolved', 'spam'],
       default: 'new',
     },
+    priority: {
+      type: String,
+      enum: ['low', 'normal', 'high', 'urgent'],
+      default: 'normal',
+    },
+    assignedTo: { type: String, default: '' },
     notes: { type: String, default: '' },
     handledBy: { type: String, default: '' },
     handledAt: { type: Date, default: null },

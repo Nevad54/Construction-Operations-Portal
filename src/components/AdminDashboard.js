@@ -89,7 +89,7 @@ const Admin = () => {
     const [inquiryTotal, setInquiryTotal] = useState(0);
     const inquiryPageSize = 12;
     const [inquiryModal, setInquiryModal] = useState({ open: false, inquiry: null });
-    const [inquiryForm, setInquiryForm] = useState({ status: 'new', notes: '' });
+    const [inquiryForm, setInquiryForm] = useState({ status: 'new', priority: 'normal', assignedTo: '', notes: '' });
     const [inquirySaving, setInquirySaving] = useState(false);
 
     // Initialize AOS
@@ -611,6 +611,8 @@ const Admin = () => {
         setInquiryModal({ open: true, inquiry });
         setInquiryForm({
             status: String(inquiry.status || 'new'),
+            priority: String(inquiry.priority || 'normal'),
+            assignedTo: String(inquiry.assignedTo || ''),
             notes: String(inquiry.notes || ''),
         });
     }, []);
@@ -628,6 +630,8 @@ const Admin = () => {
             setInquirySaving(true);
             await api.adminUpdateInquiry(id, {
                 status: inquiryForm.status,
+                priority: inquiryForm.priority,
+                assignedTo: inquiryForm.assignedTo,
                 notes: inquiryForm.notes,
             });
             success('Inquiry updated');
@@ -639,7 +643,7 @@ const Admin = () => {
         } finally {
             setInquirySaving(false);
         }
-    }, [closeInquiryModal, error, inquiryForm.notes, inquiryForm.status, inquiryModal?.inquiry?.id, isReportsPage, loadInquiries, loadReports, success]);
+    }, [closeInquiryModal, error, inquiryForm.assignedTo, inquiryForm.notes, inquiryForm.priority, inquiryForm.status, inquiryModal?.inquiry?.id, isReportsPage, loadInquiries, loadReports, success]);
 
     const handleDeleteInquiry = useCallback(async (inquiry) => {
         if (!inquiry?.id) return;
@@ -678,6 +682,11 @@ const Admin = () => {
             acc[key] = (acc[key] || 0) + 1;
             return acc;
         }, {});
+        const inquiriesByPriority = inquiries.reduce((acc, item) => {
+            const key = String(item.priority || 'normal');
+            acc[key] = (acc[key] || 0) + 1;
+            return acc;
+        }, {});
         return {
             usersTotal: reportUsers.length,
             usersByRole: byRole,
@@ -685,6 +694,7 @@ const Admin = () => {
             filesByVisibility: byVisibility,
             inquiriesTotal: inquiries.length,
             inquiriesByStatus,
+            inquiriesByPriority,
             projectsTotal: projects.length,
             ongoingTotal: projects.filter((p) => p.status === 'ongoing').length,
             completedTotal: projects.filter((p) => p.status === 'completed').length,
@@ -869,6 +879,25 @@ const Admin = () => {
                                                         {String(inquiry.status || 'new').replace('_', ' ')}
                                                     </Badge>
                                                 </div>
+                                                <div className="flex flex-wrap items-center gap-2 mt-2">
+                                                    <Badge
+                                                        size="sm"
+                                                        variant={
+                                                            inquiry.priority === 'urgent'
+                                                                ? 'error'
+                                                                : inquiry.priority === 'high'
+                                                                    ? 'warning'
+                                                                    : inquiry.priority === 'low'
+                                                                        ? 'secondary'
+                                                                        : 'info'
+                                                        }
+                                                    >
+                                                        Priority: {String(inquiry.priority || 'normal')}
+                                                    </Badge>
+                                                    <span className="text-xs text-text-muted dark:text-gray-500">
+                                                        Assigned to: {inquiry.assignedTo || 'Unassigned'}
+                                                    </span>
+                                                </div>
                                                 <p className="text-sm text-text-secondary dark:text-gray-300 mt-2 whitespace-pre-wrap break-words">
                                                     {inquiry.message || 'No message'}
                                                 </p>
@@ -986,6 +1015,9 @@ const Admin = () => {
                                             <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportsOverview.inquiriesTotal}</p>
                                             <p className="text-sm text-text-secondary dark:text-gray-400">
                                                 {reportsOverview.inquiriesByStatus.new || 0} new • {reportsOverview.inquiriesByStatus.in_progress || 0} in progress • {reportsOverview.inquiriesByStatus.resolved || 0} resolved
+                                            </p>
+                                            <p className="text-xs text-text-muted dark:text-gray-500">
+                                                {reportsOverview.inquiriesByPriority.urgent || 0} urgent • {reportsOverview.inquiriesByPriority.high || 0} high priority
                                             </p>
                                         </CardContent>
                                     </Card>
@@ -1374,6 +1406,26 @@ const Admin = () => {
                                 { value: 'in_progress', label: 'In Progress' },
                                 { value: 'resolved', label: 'Resolved' },
                                 { value: 'spam', label: 'Spam' },
+                            ]}
+                        />
+                        <Select
+                            label="Priority"
+                            value={inquiryForm.priority}
+                            onChange={(e) => setInquiryForm((prev) => ({ ...prev, priority: e.target.value }))}
+                            options={[
+                                { value: 'low', label: 'Low' },
+                                { value: 'normal', label: 'Normal' },
+                                { value: 'high', label: 'High' },
+                                { value: 'urgent', label: 'Urgent' },
+                            ]}
+                        />
+                        <Select
+                            label="Assigned To"
+                            value={inquiryForm.assignedTo}
+                            onChange={(e) => setInquiryForm((prev) => ({ ...prev, assignedTo: e.target.value }))}
+                            options={[
+                                { value: '', label: 'Unassigned' },
+                                ...adminUsers.map((u) => ({ value: u.username, label: `${u.username} (${u.role})` })),
                             ]}
                         />
                         <Textarea
