@@ -183,6 +183,53 @@ export const api = {
         return handleResponse(response);
     },
 
+    // CSV export endpoints (return Blob)
+    adminExportUsers: async (params = {}) => {
+        const url = new URL(`${API_PREFIX}/admin/export/users`, window.location.origin);
+        Object.entries(params).forEach(([k, v]) => {
+            if (v != null && v !== '') url.searchParams.set(k, v);
+        });
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            credentials: 'include',
+        });
+        if (!response.ok) {
+            const err = await handleResponse(response);
+            throw new Error(err.error || 'Failed to export users');
+        }
+        return response.blob();
+    },
+    adminExportInquiries: async (params = {}) => {
+        const url = new URL(`${API_PREFIX}/admin/export/inquiries`, window.location.origin);
+        Object.entries(params).forEach(([k, v]) => {
+            if (v != null && v !== '') url.searchParams.set(k, v);
+        });
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            credentials: 'include',
+        });
+        if (!response.ok) {
+            const err = await handleResponse(response);
+            throw new Error(err.error || 'Failed to export inquiries');
+        }
+        return response.blob();
+    },
+    adminExportActivity: async (params = {}) => {
+        const url = new URL(`${API_PREFIX}/admin/export/activity`, window.location.origin);
+        Object.entries(params).forEach(([k, v]) => {
+            if (v != null && v !== '') url.searchParams.set(k, v);
+        });
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            credentials: 'include',
+        });
+        if (!response.ok) {
+            const err = await handleResponse(response);
+            throw new Error(err.error || 'Failed to export activity logs');
+        }
+        return response.blob();
+    },
+
     adminUpdateUser: async (id, updates = {}) => {
         const response = await fetch(`${API_PREFIX}/admin/users/${encodeURIComponent(id)}`, {
             method: 'PUT',

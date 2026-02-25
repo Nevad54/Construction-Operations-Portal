@@ -666,6 +666,53 @@ const Admin = () => {
         return adminUsers.filter((u) => String(u.role || '') === userRoleFilter);
     }, [adminUsers, userRoleFilter]);
 
+    // helper for downloading blobs
+    const downloadBlob = useCallback((blob, filename) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, []);
+
+    // export helpers (use server endpoints with params)
+    const handleExportActivity = useCallback(async () => {
+        try {
+            const blob = await api.adminExportActivity({ limit: 0 }); // 0 => no limit
+            downloadBlob(blob, 'activity_logs.csv');
+            success('Activity CSV download started');
+        } catch (err) {
+            error(err.message || 'Failed to export activity');
+        }
+    }, [downloadBlob, error, success]);
+
+    const handleExportUsersCsv = useCallback(async () => {
+        try {
+            const params = {};
+            if (userRoleFilter && userRoleFilter !== 'all') params.role = userRoleFilter;
+            const blob = await api.adminExportUsers(params);
+            downloadBlob(blob, 'users.csv');
+            success('Users CSV download started');
+        } catch (err) {
+            error(err.message || 'Failed to export users');
+        }
+    }, [downloadBlob, error, success, userRoleFilter]);
+
+    const handleExportInquiriesCsv = useCallback(async () => {
+        try {
+            const params = {};
+            if (inquiryStatusFilter && inquiryStatusFilter !== 'all') params.status = inquiryStatusFilter;
+            const blob = await api.adminExportInquiries(params);
+            downloadBlob(blob, 'inquiries.csv');
+            success('Inquiries CSV download started');
+        } catch (err) {
+            error(err.message || 'Failed to export inquiries');
+        }
+    }, [downloadBlob, error, inquiryStatusFilter, success]);
+
     const reportsOverview = useMemo(() => {
         const byRole = reportUsers.reduce((acc, user) => {
             const role = String(user.role || 'unknown');
@@ -751,6 +798,14 @@ const Admin = () => {
                                     <Button variant="outline" size="sm" onClick={loadAdminUsers} loading={usersLoading}>
                                         Refresh
                                     </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleExportUsersCsv}
+                                        disabled={!visibleUsers.length}
+                                    >
+                                        Export Users
+                                    </Button>
                                 </div>
                             </CardHeader>
                             <CardContent>
@@ -831,6 +886,14 @@ const Admin = () => {
                                     />
                                     <Button variant="outline" size="sm" onClick={loadInquiries} loading={inquiriesLoading}>
                                         Refresh
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleExportInquiriesCsv}
+                                        disabled={!inquiries.length}
+                                    >
+                                        Export Inquiries
                                     </Button>
                                 </div>
                             </CardHeader>
@@ -956,9 +1019,19 @@ const Admin = () => {
                                     Snapshot of projects, users, files, and recent admin activity.
                                 </p>
                             </div>
-                            <Button variant="outline" size="sm" onClick={loadReports} loading={reportsLoading}>
-                                Refresh Report
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button variant="outline" size="sm" onClick={loadReports} loading={reportsLoading}>
+                                    Refresh Report
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleExportActivity}
+                                    disabled={!reportActivity.length}
+                                >
+                                    Export Activity CSV
+                                </Button>
+                            </div>
                         </div>
 
                         {reportsError && (

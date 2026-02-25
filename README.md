@@ -102,7 +102,11 @@ Place screenshots in `docs/screenshots/` using the exact filenames below.
   - `PUT /api/admin/users/:id`
   - `POST /api/admin/users/:id/reset-password`
   - `DELETE /api/admin/users/:id`
-- Inquiries:
+  - `GET /api/admin/export/users` (CSV download of user list; optional query param `role`)
+  - `GET /api/admin/export/inquiries` (CSV download of inquiries; optional `status` filter)
+  - `GET /api/admin/export/activity` (CSV download of activity logs; optional `limit`)
+
+* **Scheduled exports**: when the backend is running it writes daily CSV files to an `exports/` directory adjacent to the project root. The files include `users.csv`, `inquiries.csv` and `activity_logs.csv` and are regenerated every 24 hours (first run ~30 seconds after start).- Inquiries:
   - `POST /api/contact` (public submission)
   - `GET /api/admin/inquiries`
   - `PUT /api/admin/inquiries/:id`

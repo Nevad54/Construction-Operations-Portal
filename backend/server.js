@@ -35,6 +35,31 @@ const Inquiry = require('./models/Inquiry');
 // In-memory fallback storage for development when MongoDB is unavailable
 const fallbackFile = path.join(__dirname, 'dev_projects.json');
 let fallbackProjects = [];
+
+// helper to convert array of plain objects to CSV
+function rowsToCsv(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return '';
+  const header = Object.keys(rows[0]);
+  const csvRows = [header.join(',')];
+  for (const row of rows) {
+    const values = header.map((key) => {
+      let val = row[key] == null ? '' : row[key];
+      if (typeof val === 'object') {
+        try { val = JSON.stringify(val); } catch (_e) { val = String(val); }
+      }
+      val = String(val);
+      if (val.includes('"')) {
+        val = val.replace(/"/g, '""');
+      }
+      if (val.search(/,|\n|\r|"/) >= 0) {
+        val = `"${val}"`;
+      }
+      return val;
+    });
+    csvRows.push(values.join(','));
+  }
+  return csvRows.join('\r\n');
+}
 try {
   if (fs.existsSync(fallbackFile)) {
     const data = fs.readFileSync(fallbackFile, 'utf8');
@@ -272,6 +297,67 @@ if (fs.existsSync(pagesPath)) {
 
 // If this server is behind a reverse proxy (Netlify/Render/etc), trust proxy so secure cookies work correctly.
 app.set('trust proxy', 1);
+
+// ---------- scheduled exports (runs in-memory when server is running) ----------
+function performScheduledExport() {
+  const exportsDir = path.join(__dirname, '../exports');
+  try {
+    if (!fs.existsSync(exportsDir)) fs.mkdirSync(exportsDir, { recursive: true });
+  } catch (e) {
+    console.error('Failed to create exports directory', e);
+  }
+
+  const writeCsvFile = (filename, rows) => {
+    try {
+      const csv = rowsToCsv(rows);
+      fs.writeFileSync(path.join(exportsDir, filename), csv);
+      console.log(`Scheduled export written: ${filename}`);
+    } catch (e) {
+      console.error(`Error writing scheduled export ${filename}`, e);
+    }
+  };
+
+  (async () => {
+    try {
+      let users = [];
+      if (isDbReady()) {
+        users = await User.find().lean();
+      } else {
+        users = AUTH_USERS.map((u) => ({
+          id: u.id,
+          username: u.username,
+          role: u.role,
+          projectIds: Array.isArray(u.projectIds) ? u.projectIds.map((v) => String(v)) : [],
+        }));
+      }
+      writeCsvFile('users.csv', users);
+
+      let inq = [];
+      if (isDbReady()) {
+        inq = await Inquiry.find().lean();
+      } else {
+        inq = [...fallbackInquiries];
+      }
+      writeCsvFile('inquiries.csv', inq);
+
+      let logs = [];
+      if (isDbReady()) {
+        logs = await ActivityLog.find().lean();
+      } else {
+        logs = [...fallbackActivityLogs];
+      }
+      writeCsvFile('activity_logs.csv', logs);
+    } catch (err) {
+      console.error('Scheduled export job failed', err);
+    }
+  })();
+}
+
+// schedule first run 30 seconds after server start (give DB time to connect) and then daily
+setTimeout(() => {
+  performScheduledExport();
+  setInterval(performScheduledExport, 24 * 60 * 60 * 1000);
+}, 30000);
 
 const sessionCookieSecure =
   process.env.NODE_ENV === 'production' &&
@@ -812,6 +898,84 @@ app.get('/api/admin/users', requireAuth, requireRoles(['admin']), async (req, re
     return res.status(500).json({ error: 'Server error' });
   }
 });
+
+// CSV export endpoints -----------------------------------------------------
+app.get('/api/admin/export/users', requireAuth, requireRoles(['admin']), async (req, res) => {
+  try {
+    let users = [];
+    if (isDbReady()) {
+      users = await User.find().sort({ createdAt: -1 }).lean();
+    } else {
+      users = AUTH_USERS.map((u) => ({
+        id: u.id,
+        username: u.username,
+        role: u.role,
+        projectIds: Array.isArray(u.projectIds) ? u.projectIds.map((v) => String(v)) : [],
+      }));
+    }
+    // optional filter by role
+    if (req.query.role && req.query.role !== 'all') {
+      const roleReq = String(req.query.role).toLowerCase();
+      users = users.filter((u) => String(u.role).toLowerCase() === roleReq);
+    }
+    const csvData = rowsToCsv(users);
+    res.setHeader('Content-Type', 'text/csv');
+    res.attachment('users.csv');
+    return res.send(csvData);
+  } catch (err) {
+    console.error('Export users CSV failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/admin/export/inquiries', requireAuth, requireRoles(['admin']), async (req, res) => {
+  try {
+    let list = [];
+    if (isDbReady()) {
+      const filter = {};
+      if (req.query.status && req.query.status !== 'all') {
+        filter.status = String(req.query.status);
+      }
+      list = await Inquiry.find(filter).sort({ createdAt: -1 }).lean();
+    } else {
+      list = [...fallbackInquiries];
+      if (req.query.status && req.query.status !== 'all') {
+        list = list.filter((i) => String(i.status) === String(req.query.status));
+      }
+    }
+    const csvData = rowsToCsv(list);
+    res.setHeader('Content-Type', 'text/csv');
+    res.attachment('inquiries.csv');
+    return res.send(csvData);
+  } catch (err) {
+    console.error('Export inquiries CSV failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/admin/export/activity', requireAuth, requireRoles(['admin']), async (req, res) => {
+  try {
+    let logs = [];
+    if (isDbReady()) {
+      const q = ActivityLog.find().sort({ createdAt: -1 });
+      const limit = parseInt(req.query.limit || '0', 10);
+      if (limit > 0) q.limit(limit);
+      logs = await q.lean();
+    } else {
+      logs = [...fallbackActivityLogs];
+      const limit = parseInt(req.query.limit || '0', 10);
+      if (limit > 0) logs = logs.slice(0, limit);
+    }
+    const csvData = rowsToCsv(logs);
+    res.setHeader('Content-Type', 'text/csv');
+    res.attachment('activity_logs.csv');
+    return res.send(csvData);
+  } catch (err) {
+    console.error('Export activity CSV failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 app.put('/api/admin/users/:id', requireAuth, requireRoles(['admin']), async (req, res) => {
   const id = String(req.params.id || '').trim();
