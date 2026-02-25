@@ -35,6 +35,12 @@ header .container {
     padding-bottom: var(--space-2);
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
 .logo {
     max-width: 100px;
     height: auto;
@@ -96,6 +102,33 @@ header .container {
     display: flex;
     align-items: center;
     gap: var(--space-1);
+}
+
+.theme-toggle-btn {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background: var(--bg-section);
+    color: var(--text-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.theme-toggle-btn:hover {
+    background: var(--neutral-100);
+    color: var(--accent);
+}
+
+.theme-toggle-btn:active {
+    transform: scale(0.98);
+}
+
+.theme-toggle-btn:focus-visible {
+    outline: 2px solid var(--accent-400);
+    outline-offset: 2px;
 }
 
 .nav-links li a,
@@ -1454,6 +1487,10 @@ footer {
         display: none;
     }
 
+    .header-actions {
+        margin-left: auto;
+    }
+
     .nav-links li a {
         padding: 15px 20px;
         justify-content: center;
@@ -2150,6 +2187,17 @@ html.dark .logo-text,
 html.dark .nav-links li a,
 html.dark .nav-dropdown-trigger {
   color: #e5e7eb;
+}
+
+html.dark .theme-toggle-btn {
+  background: #111827;
+  border-color: #334155;
+  color: #e5e7eb;
+}
+
+html.dark .theme-toggle-btn:hover {
+  background: #1f2937;
+  color: #f8fafc;
 }
 
 html.dark .nav-links li a:hover,

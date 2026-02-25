@@ -34,20 +34,9 @@ const Header = ({ isSidebarActive, setIsSidebarActive, isNavLinksActive, setIsNa
           <Link to="/" className="logo-link" aria-label="Construction Portal">
             <img src="/assets/logo.svg" alt="Construction Portal Logo" className="logo" loading="lazy" />
           </Link>
-          <nav aria-label="Main menu">
-            <ul className={`nav-links ${isNavLinksActive ? 'active' : ''}`}>
-              <li>
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  className="theme-toggle-btn"
-                  aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-                  title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-                >
-                  {theme === 'light' ? <i className="fas fa-moon"></i> : <i className="fas fa-sun"></i>}
-                </button>
-              </li>
-
+          <div className="header-actions">
+            <nav aria-label="Main menu">
+              <ul className={`nav-links ${isNavLinksActive ? 'active' : ''}`}>
               <li className={activePage === 'home' ? 'active' : ''}>
                 <Link to="/" onClick={() => setIsNavLinksActive(false)} aria-current={activePage === 'home' ? 'page' : undefined}>
                   <i className="fas fa-home"></i> Home
@@ -121,8 +110,18 @@ const Header = ({ isSidebarActive, setIsSidebarActive, isNavLinksActive, setIsNa
                   <i className="fas fa-envelope"></i> Contact
                 </Link>
               </li>
-            </ul>
-          </nav>
+              </ul>
+            </nav>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="theme-toggle-btn"
+              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? <i className="fas fa-moon"></i> : <i className="fas fa-sun"></i>}
+            </button>
+          </div>
         </div>
       </header>
     </>
