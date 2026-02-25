@@ -64,34 +64,45 @@ function getSampleUploadImages() {
   return files;
 }
 
+function pickExistingUploadPath(candidates, fallback = '/Uploads/industrial.jpg') {
+  for (const candidate of candidates) {
+    const name = String(candidate || '').replace('/Uploads/', '');
+    const filePath = path.join(repoRoot, 'public', 'Uploads', name);
+    if (name && fs.existsSync(filePath)) return `/Uploads/${name}`;
+  }
+  return fallback;
+}
+
 function buildSampleProjects() {
-  const sampleImages = getSampleUploadImages();
   const templates = [
-    ['Bridge Retrofit Program', 'Retrofit works for aging bridge components, including deck strengthening and railing upgrades.', 'North District', 'City Infrastructure Office'],
-    ['Warehouse Expansion Phase 1', 'Design-build expansion with structural steel, slab extension, and stormwater improvements.', 'Logistics Park', 'LogiBuild Partners'],
-    ['Municipal Road Improvement', 'Road widening, concrete paving, drainage channels, and traffic safety markings.', 'West Access Road', 'Municipal Engineering Office'],
-    ['Site Drainage Upgrade', 'Installation of drain lines, catch basins, and pavement tie-ins to improve stormwater flow.', 'South Utility Zone', 'Regional Public Works'],
-    ['Plant Utility Piping Renewal', 'Replacement of old utility pipe racks, supports, and valves in active production zones.', 'Industrial Strip A', 'Apex Manufacturing'],
-    ['Commercial Fit-Out Package', 'Interior fit-out for office and retail units with MEP coordination and compliance checks.', 'Central Commercial Block', 'BlueStone Properties'],
-    ['Concrete Pavement Rehabilitation', 'Concrete panel replacement, joint resealing, and surface correction for heavy traffic lanes.', 'Cargo Access Road', 'Port Logistics Authority'],
-    ['Flood Control Channel Works', 'Channel lining, embankment stabilization, and culvert tie-ins for seasonal flood reduction.', 'Riverside Sector', 'Provincial Engineering Unit'],
-    ['Substation Civil Works', 'Foundation, cable trenching, and equipment pads for substation upgrade.', 'Power Corridor East', 'Grid Services Contractor'],
-    ['Factory Ventilation Upgrade', 'Duct routing, fan support structures, and airflow balancing works in production halls.', 'Plant Zone 3', 'Northline Fabrication'],
-    ['School Building Retrofit', 'Structural strengthening and accessibility upgrades for academic facilities.', 'Education District', 'School Facilities Board'],
-    ['Water Line Distribution Upgrade', 'Mainline replacement and branch tie-ins to improve pressure and reliability.', 'South Residential Cluster', 'Waterworks Operations'],
+    ['Bridge Retrofit Program', 'Retrofit works for aging bridge components, including deck strengthening and railing upgrades.', 'North District', 'City Infrastructure Office', ['/Uploads/1744087023216.png', '/Uploads/1744087111712.png']],
+    ['Warehouse Expansion Phase 1', 'Design-build expansion with structural steel, slab extension, and stormwater improvements.', 'Logistics Park', 'LogiBuild Partners', ['/Uploads/showcase3.png', '/Uploads/commercial.jpg']],
+    ['Municipal Road Improvement', 'Road widening, concrete paving, drainage channels, and traffic safety markings.', 'West Access Road', 'Municipal Engineering Office', ['/Uploads/1744082626975.png', '/Uploads/showcase1.png']],
+    ['Site Drainage Upgrade', 'Installation of drain lines, catch basins, and pavement tie-ins to improve stormwater flow.', 'South Utility Zone', 'Regional Public Works', ['/Uploads/1744082424394.png', '/Uploads/1743834690463.jpg']],
+    ['Plant Utility Piping Renewal', 'Replacement of old utility pipe racks, supports, and valves in active production zones.', 'Industrial Strip A', 'Apex Manufacturing', ['/Uploads/1743834690463.jpg', '/Uploads/1744087191359.png']],
+    ['Commercial Fit-Out Package', 'Interior fit-out for office and retail units with MEP coordination and compliance checks.', 'Central Commercial Block', 'BlueStone Properties', ['/Uploads/commercial.jpg', '/Uploads/showcase2.png']],
+    ['Concrete Pavement Rehabilitation', 'Concrete panel replacement, joint resealing, and surface correction for heavy traffic lanes.', 'Cargo Access Road', 'Port Logistics Authority', ['/Uploads/showcase1.png', '/Uploads/1744082626975.png']],
+    ['Flood Control Channel Works', 'Channel lining, embankment stabilization, and culvert tie-ins for seasonal flood reduction.', 'Riverside Sector', 'Provincial Engineering Unit', ['/Uploads/1744082424394.png', '/Uploads/1744087023216.png']],
+    ['Substation Civil Works', 'Foundation, cable trenching, and equipment pads for substation upgrade.', 'Power Corridor East', 'Grid Services Contractor', ['/Uploads/1744086896698.png', '/Uploads/1744080293122.png']],
+    ['Factory Ventilation Upgrade', 'Duct routing, fan support structures, and airflow balancing works in production halls.', 'Plant Zone 3', 'Northline Fabrication', ['/Uploads/1744085193927.png', '/Uploads/1744085840617.png']],
+    ['School Building Retrofit', 'Structural strengthening and accessibility upgrades for academic facilities.', 'Education District', 'School Facilities Board', ['/Uploads/showcase2.png', '/Uploads/residential.jpg']],
+    ['Water Line Distribution Upgrade', 'Mainline replacement and branch tie-ins to improve pressure and reliability.', 'South Residential Cluster', 'Waterworks Operations', ['/Uploads/1744087191359.png', '/Uploads/1743834690463.jpg']],
   ];
 
-  return templates.map((t, idx) => ({
-    _id: `prj-sample-${String(idx + 1).padStart(3, '0')}`,
-    title: t[0],
-    description: t[1],
-    location: t[2],
-    owner: t[3],
-    image: sampleImages[idx % sampleImages.length],
-    date: nowIso(-(idx * 18 + 10)),
-    status: idx < 6 ? 'ongoing' : 'completed',
-    featured: idx % 3 === 0,
-  }));
+  return templates.map((t, idx) => {
+    const image = pickExistingUploadPath(t[4], getSampleUploadImages()[0] || '/Uploads/industrial.jpg');
+    return {
+      _id: `prj-sample-${String(idx + 1).padStart(3, '0')}`,
+      title: t[0],
+      description: t[1],
+      location: t[2],
+      owner: t[3],
+      image,
+      date: nowIso(-(idx * 18 + 10)),
+      status: idx < 6 ? 'ongoing' : 'completed',
+      featured: idx % 3 === 0,
+    };
+  });
 }
 
 function buildSampleFiles(projectIds) {
