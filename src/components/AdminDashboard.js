@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useProjects } from '../context/ProjectContext';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -40,12 +40,16 @@ const Admin = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [editImagePreview, setEditImagePreview] = useState(null);
     const [isFallback, setIsFallback] = useState(false);
-    const isProjectsPage = location.pathname === '/admin/dashboard' || location.pathname === '/admin/dashboard/projects';
+    const isDashboardPage = location.pathname === '/admin/dashboard';
+    const isProjectsPage = location.pathname === '/admin/dashboard/projects';
     const isFilesPage = location.pathname === '/admin/dashboard/files';
     const isClientsPage = location.pathname === '/admin/dashboard/clients';
     const isReportsPage = location.pathname === '/admin/dashboard/reports';
     const isSettingsPage = location.pathname === '/admin/dashboard/settings';
     const adminPageMeta = useMemo(() => {
+        if (location.pathname === '/admin/dashboard') {
+            return { title: 'Dashboard', description: 'Operations snapshot and quick navigation.' };
+        }
         if (location.pathname === '/admin/dashboard/clients') {
             return { title: 'User Management', description: 'Manage admin, employee, and client accounts.' };
         }
@@ -421,6 +425,21 @@ const Admin = () => {
         filteredProjects.filter(p => p.status === 'completed'), 
         [filteredProjects]
     );
+
+    const adminOverview = useMemo(() => {
+        const ongoing = projects.filter((p) => p.status === 'ongoing').length;
+        const completed = projects.filter((p) => p.status === 'completed').length;
+        const recentProjects = [...projects]
+            .sort((a, b) => new Date(b.updatedAt || b.date || 0).getTime() - new Date(a.updatedAt || a.date || 0).getTime())
+            .slice(0, 5);
+
+        return {
+            total: projects.length,
+            ongoing,
+            completed,
+            recentProjects,
+        };
+    }, [projects]);
 
     const parseProjectIds = useCallback((raw) => {
         return String(raw || '')
@@ -1053,7 +1072,69 @@ const Admin = () => {
                     </>
                 )}
 
-                {!isProjectsPage && !isFilesPage && !isSettingsPage && !isClientsPage && !isReportsPage && (
+                {isDashboardPage && (
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-aos="fade-up">
+                            <Card>
+                                <CardHeader><CardTitle size="sm">Total Work Orders</CardTitle></CardHeader>
+                                <CardContent>
+                                    <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{adminOverview.total}</p>
+                                    <p className="text-sm text-text-secondary dark:text-gray-400">
+                                        {adminOverview.ongoing} ongoing • {adminOverview.completed} completed
+                                    </p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader><CardTitle size="sm">Quick Access</CardTitle></CardHeader>
+                                <CardContent className="space-y-2">
+                                    <Link to="/admin/dashboard/projects" className="block text-sm text-brand hover:underline">
+                                        Manage Work Orders
+                                    </Link>
+                                    <Link to="/admin/dashboard/files" className="block text-sm text-brand hover:underline">
+                                        Open File Management
+                                    </Link>
+                                    <Link to="/admin/dashboard/clients" className="block text-sm text-brand hover:underline">
+                                        Review Contacts and Users
+                                    </Link>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader><CardTitle size="sm">Search</CardTitle></CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-text-secondary dark:text-gray-400">
+                                        Use the top search to quickly find projects by title, location, owner, or status.
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <Card data-aos="fade-up" data-aos-delay="100">
+                            <CardHeader>
+                                <CardTitle>Recent Work Orders</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {adminOverview.recentProjects.length === 0 ? (
+                                    <p className="text-sm text-text-secondary dark:text-gray-400">
+                                        No projects yet. Add your first work order from the Work Orders page.
+                                    </p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {adminOverview.recentProjects.map((project) => (
+                                            <div key={project._id} className="rounded-lg border border-stroke dark:border-gray-700 p-3 bg-surface-card dark:bg-gray-900">
+                                                <p className="text-sm font-medium text-text-primary dark:text-gray-100">{project.title || 'Untitled project'}</p>
+                                                <p className="text-xs text-text-secondary dark:text-gray-400">
+                                                    {(project.location || 'No location')} • {(project.status || 'ongoing')}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </>
+                )}
+
+                {!isDashboardPage && !isProjectsPage && !isFilesPage && !isSettingsPage && !isClientsPage && !isReportsPage && (
                     <Card>
                         <CardHeader>
                             <CardTitle>{adminPageMeta.title}</CardTitle>
