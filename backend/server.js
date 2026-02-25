@@ -1010,6 +1010,11 @@ app.get('/api/admin/inquiries', requireAuth, requireRoles(['admin']), async (req
   try {
     const statusFilter = String(req.query.status || '').trim().toLowerCase();
     const q = String(req.query.q || '').trim().toLowerCase();
+    const limitRaw = Number(req.query.limit);
+    const skipRaw = Number(req.query.skip);
+    const usePaging = Number.isFinite(limitRaw) && limitRaw > 0;
+    const limit = usePaging ? Math.min(Math.max(Math.floor(limitRaw), 1), 200) : 0;
+    const skip = usePaging && Number.isFinite(skipRaw) && skipRaw > 0 ? Math.floor(skipRaw) : 0;
 
     if (useFallback || mongoose.connection.readyState !== 1) {
       let list = [...fallbackInquiries];
@@ -1026,7 +1031,16 @@ app.get('/api/admin/inquiries', requireAuth, requireRoles(['admin']), async (req
         });
       }
       list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      return res.json(list.map((item) => sanitizeInquiry(item)));
+      const sanitized = list.map((item) => sanitizeInquiry(item));
+      if (!usePaging) return res.json(sanitized);
+      const items = sanitized.slice(skip, skip + limit);
+      return res.json({
+        items,
+        total: sanitized.length,
+        skip,
+        limit,
+        hasMore: skip + items.length < sanitized.length,
+      });
     }
 
     const query = {};
@@ -1042,8 +1056,21 @@ app.get('/api/admin/inquiries', requireAuth, requireRoles(['admin']), async (req
         { notes: { $regex: q, $options: 'i' } },
       ];
     }
-    const list = await Inquiry.find(query).sort({ createdAt: -1 }).lean();
-    return res.json(list.map((item) => sanitizeInquiry(item)));
+    if (!usePaging) {
+      const list = await Inquiry.find(query).sort({ createdAt: -1 }).lean();
+      return res.json(list.map((item) => sanitizeInquiry(item)));
+    }
+    const [list, total] = await Promise.all([
+      Inquiry.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Inquiry.countDocuments(query),
+    ]);
+    return res.json({
+      items: list.map((item) => sanitizeInquiry(item)),
+      total,
+      skip,
+      limit,
+      hasMore: skip + list.length < total,
+    });
   } catch (err) {
     console.error('List inquiries failed', err);
     return res.status(500).json({ error: 'Server error' });

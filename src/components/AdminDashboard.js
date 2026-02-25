@@ -85,6 +85,9 @@ const Admin = () => {
     const [inquiriesError, setInquiriesError] = useState('');
     const [inquiryStatusFilter, setInquiryStatusFilter] = useState('all');
     const [inquirySearch, setInquirySearch] = useState('');
+    const [inquiryPage, setInquiryPage] = useState(1);
+    const [inquiryTotal, setInquiryTotal] = useState(0);
+    const inquiryPageSize = 12;
     const [inquiryModal, setInquiryModal] = useState({ open: false, inquiry: null });
     const [inquiryForm, setInquiryForm] = useState({ status: 'new', notes: '' });
     const [inquirySaving, setInquirySaving] = useState(false);
@@ -464,17 +467,30 @@ const Admin = () => {
         try {
             setInquiriesLoading(true);
             setInquiriesError('');
-            const list = await api.adminListInquiries({
+            const result = await api.adminListInquiries({
                 status: inquiryStatusFilter,
                 q: inquirySearch,
+                limit: inquiryPageSize,
+                skip: (inquiryPage - 1) * inquiryPageSize,
             });
-            setInquiries(Array.isArray(list) ? list : []);
+            if (Array.isArray(result)) {
+                setInquiries(result);
+                setInquiryTotal(result.length);
+            } else {
+                const items = Array.isArray(result?.items) ? result.items : [];
+                setInquiries(items);
+                setInquiryTotal(Number(result?.total || 0));
+            }
         } catch (err) {
             setInquiriesError(err.message || 'Failed to load inquiries');
         } finally {
             setInquiriesLoading(false);
         }
-    }, [inquirySearch, inquiryStatusFilter]);
+    }, [inquiryPage, inquirySearch, inquiryStatusFilter]);
+
+    useEffect(() => {
+        setInquiryPage(1);
+    }, [inquiryStatusFilter, inquirySearch]);
 
     useEffect(() => {
         if (isClientsPage || isReportsPage) {
@@ -627,8 +643,10 @@ const Admin = () => {
 
     const handleDeleteInquiry = useCallback(async (inquiry) => {
         if (!inquiry?.id) return;
-        const confirmed = window.confirm(`Delete inquiry from "${inquiry.name}"?`);
+        const confirmed = window.confirm(`Delete inquiry from "${inquiry.name}"? This cannot be undone.`);
         if (!confirmed) return;
+        const typed = window.prompt('Type DELETE to confirm permanent removal.');
+        if (typed !== 'DELETE') return;
         try {
             await api.adminDeleteInquiry(inquiry.id);
             success('Inquiry deleted');
@@ -869,6 +887,30 @@ const Admin = () => {
                                                 </div>
                                             </div>
                                         ))}
+                                        <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                            <p className="text-xs text-text-muted dark:text-gray-500">
+                                                Showing {(inquiryPage - 1) * inquiryPageSize + (inquiries.length ? 1 : 0)}-
+                                                {(inquiryPage - 1) * inquiryPageSize + inquiries.length} of {inquiryTotal}
+                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setInquiryPage((p) => Math.max(1, p - 1))}
+                                                    disabled={inquiryPage <= 1 || inquiriesLoading}
+                                                >
+                                                    Previous
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setInquiryPage((p) => p + 1)}
+                                                    disabled={((inquiryPage - 1) * inquiryPageSize + inquiries.length) >= inquiryTotal || inquiriesLoading}
+                                                >
+                                                    Next
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </CardContent>

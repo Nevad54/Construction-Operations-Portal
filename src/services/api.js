@@ -200,6 +200,8 @@ export const api = {
         const qs = new URLSearchParams();
         if (params.status) qs.set('status', String(params.status));
         if (params.q) qs.set('q', String(params.q));
+        if (params.limit != null) qs.set('limit', String(params.limit));
+        if (params.skip != null) qs.set('skip', String(params.skip));
         const suffix = qs.toString() ? `?${qs.toString()}` : '';
         const response = await fetch(`${API_PREFIX}/admin/inquiries${suffix}`, {
             method: 'GET',
