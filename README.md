@@ -37,6 +37,13 @@ Place screenshots in `docs/screenshots/` using the exact filenames below.
 ### Mobile
 
 ![Mobile Navigation](docs/screenshots/mobile-nav.png)
+![Mobile Home Light](docs/screenshots/mobile-home-light.png)
+![Mobile Home Dark](docs/screenshots/mobile-home-dark.png)
+![Mobile Projects](docs/screenshots/mobile-projects.png)
+![Mobile Contact](docs/screenshots/mobile-contact.png)
+![Mobile Admin Dashboard](docs/screenshots/mobile-admin-dashboard.png)
+![Mobile Sidebar](docs/screenshots/mobile-sidebar.png)
+![Mobile Reports](docs/screenshots/mobile-reports.png)
 
 ## Highlights
 
