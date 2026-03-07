@@ -2,15 +2,17 @@
 
 A full-stack construction company web app with a public marketing site, role-based dashboards, project tracking, file management, and contact inquiry operations.
 
+![Node](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=222)
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
+
 ## Demo
 
 - Live app: `https://mastertech4.netlify.app`
 - API status endpoint: `https://mastertech-backend.onrender.com/api/status`
-- Demo video (2-3 min): `TBD`
+- Demo video: coming soon
 
 ## Screenshots
-
-Place screenshots in `docs/screenshots/` using the exact filenames below.
 
 - `docs/screenshots/home-light.png` - Public homepage (light mode)
 - `docs/screenshots/home-dark.png` - Public homepage (dark mode)
@@ -106,7 +108,8 @@ Place screenshots in `docs/screenshots/` using the exact filenames below.
   - `GET /api/admin/export/inquiries` (CSV download of inquiries; optional `status` filter)
   - `GET /api/admin/export/activity` (CSV download of activity logs; optional `limit`)
 
-* **Scheduled exports**: when the backend is running it writes daily CSV files to an `exports/` directory adjacent to the project root. The files include `users.csv`, `inquiries.csv` and `activity_logs.csv` and are regenerated every 24 hours (first run ~30 seconds after start).- Inquiries:
+- Scheduled exports: when the backend is running it writes daily CSV files to an `exports/` directory adjacent to the project root. The files include `users.csv`, `inquiries.csv`, and `activity_logs.csv`, and are regenerated every 24 hours (first run about 30 seconds after start).
+- Inquiries:
   - `POST /api/contact` (public submission)
   - `GET /api/admin/inquiries`
   - `PUT /api/admin/inquiries/:id`
@@ -203,6 +206,8 @@ Set `BACKEND_API_URL` in Netlify to your Render backend URL.
 - `DARK_MODE_DOCUMENTATION_INDEX.md`
 - `UI_IMPROVEMENTS_SUMMARY.md`
 - `RELEASE_NOTES_v0.1.0-ui-stabilization.md`
+- `SECURITY.md`
+- `CONTRIBUTING.md`
 
 ## Suggested Portfolio Positioning
 
@@ -223,9 +228,9 @@ For portfolio presentation, frame this as:
 
 ## Release Checklist
 
-- [ ] Live frontend deployed and linked
-- [ ] Live backend deployed and linked
+- [x] Live frontend deployed and linked
+- [x] Live backend deployed and linked
 - [ ] Demo video uploaded
-- [ ] Screenshot set added to `docs/screenshots`
+- [x] Screenshot set added to `docs/screenshots`
 - [ ] Demo credentials verified
 - [ ] Final smoke test on production URLs
