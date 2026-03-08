@@ -24,6 +24,18 @@ For a live preview/prod runtime check from your machine, run:
 FRONTEND_URL=https://your-preview-or-production-site npm run smoke:deploy-runtime
 ```
 
+For a production-safe contact-path probe from your machine, run:
+
+```bash
+FRONTEND_URL=https://your-preview-or-production-site npm run smoke:deploy-contact
+```
+
+For one deployed smoke command that covers the core public routes plus the contact probe, run:
+
+```bash
+FRONTEND_URL=https://your-preview-or-production-site BACKEND_URL=https://your-backend-host npm run smoke:production
+```
+
 ## 2. Confirm Preview Configuration
 
 Record the exact URLs being checked:
@@ -47,6 +59,7 @@ Check these in the deployed preview:
 
 - `/` renders without missing brand assets or broken layout.
 - `/services`, `/projects`, `/contact`, and each `/solutions/*` route load without console-breaking errors.
+- `npm run smoke:production` passes for the deployed frontend origin.
 - Mobile nav opens and closes at a mobile viewport.
 - Theme toggle still works in light mode and dark mode.
 - `/api/status` resolves from the preview frontend origin and returns JSON.
@@ -59,6 +72,7 @@ On the preview contact route:
 - The live Google reCAPTCHA widget renders instead of the localhost verification card.
 - The widget does not show a Google domain mismatch error.
 - The submit flow is blocked until reCAPTCHA is completed.
+- `npm run smoke:deploy-contact` passes for the deployed frontend origin and returns the expected invalid-token `400` JSON payload from `/api/contact`.
 
 On the preview marketing routes:
 
@@ -76,5 +90,6 @@ Capture this before approving the deploy:
 - theme coverage checked: `light`, `dark`
 - viewport coverage checked: `desktop`, `mobile`
 - contact widget checked: `preview reCAPTCHA`
+- contact smoke command checked: `yes` or `no`
 - metadata checked: `yes` or `no`
 - production blockers:

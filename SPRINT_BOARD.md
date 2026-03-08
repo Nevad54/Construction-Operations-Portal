@@ -1452,7 +1452,7 @@ Date: 2026-03-08
 ## Sprint 23 (Production Validation and Release Hardening)
 
 ### P22-1 Deployed Contact Flow Validation
-- Status: [ ] Not Started
+- Status: [x] Complete
 - Owner: Frontend + Backend
 - Estimate: 0.5 day
 - Files:
@@ -1467,9 +1467,14 @@ Date: 2026-03-08
   - The deployed contact page loads the expected verification control for the live environment.
   - A safe end-to-end contact submission check path is documented or automated.
   - Any production-only contact mismatch is captured as a follow-up item with file targets.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added `npm run smoke:deploy-contact` to validate a deployed `/contact` route and probe `/api/contact` with a fictional payload plus an intentionally invalid reCAPTCHA token, so the live contact path can be checked without generating a real inquiry.
+  - Updated the README, deploy-preview validation flow, and public release checklist to include the deployed contact smoke command alongside the manual widget/domain check.
+  - Verified against the current production URLs: `https://mastertech4.netlify.app/contact` and `https://mastertech4.netlify.app/api/contact` returned the expected live-route shell and invalid-token reCAPTCHA rejection payload.
 
 ### P22-2 Production Smoke Script
-- Status: [ ] Not Started
+- Status: [x] Complete
 - Owner: Full-stack
 - Estimate: 0.5 day
 - Files:
@@ -1482,9 +1487,15 @@ Date: 2026-03-08
 - Acceptance Criteria:
   - One command can check the deployed production frontend and backend URLs.
   - README documents the production smoke command and its required env vars.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added `npm run smoke:production` to validate a deployed frontend across `/`, `/services`, `/projects`, `/contact`, `/api/status`, anonymous `/api/auth/me`, and a production-safe invalid-token `/api/contact` probe.
+  - The command accepts `FRONTEND_URL` and optional `BACKEND_URL`, so it can validate the frontend same-origin proxy path and optionally confirm the backend base status endpoint directly.
+  - Updated the README and deploy-preview validation flow to document the new production smoke command as the primary deployed verification path.
+  - Verified with `FRONTEND_URL=https://mastertech4.netlify.app BACKEND_URL=https://mastertech-app-32jm.onrender.com npm run smoke:production`.
 
 ### P22-3 Runtime Warning and Log Cleanup
-- Status: [ ] Not Started
+- Status: [x] Complete
 - Owner: Frontend
 - Estimate: 0.5 day
 - Files:
@@ -1496,6 +1507,11 @@ Date: 2026-03-08
 - Acceptance Criteria:
   - Current Vite/Vitest local-storage warning is resolved or intentionally suppressed with justification.
   - Release/smoke commands finish without avoidable warning noise.
+- Notes:
+  - Completed on 2026-03-08.
+  - The remaining warning noise was an inherited Node runtime warning about `--localstorage-file`, not a repo-generated app or test failure.
+  - Updated the Vitest-backed `npm test` and `npm run smoke:public-ui` scripts to export `NODE_NO_WARNINGS=1` and run through `node --no-warnings`, which removes the environment-level warning spam while leaving test failures and normal stderr intact.
+  - Verified the frontend test suite and public smoke suite complete cleanly without the repeated local-storage warning lines.
 
 ## Completed Outside Sprint Scope
 - 2026-03-08: Fixed two Express 5 wildcard route incompatibilities in `backend/server.js` so the app can run locally on alternate ports without affecting the deployed environment.

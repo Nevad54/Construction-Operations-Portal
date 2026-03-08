@@ -222,7 +222,9 @@ Other useful scripts:
 - `npm run check:public-assets` (fails if the tracked public marketing assets exceed the local demo budget)
 - `npm run report:unused-uploads` (lists oversized public upload files that are not referenced by the current frontend source)
 - `npm run smoke:local-demo` (checks local frontend + backend demo routes on `3001/3002` or `3101/3102`)
+- `npm run smoke:production` (checks a deployed frontend across core public routes plus `/api/status`, `/api/auth/me`, and a production-safe invalid-token contact probe)
 - `npm run smoke:deploy-runtime` (checks a frontend origin and its API boundary via `/`, `/api/status`, and anonymous `/api/auth/me`)
+- `npm run smoke:deploy-contact` (checks a deployed contact route and sends a production-safe invalid reCAPTCHA probe to `/api/contact`)
 - `npm run smoke:admin` (logs in as admin and checks the dashboard API shape locally)
 - `npm run smoke:contact` (submits a local demo inquiry to the public contact endpoint)
 - `npm run verify:demo` (builds, checks the bundle budget, boots an isolated demo backend, and runs the full local demo smoke set)
@@ -265,12 +267,28 @@ If you want the script to validate the backend base URL directly as well:
 FRONTEND_URL=https://your-preview-or-production-site BACKEND_URL=https://your-backend-host npm run smoke:deploy-runtime
 ```
 
+For a deployed contact-flow check that does not create a real inquiry, run:
+
+```bash
+FRONTEND_URL=https://your-preview-or-production-site npm run smoke:deploy-contact
+```
+
+For one production-safe deploy smoke command that covers the core public routes and contact path together, run:
+
+```bash
+FRONTEND_URL=https://your-preview-or-production-site BACKEND_URL=https://your-backend-host npm run smoke:production
+```
+
 Before releasing a deployed contact-flow change, also confirm:
 
 - the backend service has `RECAPTCHA_SECRET_KEY`
 - the frontend build has `REACT_APP_RECAPTCHA_SITE_KEY`
 - both values come from the same Google reCAPTCHA project
 - the Google site key allowlist includes the deployed frontend hostname you are shipping
+
+`smoke:deploy-contact` validates the deployed `/contact` route and then posts a fictional inquiry with an intentionally invalid reCAPTCHA token. The expected result is a `400` JSON response with the reCAPTCHA failure payload, which proves the deployed contact path is wired up without generating a real inquiry.
+
+`smoke:production` combines the deployed public-route shell check with the same-origin API boundary checks and the invalid-token contact probe. It verifies `/`, `/services`, `/projects`, `/contact`, `/api/status`, `/api/auth/me`, and `/api/contact` from the deployed frontend origin, and optionally checks the backend base `/api/status` directly when `BACKEND_URL` is provided.
 
 Detailed public release sign-off is documented in [`docs/PUBLIC_RELEASE_CHECKLIST.md`](./docs/PUBLIC_RELEASE_CHECKLIST.md).
 Deployed preview sign-off is documented in [`docs/DEPLOY_PREVIEW_VALIDATION.md`](./docs/DEPLOY_PREVIEW_VALIDATION.md).

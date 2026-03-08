@@ -52,6 +52,7 @@ For deployed preview or production:
 - Both keys come from the same Google reCAPTCHA project.
 - The Google site-key allowlist includes the deployed frontend hostname being released.
 - The deployed contact page does not show a Google domain error inside the widget.
+- `FRONTEND_URL=https://your-preview-or-production-site npm run smoke:deploy-contact` passes and returns the expected invalid-token rejection path.
 
 ## 4. Metadata and Brand Checks
 
