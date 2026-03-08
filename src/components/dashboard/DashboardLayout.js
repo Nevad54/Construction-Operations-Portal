@@ -8,6 +8,9 @@ export default function DashboardLayout({
   children,
   searchQuery = '',
   onSearchChange = () => {},
+  showSearch = true,
+  searchPlaceholder = 'Search workspace',
+  searchAriaLabel = 'Search workspace',
   sidebarMenuItems,
   sidebarHomePath = '/admin/dashboard',
   sidebarProfileName = 'Admin',
@@ -67,6 +70,9 @@ export default function DashboardLayout({
         isMobile={isMobile}
         searchQuery={searchQuery}
         onSearchChange={onSearchChange}
+        showSearch={showSearch}
+        searchPlaceholder={searchPlaceholder}
+        searchAriaLabel={searchAriaLabel}
         currentUser={authUser}
       />
       <DashboardSidebar

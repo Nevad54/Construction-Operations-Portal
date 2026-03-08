@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useId } from 'react';
 
 // Simple className utility
 function cn(...inputs) {
@@ -62,6 +62,8 @@ export default function Modal({
 }) {
   const modalRef = useRef(null);
   const previousFocusRef = useRef(null);
+  const titleId = useId();
+  const contentId = useId();
 
   // Store the element that had focus before modal opened
   const storePreviousFocus = useCallback(() => {
@@ -91,6 +93,8 @@ export default function Modal({
 
   // Setup modal when opened
   useEffect(() => {
+    let cleanupFocusTrap;
+
     if (isOpen) {
       storePreviousFocus();
       
@@ -104,14 +108,15 @@ export default function Modal({
       setTimeout(() => {
         if (modalRef.current) {
           setFocusToFirst(modalRef.current);
-          const cleanupFocusTrap = trapFocus(modalRef.current);
-          
-          return cleanupFocusTrap;
+          cleanupFocusTrap = trapFocus(modalRef.current);
         }
       }, 100);
     }
 
     return () => {
+      if (cleanupFocusTrap) {
+        cleanupFocusTrap();
+      }
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
       restorePreviousFocus();
@@ -134,7 +139,8 @@ export default function Modal({
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
-      aria-labelledby={title ? 'modal-title' : undefined}
+      aria-labelledby={title ? titleId : undefined}
+      aria-describedby={contentId}
     >
       {/* Overlay */}
       <div 
@@ -160,7 +166,7 @@ export default function Modal({
           <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-stroke dark:border-gray-700">
             {title && (
               <h2 
-                id="modal-title"
+                id={titleId}
                 className="text-base sm:text-lg font-semibold text-text-primary dark:text-gray-100 pr-2"
               >
                 {title}
@@ -181,7 +187,7 @@ export default function Modal({
         )}
         
         {/* Content */}
-        <div className="flex-1 px-4 sm:px-6 py-4 overflow-y-auto">
+        <div id={contentId} className="flex-1 px-4 sm:px-6 py-4 overflow-y-auto">
           {children}
         </div>
       </div>

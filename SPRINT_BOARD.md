@@ -12,7 +12,8 @@ Date: 2026-03-08
 - Contact intake has been simplified again so first contact no longer asks for heavy qualification details.
 - Sprint 16 public UI audit work is complete: header/nav balance, home-page section rebuilds, copy cleanup, projects-page reduction, and footer/location redesign are now in place.
 - Sprint 17 stabilization is complete: duplicate landing CTA overrides are cleaned up, shared public-route regression coverage is broader, the public visual QA sweep is recorded, and local runtime console noise is reduced.
-- Sprint 18 is underway: localhost contact intake now has a deliberate development verification path instead of a broken reCAPTCHA widget.
+- Sprint 18 is complete: localhost contact intake now uses a deliberate development verification path instead of a broken reCAPTCHA widget.
+- Sprint 27 admin hardening is underway: the admin shell now has route-aware page framing and only shows top-nav search where it is operationally meaningful.
 
 ## Sprint 1 (Weeks 1-2) - Foundation
 
@@ -1695,6 +1696,91 @@ Date: 2026-03-08
   - Added `npm run verify:ci`, which runs `verify:release:public` and `check:security-audit` in sequence and fails fast if either step fails.
   - Implemented the wrapper as a Node script so it behaves consistently across Windows and non-Windows environments, matching the current operator-command pattern used elsewhere in the repo.
   - Updated the README so the CI parity path is visible from the release guidance.
+
+## Sprint 27 (Admin UX Hardening)
+
+### P26-1 Admin Dashboard UX Audit
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 0.75 day
+- Files:
+  - src/components/AdminDashboard.js
+  - src/components/dashboard/DashboardLayout.js
+  - src/components/dashboard/DashboardTopNav.js
+  - src/components/AdminDashboard.test.js
+  - SPRINT_BOARD.md
+- Scope:
+  - Tighten the admin route shell so each admin section opens with a clear page header, route-specific context, and meaningful top-nav behavior.
+  - Remove misleading global search behavior from non-project admin pages.
+- Acceptance Criteria:
+  - Admin routes show a route-aware heading and summary context instead of dropping directly into dense cards.
+  - Top-nav search is only visible on routes where it is actually wired and useful.
+  - Regression coverage protects the admin shell behavior.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added a shared admin hero band with route-specific framing for projects, users/inquiries, reports, files, and settings.
+  - Projects keep an operational search input in the top nav, while non-project admin routes now hide that search instead of pretending they support project search.
+  - Added focused admin route-shell coverage for the projects and clients routes.
+
+### P26-2 Admin Inquiry Workflow Polish
+- Status: [x] Complete
+- Owner: Frontend + Backend
+- Estimate: 1 day
+- Files:
+  - src/components/AdminDashboard.js
+  - src/components/AdminDashboard.test.js
+  - SPRINT_BOARD.md
+- Scope:
+  - Improve inquiry triage clarity, overdue handling, and follow-up editing ergonomics in the admin queue.
+- Acceptance Criteria:
+  - The inquiry queue exposes clearer risk states for ownership and next follow-up gaps.
+  - Common triage actions can be taken directly from the list without opening the full modal every time.
+  - Regression coverage protects at least one quick-action path.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added queue summary cards, explicit `Needs owner` and `Follow-up missing` states, and direct list actions for assigning ownership, starting review, and scheduling the next follow-up.
+  - Expanded the inquiry modal with a contact context block and quick follow-up presets so operators can set the next action faster.
+  - Added regression coverage proving the quick `Start Review` queue action posts the expected inquiry update.
+
+### P26-3 Admin Accessibility Pass
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 0.75 day
+- Files:
+  - src/components/AdminDashboard.js
+  - src/components/dashboard/
+  - src/components/ui/
+  - src/components/AdminDashboard.test.js
+  - SPRINT_BOARD.md
+- Scope:
+  - Audit keyboard flow, modal semantics, focus visibility, and admin action affordances across the dashboard routes.
+- Acceptance Criteria:
+  - Admin modal/form controls expose proper invalid and helper semantics.
+  - Sidebar/mobile shell controls have explicit accessible labels.
+  - Regression coverage protects at least one accessibility-critical admin validation path.
+- Notes:
+  - Completed on 2026-03-08.
+  - Updated shared form inputs to use stable ids plus `aria-invalid` and `aria-describedby` wiring for helper/error text, which improves admin modal and dashboard form semantics broadly.
+  - Tightened modal accessibility by using stable title/content ids, keeping the focus trap cleanup explicit, and preserving dialog labeling.
+  - Added explicit sidebar close affordances for mobile overlays and expanded admin test coverage to verify inquiry-modal invalid state handling.
+
+### P26-4 Admin Smoke Coverage Expansion
+- Status: [x] Complete
+- Owner: QA + Frontend
+- Estimate: 0.75 day
+- Files:
+  - src/components/AdminDashboard.test.js
+  - SPRINT_BOARD.md
+- Scope:
+  - Expand regression coverage around admin route states, inquiry edits, and reporting fallbacks.
+- Acceptance Criteria:
+  - Admin route coverage includes more than one route shell and one inquiry-path assertion.
+  - Reports fallback state and at least one non-project admin route are covered.
+  - Project-route retry/error guidance is protected.
+- Notes:
+  - Completed on 2026-03-08.
+  - Expanded the admin suite to cover reports failure handling, files/settings route shells, and the projects retry state in addition to the earlier inquiry triage coverage.
+  - The focused admin smoke file now guards the main route-level regressions without adding noisy snapshot-style tests.
 
 ## Completed Outside Sprint Scope
 - 2026-03-08: Fixed two Express 5 wildcard route incompatibilities in `backend/server.js` so the app can run locally on alternate ports without affecting the deployed environment.

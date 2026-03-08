@@ -29,6 +29,18 @@ const isInquiryOverdue = (inquiry, now = Date.now()) => {
     const followUpAt = getInquiryFollowUpTime(inquiry.nextFollowUpAt);
     return followUpAt > 0 && followUpAt < now;
 };
+const hasAssignedInquiryOwner = (inquiry) => Boolean(String(inquiry?.owner || inquiry?.assignedTo || '').trim());
+const hasScheduledFollowUp = (inquiry) => getInquiryFollowUpTime(inquiry?.nextFollowUpAt) > 0;
+const buildNextFollowUpIso = ({ days = 0, hours = 0, targetHour = null } = {}) => {
+    const next = new Date();
+    if (targetHour !== null) {
+        next.setDate(next.getDate() + days);
+        next.setHours(targetHour, 0, 0, 0);
+    } else {
+        next.setTime(next.getTime() + (days * 24 + hours) * 60 * 60 * 1000);
+    }
+    return next.toISOString();
+};
 
 const Admin = () => {
     const { projects, addProject, updateProject, deleteProject, refreshProjects, loading, error: projectsError } = useProjects();
@@ -64,20 +76,65 @@ const Admin = () => {
     const isReportsPage = location.pathname === '/admin/dashboard/reports';
     const isSettingsPage = location.pathname === '/admin/dashboard/settings';
     const adminPageMeta = useMemo(() => {
-        if (location.pathname === '/admin/dashboard/clients') {
-            return { title: 'User Management', description: 'Manage admin, employee, and client accounts.' };
+        if (isProjectsPage) {
+            return {
+                eyebrow: 'Project Operations',
+                title: 'Keep active work visible and delivery updates current.',
+                description: 'Manage ongoing and completed jobs, keep ownership clear, and clean up portfolio records without digging through dense project cards first.',
+                searchEnabled: true,
+                searchPlaceholder: 'Search work orders, locations, or owners',
+                searchAriaLabel: 'Search work orders',
+            };
         }
-        if (location.pathname === '/admin/dashboard/reports') {
-            return { title: 'Analytics', description: 'Operational metrics and recent activity.' };
+        if (isClientsPage) {
+            return {
+                eyebrow: 'User and Inquiry Operations',
+                title: 'Triage incoming demand and keep account access aligned.',
+                description: 'Review inquiry ownership, follow-up load, and dashboard access from one operations queue instead of jumping between disconnected admin panels.',
+                searchEnabled: false,
+                searchPlaceholder: '',
+                searchAriaLabel: '',
+            };
         }
-        if (location.pathname === '/admin/dashboard/files') {
-            return { title: 'File Management', description: 'Centralized files for admin, users, and clients.' };
+        if (isReportsPage) {
+            return {
+                eyebrow: 'Reporting',
+                title: 'Read operational health before issues compound.',
+                description: 'Track current inquiry pressure, delivery volume, user load, and recent admin activity from one analytics view.',
+                searchEnabled: false,
+                searchPlaceholder: '',
+                searchAriaLabel: '',
+            };
         }
-        if (location.pathname === '/admin/dashboard/settings') {
-            return { title: 'Settings', description: 'Admin preferences and account settings will appear here.' };
+        if (isFilesPage) {
+            return {
+                eyebrow: 'File Management',
+                title: 'Control shared documentation without losing access discipline.',
+                description: 'Use the admin file library to publish team and client documents while keeping visibility rules explicit.',
+                searchEnabled: false,
+                searchPlaceholder: '',
+                searchAriaLabel: '',
+            };
         }
-        return { title: 'Admin', description: 'This admin section is under construction.' };
-    }, [location.pathname]);
+        if (isSettingsPage) {
+            return {
+                eyebrow: 'Settings',
+                title: 'Maintain admin account controls and workspace preferences.',
+                description: 'Keep profile, authentication, and account-level preferences current before handing the portal to another operator.',
+                searchEnabled: false,
+                searchPlaceholder: '',
+                searchAriaLabel: '',
+            };
+        }
+        return {
+            eyebrow: 'Admin Workspace',
+            title: 'Admin workspace',
+            description: 'Use the admin routes to manage projects, files, contacts, reporting, and account settings.',
+            searchEnabled: false,
+            searchPlaceholder: '',
+            searchAriaLabel: '',
+        };
+    }, [isClientsPage, isFilesPage, isProjectsPage, isReportsPage, isSettingsPage]);
 
     const [adminUsers, setAdminUsers] = useState([]);
     const [usersLoading, setUsersLoading] = useState(false);
@@ -807,6 +864,151 @@ const Admin = () => {
             .sort((a, b) => getInquiryFollowUpTime(a.nextFollowUpAt) - getInquiryFollowUpTime(b.nextFollowUpAt));
     }, [inquiries]);
 
+    const inquiryQueueSummary = useMemo(() => {
+        const activeInquiries = inquiries.filter((item) => !isClosedInquiryStatus(item.status));
+        const unassignedInquiries = activeInquiries.filter((item) => !hasAssignedInquiryOwner(item));
+        const unscheduledInquiries = activeInquiries.filter((item) => !hasScheduledFollowUp(item));
+
+        return [
+            {
+                label: 'Active inquiries',
+                value: String(activeInquiries.length),
+                detail: 'Items that still need operator follow-through',
+            },
+            {
+                label: 'Needs owner',
+                value: String(unassignedInquiries.length),
+                detail: 'Queue items without a single accountable lead',
+            },
+            {
+                label: 'Follow-up missing',
+                value: String(unscheduledInquiries.length),
+                detail: 'Active items without a scheduled next action',
+            },
+            {
+                label: 'Overdue',
+                value: String(overdueInquiries.length),
+                detail: 'Past-due follow-ups that should be triaged first',
+            },
+        ];
+    }, [inquiries, overdueInquiries.length]);
+
+    const adminHeroStats = useMemo(() => {
+        if (isProjectsPage) {
+            return [
+                {
+                    label: 'Tracked projects',
+                    value: String(projects.length),
+                    detail: `${ongoingProjects.length} ongoing / ${completedProjects.length} completed`,
+                },
+                {
+                    label: 'Selected cards',
+                    value: String(selectedProjects.ongoing.length + selectedProjects.completed.length),
+                    detail: normalizedSearch ? `Filtered by "${searchQuery.trim()}"` : 'Ready for bulk actions',
+                },
+                {
+                    label: 'Data mode',
+                    value: isFallback ? 'Fallback' : 'Live',
+                    detail: isFallback ? 'Changes stay local until the DB reconnects' : 'Connected to the primary project feed',
+                },
+            ];
+        }
+
+        if (isClientsPage) {
+            return [
+                {
+                    label: 'Visible accounts',
+                    value: String(visibleUsers.length),
+                    detail: userRoleFilter === 'all' ? 'Across all roles' : `Filtered to ${userRoleFilter}`,
+                },
+                {
+                    label: 'Inquiry queue',
+                    value: String(inquiryTotal || inquiries.length),
+                    detail: overdueInquiries.length ? `${overdueInquiries.length} overdue follow-ups` : 'No overdue follow-ups right now',
+                },
+                {
+                    label: 'Open ownership',
+                    value: String(inquiries.filter((item) => !isClosedInquiryStatus(item.status)).length),
+                    detail: 'Active inquiries still needing operator attention',
+                },
+            ];
+        }
+
+        if (isReportsPage) {
+            return [
+                {
+                    label: 'New today',
+                    value: String(reportKpis.new_today),
+                    detail: 'Fresh inquiry volume since midnight',
+                },
+                {
+                    label: 'Overdue follow-ups',
+                    value: String(reportKpis.overdue_followups),
+                    detail: 'Active items past their next action date',
+                },
+                {
+                    label: 'Recent activity',
+                    value: String(reportActivity.length),
+                    detail: 'Most recent admin events loaded into the report',
+                },
+            ];
+        }
+
+        if (isFilesPage) {
+            return [
+                {
+                    label: 'Visibility',
+                    value: 'Admin',
+                    detail: 'Shared document controls stay under admin oversight',
+                },
+                {
+                    label: 'Audience',
+                    value: 'Team + Client',
+                    detail: 'Use role-aware file visibility before publishing',
+                },
+            ];
+        }
+
+        if (isSettingsPage) {
+            return [
+                {
+                    label: 'Account mode',
+                    value: 'Admin',
+                    detail: 'Changes here affect how this operator signs in and works',
+                },
+                {
+                    label: 'Priority',
+                    value: 'Security',
+                    detail: 'Keep credentials and access defaults current',
+                },
+            ];
+        }
+
+        return [];
+    }, [
+        completedProjects.length,
+        inquiryTotal,
+        inquiries,
+        isClientsPage,
+        isFallback,
+        isFilesPage,
+        isProjectsPage,
+        isReportsPage,
+        isSettingsPage,
+        normalizedSearch,
+        ongoingProjects.length,
+        overdueInquiries.length,
+        projects.length,
+        reportActivity.length,
+        reportKpis.new_today,
+        reportKpis.overdue_followups,
+        searchQuery,
+        selectedProjects.completed.length,
+        selectedProjects.ongoing.length,
+        userRoleFilter,
+        visibleUsers.length,
+    ]);
+
     const handleReminderAction = useCallback(async (inquiry, action) => {
         if (!inquiry?.id) return;
 
@@ -853,10 +1055,157 @@ const Admin = () => {
         }
     }, [error, isReportsPage, loadInquiries, loadReports, success]);
 
+    const applyInquiryFollowUpPreset = useCallback((mode) => {
+        const nextFollowUpAt = mode === 'tomorrow_am'
+            ? buildNextFollowUpIso({ days: 1, targetHour: 9 })
+            : buildNextFollowUpIso({ hours: 2 });
+
+        setInquiryForm((prev) => ({
+            ...prev,
+            nextFollowUpAt: formatDateTimeLocalValue(nextFollowUpAt),
+        }));
+        setInquiryFormErrors((prev) => ({
+            ...prev,
+            nextFollowUpAt: undefined,
+        }));
+    }, []);
+
+    const handleQuickInquiryAction = useCallback(async (inquiry, action) => {
+        if (!inquiry?.id) return;
+        if (action === 'assign_owner') {
+            openInquiryModal(inquiry);
+            return;
+        }
+
+        const owner = String(inquiry.owner || inquiry.assignedTo || '').trim();
+        if (!owner) {
+            error('Assign an owner before using quick triage actions.');
+            openInquiryModal(inquiry);
+            return;
+        }
+
+        try {
+            const basePayload = {
+                priority: inquiry.priority || 'normal',
+                owner,
+                assignedTo: owner,
+                notes: inquiry.notes || '',
+            };
+
+            if (action === 'start_review') {
+                const nextFollowUpAt = hasScheduledFollowUp(inquiry)
+                    ? inquiry.nextFollowUpAt
+                    : buildNextFollowUpIso({ days: 1, targetHour: 9 });
+                await api.adminUpdateInquiry(inquiry.id, {
+                    ...basePayload,
+                    status: 'in_progress',
+                    nextFollowUpAt,
+                });
+                success('Inquiry moved into active review');
+            } else if (action === 'schedule_follow_up') {
+                await api.adminUpdateInquiry(inquiry.id, {
+                    ...basePayload,
+                    status: isClosedInquiryStatus(inquiry.status) ? 'in_progress' : (inquiry.status || 'in_progress'),
+                    nextFollowUpAt: buildNextFollowUpIso({ days: 1, targetHour: 9 }),
+                });
+                success('Follow-up scheduled for tomorrow morning');
+            } else {
+                return;
+            }
+
+            if (isReportsPage) {
+                await loadReports();
+            } else {
+                await loadInquiries();
+            }
+        } catch (err) {
+            error(err.message || 'Failed to update inquiry');
+        }
+    }, [error, isReportsPage, loadInquiries, loadReports, openInquiryModal, success]);
+
 
     return (
-        <DashboardLayout searchQuery={searchQuery} onSearchChange={setSearchQuery}>
+        <DashboardLayout
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            showSearch={adminPageMeta.searchEnabled}
+            searchPlaceholder={adminPageMeta.searchPlaceholder}
+            searchAriaLabel={adminPageMeta.searchAriaLabel}
+        >
             <div className="space-y-6 animate-fade-in">
+                <section
+                    data-aos="fade-up"
+                    className="rounded-[1.75rem] border border-stroke bg-gradient-to-br from-surface-card via-surface-card to-surface-muted/70 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 p-5 shadow-sm sm:p-6"
+                >
+                    <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                        <div className="max-w-3xl space-y-3">
+                            <div className="inline-flex w-fit items-center rounded-full bg-brand/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-brand dark:bg-brand/20 dark:text-brand-300">
+                                {adminPageMeta.eyebrow}
+                            </div>
+                            <div className="space-y-2">
+                                <h1 className="text-3xl font-semibold tracking-tight text-text-primary dark:text-gray-100 sm:text-[2.1rem]">
+                                    {adminPageMeta.title}
+                                </h1>
+                                <p className="max-w-2xl text-sm leading-6 text-text-secondary dark:text-gray-400 sm:text-[0.98rem]">
+                                    {adminPageMeta.description}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 xl:justify-end">
+                            {isProjectsPage ? (
+                                <Button
+                                    onClick={() => setShowModal(true)}
+                                    icon={(
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                    )}
+                                >
+                                    Add New Project
+                                </Button>
+                            ) : null}
+                            {isClientsPage ? (
+                                <Button
+                                    onClick={() => openUserModal('create')}
+                                    icon={(
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                    )}
+                                >
+                                    Add User
+                                </Button>
+                            ) : null}
+                            {isReportsPage ? (
+                                <Button variant="outline" onClick={loadReports} loading={reportsLoading}>
+                                    Refresh Report
+                                </Button>
+                            ) : null}
+                        </div>
+                    </div>
+
+                    {adminHeroStats.length ? (
+                        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                            {adminHeroStats.map((item) => (
+                                <div
+                                    key={item.label}
+                                    className="rounded-2xl border border-stroke bg-surface-page/70 p-4 dark:border-gray-700 dark:bg-gray-950/40"
+                                >
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted dark:text-gray-500">
+                                        {item.label}
+                                    </p>
+                                    <p className="mt-2 text-2xl font-semibold text-text-primary dark:text-gray-100">
+                                        {item.value}
+                                    </p>
+                                    <p className="mt-1 text-sm text-text-secondary dark:text-gray-400">
+                                        {item.detail}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : null}
+                </section>
+
                 {isFilesPage && (
                     <FileManager expectedRole="admin" title="Admin File Management" />
                 )}
@@ -867,25 +1216,6 @@ const Admin = () => {
 
                 {isClientsPage && (
                     <>
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" data-aos="fade-up">
-                            <div>
-                                <h1 className="text-2xl font-bold text-text-primary dark:text-gray-100">User Management</h1>
-                                <p className="text-sm text-text-secondary dark:text-gray-400">
-                                    Manage admin, employee, and client access.
-                                </p>
-                            </div>
-                            <Button
-                                onClick={() => openUserModal('create')}
-                                icon={(
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                    </svg>
-                                )}
-                            >
-                                Add User
-                            </Button>
-                        </div>
-
                         <Card data-aos="fade-up" data-aos-delay="80">
                             <CardHeader className="flex-col items-start sm:flex-row sm:items-center sm:justify-between">
                                 <CardTitle>Accounts</CardTitle>
@@ -970,7 +1300,12 @@ const Admin = () => {
 
                         <Card data-aos="fade-up" data-aos-delay="120">
                             <CardHeader className="flex-col items-start sm:flex-row sm:items-center sm:justify-between">
-                                <CardTitle>Contact Inquiries</CardTitle>
+                                <div>
+                                    <CardTitle>Contact Inquiries</CardTitle>
+                                    <p className="mt-1 text-sm text-text-secondary dark:text-gray-400">
+                                        Triage ownership, next action timing, and contact urgency from one queue.
+                                    </p>
+                                </div>
                                 <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                                     <Input
                                         className="sm:w-56"
@@ -1018,7 +1353,26 @@ const Admin = () => {
                                         description="New contact submissions will appear here."
                                     />
                                 ) : (
-                                    <div className="space-y-2">
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                                            {inquiryQueueSummary.map((item) => (
+                                                <div
+                                                    key={item.label}
+                                                    className="rounded-xl border border-stroke bg-surface-page/70 px-4 py-3 dark:border-gray-700 dark:bg-gray-950/40"
+                                                >
+                                                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted dark:text-gray-500">
+                                                        {item.label}
+                                                    </p>
+                                                    <p className="mt-2 text-xl font-semibold text-text-primary dark:text-gray-100">
+                                                        {item.value}
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-text-secondary dark:text-gray-400">
+                                                        {item.detail}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+
                                         {inquiries.map((inquiry) => (
                                             <div
                                                 key={inquiry.id}
@@ -1051,6 +1405,12 @@ const Admin = () => {
                                                         >
                                                             {String(inquiry.status || 'new').replace('_', ' ')}
                                                         </Badge>
+                                                        {!hasAssignedInquiryOwner(inquiry) ? (
+                                                            <Badge size="sm" variant="error">Needs owner</Badge>
+                                                        ) : null}
+                                                        {!isClosedInquiryStatus(inquiry.status) && !hasScheduledFollowUp(inquiry) ? (
+                                                            <Badge size="sm" variant="warning">Follow-up missing</Badge>
+                                                        ) : null}
                                                         {isInquiryOverdue(inquiry) ? (
                                                             <Badge size="sm" variant="warning">Overdue</Badge>
                                                         ) : null}
@@ -1087,6 +1447,21 @@ const Admin = () => {
                                                     </p>
                                                 ) : null}
                                                 <div className="flex flex-wrap gap-2 mt-3">
+                                                    {!hasAssignedInquiryOwner(inquiry) ? (
+                                                        <Button variant="outline" size="sm" onClick={() => handleQuickInquiryAction(inquiry, 'assign_owner')}>
+                                                            Assign Owner
+                                                        </Button>
+                                                    ) : null}
+                                                    {String(inquiry.status || 'new') === 'new' && hasAssignedInquiryOwner(inquiry) ? (
+                                                        <Button variant="outline" size="sm" onClick={() => handleQuickInquiryAction(inquiry, 'start_review')}>
+                                                            Start Review
+                                                        </Button>
+                                                    ) : null}
+                                                    {!isClosedInquiryStatus(inquiry.status) && !hasScheduledFollowUp(inquiry) && hasAssignedInquiryOwner(inquiry) ? (
+                                                        <Button variant="outline" size="sm" onClick={() => handleQuickInquiryAction(inquiry, 'schedule_follow_up')}>
+                                                            Schedule Follow-up
+                                                        </Button>
+                                                    ) : null}
                                                     {isInquiryOverdue(inquiry) ? (
                                                         <>
                                                             <Button variant="outline" size="sm" onClick={() => handleReminderAction(inquiry, 'snooze_1d')}>
@@ -1098,7 +1473,7 @@ const Admin = () => {
                                                         </>
                                                     ) : null}
                                                     <Button variant="ghost" size="sm" onClick={() => openInquiryModal(inquiry)}>
-                                                        Update
+                                                        Open Triage
                                                     </Button>
                                                     <Button variant="danger" size="sm" onClick={() => handleDeleteInquiry(inquiry)}>
                                                         Delete
@@ -1139,26 +1514,15 @@ const Admin = () => {
 
                 {isReportsPage && (
                     <>
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" data-aos="fade-up">
-                            <div>
-                                <h1 className="text-2xl font-bold text-text-primary dark:text-gray-100">Analytics</h1>
-                                <p className="text-sm text-text-secondary dark:text-gray-400">
-                                    Snapshot of projects, users, files, and recent admin activity.
-                                </p>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button variant="outline" size="sm" onClick={loadReports} loading={reportsLoading}>
-                                    Refresh Report
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleExportActivity}
-                                    disabled={!reportActivity.length}
-                                >
-                                    Export Activity CSV
-                                </Button>
-                            </div>
+                        <div className="flex justify-end" data-aos="fade-up">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleExportActivity}
+                                disabled={!reportActivity.length}
+                            >
+                                Export Activity CSV
+                            </Button>
                         </div>
 
                         {reportsError && (
@@ -1346,17 +1710,6 @@ const Admin = () => {
                     </>
                 )}
 
-                {!isProjectsPage && !isFilesPage && !isSettingsPage && !isClientsPage && !isReportsPage && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{adminPageMeta.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-text-secondary dark:text-gray-400">{adminPageMeta.description}</p>
-                        </CardContent>
-                    </Card>
-                )}
-
                 {isProjectsPage && loading && (
                     <Card>
                         <CardContent>
@@ -1383,20 +1736,6 @@ const Admin = () => {
                         <p className="text-sm text-yellow-800 dark:text-yellow-300">Notice: The app is currently using a local in-memory fallback (changes are stored locally). Connect to the real database to persist changes to Atlas.</p>
                     </div>
                 )}
-                {/* Page title + Add project */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" data-aos="fade-up">
-                    <h1 className="text-2xl font-bold text-text-primary dark:text-gray-100">Project Management</h1>
-                    <Button
-                        onClick={() => setShowModal(true)}
-                        icon={
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                        }
-                    >
-                        Add New Project
-                    </Button>
-                </div>
 
                 {/* Ongoing Projects */}
                 <Card data-aos="fade-up" data-aos-delay="100">
@@ -1690,6 +2029,32 @@ const Admin = () => {
                     size="md"
                 >
                     <form onSubmit={handleSaveInquiry} className="space-y-4">
+                        <div className="rounded-xl border border-stroke bg-surface-page/70 p-4 dark:border-gray-700 dark:bg-gray-950/40">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Badge
+                                    size="sm"
+                                    variant={
+                                        inquiryModal.inquiry?.status === 'resolved'
+                                            ? 'success'
+                                            : inquiryModal.inquiry?.status === 'in_progress'
+                                                ? 'warning'
+                                                : inquiryModal.inquiry?.status === 'spam'
+                                                    ? 'error'
+                                                    : 'info'
+                                    }
+                                >
+                                    {String(inquiryModal.inquiry?.status || 'new').replace('_', ' ')}
+                                </Badge>
+                                <span className="text-xs text-text-muted dark:text-gray-500">
+                                    {inquiryModal.inquiry?.email || 'No email'}
+                                    {inquiryModal.inquiry?.phone ? ` • ${inquiryModal.inquiry.phone}` : ''}
+                                </span>
+                            </div>
+                            <p className="mt-2 text-sm text-text-secondary dark:text-gray-300">
+                                {inquiryModal.inquiry?.message || 'No message provided'}
+                            </p>
+                        </div>
+
                         <Select
                             label="Status"
                             value={inquiryForm.status}
@@ -1732,6 +2097,16 @@ const Admin = () => {
                             helperText={['resolved', 'spam'].includes(String(inquiryForm.status || '')) ? 'Closed inquiries do not require a follow-up date.' : 'Required while the inquiry is active.'}
                             onChange={(e) => setInquiryForm((prev) => ({ ...prev, nextFollowUpAt: e.target.value }))}
                         />
+                        {!['resolved', 'spam'].includes(String(inquiryForm.status || '')) ? (
+                            <div className="flex flex-wrap gap-2">
+                                <Button type="button" variant="outline" size="sm" onClick={() => applyInquiryFollowUpPreset('next_2h')}>
+                                    In 2 Hours
+                                </Button>
+                                <Button type="button" variant="outline" size="sm" onClick={() => applyInquiryFollowUpPreset('tomorrow_am')}>
+                                    Tomorrow 9:00
+                                </Button>
+                            </div>
+                        ) : null}
                         <Textarea
                             label="Internal Notes"
                             rows={4}

@@ -12,6 +12,9 @@ export default function DashboardTopNav({
   isMobile,
   searchQuery = '',
   onSearchChange = () => {},
+  showSearch = true,
+  searchPlaceholder = 'Search workspace',
+  searchAriaLabel = 'Search workspace',
   currentUser = null,
 }) {
   const [searchFocused, setSearchFocused] = useState(false);
@@ -112,6 +115,7 @@ export default function DashboardTopNav({
 
         {/* Center: search */}
         <div className={`flex-1 max-w-md mx-4 transition-all duration-fast hidden sm:block ${searchFocused ? 'max-w-lg' : ''}`}>
+          {showSearch ? (
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted dark:text-gray-400 pointer-events-none flex-shrink-0">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,31 +124,34 @@ export default function DashboardTopNav({
             </span>
             <input
               type="search"
-              placeholder="Search projects..."
+              placeholder={searchPlaceholder}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
               className="w-full h-10 pl-10 pr-4 rounded-lg bg-surface-muted dark:bg-gray-800 border border-transparent dark:border-gray-700 text-text-primary dark:text-gray-100 placeholder:text-text-muted dark:placeholder:text-gray-400 text-sm transition-all duration-fast
                 focus:outline-none focus:ring-2 focus:ring-brand/20 dark:focus:ring-brand/30 focus:bg-surface-card dark:focus:bg-gray-900 focus:border-stroke dark:focus:border-gray-600"
-              aria-label="Search projects"
+              aria-label={searchAriaLabel}
             />
           </div>
+          ) : null}
         </div>
 
         {/* Right: buttons */}
         <div className="flex items-center gap-1 flex-shrink-0">
           {/* Search button (mobile) */}
-          <button
-            type="button"
-            onClick={() => setMobileSearchOpen((v) => !v)}
-            className="sm:hidden flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-text-muted dark:text-gray-400 hover:text-text-primary dark:hover:text-gray-200 hover:bg-surface-muted dark:hover:bg-gray-800 active:bg-surface-interactive dark:active:bg-gray-700 transition-colors duration-fast"
-            aria-label="Search"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </button>
+          {showSearch ? (
+            <button
+              type="button"
+              onClick={() => setMobileSearchOpen((v) => !v)}
+              className="sm:hidden flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-text-muted dark:text-gray-400 hover:text-text-primary dark:hover:text-gray-200 hover:bg-surface-muted dark:hover:bg-gray-800 active:bg-surface-interactive dark:active:bg-gray-700 transition-colors duration-fast"
+              aria-label="Search"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+          ) : null}
 
           {/* Theme toggle button */}
           <button
@@ -222,7 +229,7 @@ export default function DashboardTopNav({
         </div>
       </div>
 
-      {mobileSearchOpen && (
+      {showSearch && mobileSearchOpen && (
         <div className="sm:hidden fixed top-16 left-0 right-0 z-40 px-3 pb-3 bg-surface-card dark:bg-gray-900 border-b border-stroke dark:border-gray-700 shadow-sm">
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted dark:text-gray-400 pointer-events-none">
@@ -232,11 +239,11 @@ export default function DashboardTopNav({
             </span>
             <input
               type="search"
-              placeholder="Search projects..."
+              placeholder={searchPlaceholder}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full h-10 pl-10 pr-4 rounded-lg bg-surface-muted dark:bg-gray-800 border border-transparent dark:border-gray-700 text-text-primary dark:text-gray-100 placeholder:text-text-muted dark:placeholder:text-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 dark:focus:ring-brand/30"
-              aria-label="Search projects"
+              aria-label={searchAriaLabel}
             />
           </div>
         </div>

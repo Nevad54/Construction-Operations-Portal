@@ -68,6 +68,7 @@ export default function Button({
       type={type}
       className={baseClasses}
       disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
     >
       {loading ? (

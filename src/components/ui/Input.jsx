@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 // Simple className utility
 function cn(...inputs) {
@@ -15,7 +15,11 @@ export default function Input({
   required = false,
   ...props
 }) {
-  const inputId = props.id || `input-${Math.random().toString(36).substr(2, 9)}`;
+  const generatedId = useId();
+  const inputId = props.id || `input-${generatedId}`;
+  const helperId = helperText ? `${inputId}-helper` : undefined;
+  const errorId = error ? `${inputId}-error` : undefined;
+  const describedBy = [errorId, helperId, props['aria-describedby']].filter(Boolean).join(' ') || undefined;
 
   return (
     <div className={cn('space-y-1.5', containerClassName)}>
@@ -38,6 +42,8 @@ export default function Input({
         
         <input
           id={inputId}
+          aria-invalid={Boolean(error)}
+          aria-describedby={describedBy}
           className={cn(
             'w-full px-3.5 py-2.5 rounded-lg border border-stroke dark:border-gray-600',
             'bg-surface-card dark:bg-gray-800 text-text-primary dark:text-gray-100 text-base',
@@ -53,11 +59,11 @@ export default function Input({
       </div>
       
       {error && (
-        <p className="text-sm text-feedback-error font-medium">{error}</p>
+        <p id={errorId} className="text-sm text-feedback-error font-medium">{error}</p>
       )}
       
       {helperText && !error && (
-        <p className="text-sm text-text-muted dark:text-gray-500">{helperText}</p>
+        <p id={helperId} className="text-sm text-text-muted dark:text-gray-500">{helperText}</p>
       )}
     </div>
   );
@@ -72,7 +78,11 @@ export function Textarea({
   required = false,
   ...props
 }) {
-  const inputId = props.id || `textarea-${Math.random().toString(36).substr(2, 9)}`;
+  const generatedId = useId();
+  const inputId = props.id || `textarea-${generatedId}`;
+  const helperId = helperText ? `${inputId}-helper` : undefined;
+  const errorId = error ? `${inputId}-error` : undefined;
+  const describedBy = [errorId, helperId, props['aria-describedby']].filter(Boolean).join(' ') || undefined;
 
   return (
     <div className={cn('space-y-1.5', containerClassName)}>
@@ -88,6 +98,8 @@ export function Textarea({
       
       <textarea
         id={inputId}
+        aria-invalid={Boolean(error)}
+        aria-describedby={describedBy}
         className={cn(
           'w-full px-3.5 py-2.5 rounded-lg border border-stroke dark:border-gray-600',
           'bg-surface-card dark:bg-gray-800 text-text-primary dark:text-gray-100 text-base',
@@ -102,11 +114,11 @@ export function Textarea({
       />
       
       {error && (
-        <p className="text-sm text-feedback-error font-medium">{error}</p>
+        <p id={errorId} className="text-sm text-feedback-error font-medium">{error}</p>
       )}
       
       {helperText && !error && (
-        <p className="text-sm text-text-muted dark:text-gray-500">{helperText}</p>
+        <p id={helperId} className="text-sm text-text-muted dark:text-gray-500">{helperText}</p>
       )}
     </div>
   );
@@ -122,7 +134,11 @@ export function Select({
   required = false,
   ...props
 }) {
-  const inputId = props.id || `select-${Math.random().toString(36).substr(2, 9)}`;
+  const generatedId = useId();
+  const inputId = props.id || `select-${generatedId}`;
+  const helperId = helperText ? `${inputId}-helper` : undefined;
+  const errorId = error ? `${inputId}-error` : undefined;
+  const describedBy = [errorId, helperId, props['aria-describedby']].filter(Boolean).join(' ') || undefined;
 
   return (
     <div className={cn('space-y-1.5', containerClassName)}>
@@ -139,6 +155,8 @@ export function Select({
       <div className="relative">
         <select
           id={inputId}
+          aria-invalid={Boolean(error)}
+          aria-describedby={describedBy}
           className={cn(
             'w-full px-3.5 py-2.5 rounded-lg border border-stroke dark:border-gray-600',
             'bg-surface-card dark:bg-gray-800 text-text-primary dark:text-gray-100 text-base appearance-none',
@@ -164,11 +182,11 @@ export function Select({
       </div>
       
       {error && (
-        <p className="text-sm text-feedback-error font-medium">{error}</p>
+        <p id={errorId} className="text-sm text-feedback-error font-medium">{error}</p>
       )}
       
       {helperText && !error && (
-        <p className="text-sm text-text-muted dark:text-gray-500">{helperText}</p>
+        <p id={helperId} className="text-sm text-text-muted dark:text-gray-500">{helperText}</p>
       )}
     </div>
   );

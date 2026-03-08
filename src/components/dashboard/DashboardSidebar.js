@@ -63,7 +63,12 @@ export default function DashboardSidebar({
   return (
     <>
       {open && isMobile && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden animate-fade-in" onClick={onClose} aria-label="Close sidebar" />
+        <button
+          type="button"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
+          onClick={onClose}
+          aria-label="Close sidebar overlay"
+        />
       )}
       <aside
         className={`
@@ -95,7 +100,7 @@ export default function DashboardSidebar({
             </button>
           )}
           {isMobile && (
-            <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden">
+            <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden" aria-label="Close sidebar">
               <Icon d="M6 18L18 6M6 6l12 12" className="w-5 h-5" />
             </button>
           )}
