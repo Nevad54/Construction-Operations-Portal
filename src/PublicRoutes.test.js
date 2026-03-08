@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { vi } from 'vitest';
 import { ThemeProvider } from './context/ThemeContext';
 import { trackEvent } from './utils/analytics';
 import Home from './Home';
@@ -15,12 +16,12 @@ import About from './About';
 import Contact from './Contact';
 import { pageMetaDefaults } from './utils/pageMeta';
 
-jest.mock('./utils/analytics', () => ({
-  trackEvent: jest.fn(),
+vi.mock('./utils/analytics', () => ({
+  trackEvent: vi.fn(),
 }));
 
-jest.mock('react-google-recaptcha', () => {
-  const mockReact = require('react');
+vi.mock('react-google-recaptcha', async () => {
+  const mockReact = await vi.importActual('react');
   const MockReCAPTCHA = mockReact.forwardRef((props, ref) => {
     const {
       sitekey,
@@ -56,22 +57,22 @@ const memoryRouterFutureFlags = {
 const installMatchMediaMock = () => {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query) => ({
+    value: vi.fn().mockImplementation((query) => ({
       matches: query === '(prefers-color-scheme: dark)',
       media: query,
       onchange: null,
-      addListener: jest.fn(),
-      removeListener: jest.fn(),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      dispatchEvent: jest.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
     })),
   });
 };
 
 beforeAll(() => {
   installMatchMediaMock();
-  window.scrollTo = jest.fn();
+  window.scrollTo = vi.fn();
 });
 
 beforeEach(() => {
@@ -86,14 +87,14 @@ beforeEach(() => {
     <meta name="twitter:title" content="${pageMetaDefaults.title}">
     <meta name="twitter:description" content="${pageMetaDefaults.description}">
   `;
-  global.fetch = jest.fn().mockResolvedValue({
+  global.fetch = vi.fn().mockResolvedValue({
     ok: true,
     status: 200,
     json: async () => ({
       message: 'Project inquiry received successfully.',
     }),
   });
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 const renderPublicRoute = (initialPath, element) => render(

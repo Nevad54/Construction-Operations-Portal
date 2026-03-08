@@ -1,6 +1,6 @@
 const RAW_API_BASE_URL = (process.env.REACT_APP_API_URL || '').trim();
 
-// In local development, default to CRA proxy (package.json -> proxy: http://localhost:3002).
+// In local development, default to the frontend dev proxy.
 // For deployed frontend, set REACT_APP_API_URL explicitly.
 const API_BASE_URL = RAW_API_BASE_URL || '';
 

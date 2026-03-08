@@ -2,21 +2,22 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { vi } from 'vitest';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import RoleLogin from './components/auth/RoleLogin';
 import { api } from './services/api';
 
-jest.mock('./services/api', () => ({
+vi.mock('./services/api', () => ({
   api: {
-    me: jest.fn(),
-    login: jest.fn(),
-    logout: jest.fn(),
-    register: jest.fn(),
+    me: vi.fn(),
+    login: vi.fn(),
+    logout: vi.fn(),
+    register: vi.fn(),
   },
 }));
 
-jest.mock('./utils/analytics', () => ({
-  trackEvent: jest.fn(),
+vi.mock('./utils/analytics', () => ({
+  trackEvent: vi.fn(),
 }));
 
 const memoryRouterFutureFlags = {
@@ -26,7 +27,7 @@ const memoryRouterFutureFlags = {
 
 describe('auth flows', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('ProtectedRoute redirects unauthenticated admins to admin login', async () => {

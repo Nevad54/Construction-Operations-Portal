@@ -8,8 +8,8 @@ A full-stack construction company web app with a public marketing site, role-bas
 
 ## Demo
 
-- Live app: `https://portfolio-ops-demo.netlify.app`
-- API status endpoint: `https://your-backend.onrender.com/api/status`
+- Live app: `https://mastertech4.netlify.app/`
+- API status endpoint: `https://mastertech-app-32jm.onrender.com/api/status`
 - Demo video: coming soon
 
 ## Screenshots
@@ -60,7 +60,7 @@ A full-stack construction company web app with a public marketing site, role-bas
 
 ## Tech Stack
 
-- Frontend: React 18, React Router 6, Tailwind CSS, AOS, Font Awesome
+- Frontend: React 18, React Router 6, Vite, Vitest, Tailwind CSS, AOS, Font Awesome
 - Backend: Node.js, Express, Mongoose, Express Session, CORS, Multer, Nodemailer
 - Storage/Services: MongoDB Atlas (or local fallback JSON), optional Cloudinary + CloudConvert
 - Deployment targets: Netlify (frontend), Render (backend)
@@ -199,9 +199,11 @@ You can also run frontend only:
 npm start
 ```
 
-If you run the frontend without the backend, public pages still render, but project data and admin API features will show fallback messaging until the API is available.
+`npm start` now runs the Vite dev server. If you run the frontend without the backend, public pages still render, but project data and admin API features will show fallback messaging until the API is available.
 
 ## Build and Verify
+
+Frontend build and test now run through Vite and Vitest.
 
 ```bash
 npm run build

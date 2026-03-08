@@ -2,33 +2,33 @@ const fs = require('fs');
 const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
-const buildJsDir = path.join(rootDir, 'build', 'static', 'js');
+const buildAssetsDir = path.join(rootDir, 'build', 'assets');
 
 const MAX_MAIN_BUNDLE_BYTES = 190 * 1024;
 const MAX_TOTAL_JS_BYTES = 700 * 1024;
 
 const formatKb = (bytes) => `${(bytes / 1024).toFixed(2)} kB`;
 
-if (!fs.existsSync(buildJsDir)) {
+if (!fs.existsSync(buildAssetsDir)) {
   console.error('Build budget check failed.');
   console.error('Missing build output. Run `npm run build` first.');
   process.exit(1);
 }
 
-const jsFiles = fs.readdirSync(buildJsDir)
+const jsFiles = fs.readdirSync(buildAssetsDir)
   .filter((file) => file.endsWith('.js'))
   .map((file) => {
-    const fullPath = path.join(buildJsDir, file);
+    const fullPath = path.join(buildAssetsDir, file);
     return {
       file,
       size: fs.statSync(fullPath).size,
     };
   });
 
-const mainBundle = jsFiles.find((entry) => /^main\..+\.js$/.test(entry.file));
+const mainBundle = jsFiles.find((entry) => /^index-[^.]+\.js$/.test(entry.file));
 if (!mainBundle) {
   console.error('Build budget check failed.');
-  console.error('Main bundle not found in build/static/js.');
+  console.error('Main bundle not found in build/assets.');
   process.exit(1);
 }
 

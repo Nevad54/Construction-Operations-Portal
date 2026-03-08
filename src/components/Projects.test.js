@@ -2,22 +2,25 @@ import React from 'react';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
+import { vi } from 'vitest';
 import Projects from './Projects';
+import { useProjects } from '../context/ProjectContext';
 
-jest.mock('aos', () => ({
-  init: jest.fn(),
+vi.mock('aos', () => ({
+  default: {
+    init: vi.fn(),
+  },
+  init: vi.fn(),
 }));
 
-jest.mock('./PageLayout', () => ({
+vi.mock('./PageLayout', () => ({
   __esModule: true,
   default: ({ children }) => <main>{children}</main>,
 }));
 
-jest.mock('../context/ProjectContext', () => ({
-  useProjects: jest.fn(),
+vi.mock('../context/ProjectContext', () => ({
+  useProjects: vi.fn(),
 }));
-
-const { useProjects } = require('../context/ProjectContext');
 const memoryRouterFutureFlags = {
   v7_startTransition: true,
   v7_relativeSplatPath: true,
@@ -31,7 +34,7 @@ const renderProjects = () => render(
 
 describe('Projects route states', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('keeps the page shell visible when project data fails to load', () => {
@@ -39,7 +42,7 @@ describe('Projects route states', () => {
       projects: [],
       error: 'Could not reach project data.',
       loading: false,
-      refreshProjects: jest.fn().mockResolvedValue([]),
+      refreshProjects: vi.fn().mockResolvedValue([]),
       assetBaseUrl: '',
     });
 
@@ -56,7 +59,7 @@ describe('Projects route states', () => {
       projects: [],
       error: null,
       loading: true,
-      refreshProjects: jest.fn().mockResolvedValue([]),
+      refreshProjects: vi.fn().mockResolvedValue([]),
       assetBaseUrl: '',
     });
 
@@ -70,7 +73,7 @@ describe('Projects route states', () => {
       projects: [],
       error: null,
       loading: false,
-      refreshProjects: jest.fn().mockResolvedValue([]),
+      refreshProjects: vi.fn().mockResolvedValue([]),
       assetBaseUrl: '',
     });
 
@@ -98,7 +101,7 @@ describe('Projects route states', () => {
       ],
       error: null,
       loading: false,
-      refreshProjects: jest.fn().mockResolvedValue([]),
+      refreshProjects: vi.fn().mockResolvedValue([]),
       assetBaseUrl: '',
     });
 
@@ -130,7 +133,7 @@ describe('Projects route states', () => {
       ],
       error: null,
       loading: false,
-      refreshProjects: jest.fn().mockResolvedValue([]),
+      refreshProjects: vi.fn().mockResolvedValue([]),
       assetBaseUrl: '',
     });
 
@@ -156,7 +159,7 @@ describe('Projects route states', () => {
       ],
       error: null,
       loading: false,
-      refreshProjects: jest.fn().mockResolvedValue([]),
+      refreshProjects: vi.fn().mockResolvedValue([]),
       assetBaseUrl: '',
     });
 
@@ -183,7 +186,7 @@ describe('Projects route states', () => {
       ],
       error: null,
       loading: false,
-      refreshProjects: jest.fn().mockResolvedValue([]),
+      refreshProjects: vi.fn().mockResolvedValue([]),
       assetBaseUrl: '',
     });
 

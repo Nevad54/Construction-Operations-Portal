@@ -1364,7 +1364,7 @@ Date: 2026-03-08
 - Owner: Frontend
 - Estimate: 0.5 day
 - Files:
-  - src/setupProxy.js
+  - vite.config.mjs
   - package.json
   - README.md
 - Scope:
@@ -1376,8 +1376,126 @@ Date: 2026-03-08
   - Local docs reflect the paired proxy behavior.
 - Notes:
   - Completed on 2026-03-08.
-  - Replaced the static package-level CRA proxy with `src/setupProxy.js`, which now picks the local backend target from the active frontend port and still allows an explicit override through `REACT_APP_API_URL` or `DEV_PROXY_TARGET`.
+  - Replaced the old static frontend proxy setup with a Vite-based local proxy that now picks the local backend target from the active frontend port and still allows an explicit override through `REACT_APP_API_URL` or `DEV_PROXY_TARGET`.
   - Updated the README to document the supported same-origin local proxy pairs.
+
+## Sprint 22 (Frontend Toolchain Migration)
+
+### P21-1 Replace CRA with Vite
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 1.5 days
+- Files:
+  - package.json
+  - package-lock.json
+  - vite.config.mjs
+  - index.html
+  - src/index.js
+  - src/setupTests.js
+  - src/App.test.js
+  - src/PublicRoutes.test.js
+  - src/components/Projects.test.js
+  - scripts/check-build-budget.js
+- Scope:
+  - Replace the deprecated CRA frontend toolchain with Vite for builds/dev server and Vitest for frontend test execution.
+  - Preserve the current public/admin app behavior, local proxy behavior, `build/` output path, and release verification workflow.
+- Acceptance Criteria:
+  - Frontend builds through Vite into `build/`.
+  - Frontend tests run through Vitest and keep the current public/auth/project coverage passing.
+  - Public release verification still passes after the toolchain migration.
+  - Frontend dependency audit no longer carries the old `react-scripts` vulnerability chain.
+- Notes:
+  - Completed on 2026-03-08.
+  - Replaced `react-scripts` with Vite and Vitest, moved the app shell to a root `index.html`, removed the unused `reportWebVitals` path, and kept the existing build output directory at `build`.
+  - Added Vite config for the existing env-variable model and local API proxy behavior, including the paired `3001 -> 3002` and `3101 -> 3102` development paths.
+  - Converted the frontend Jest-style suites to Vitest, added shared storage mocks in the test setup, and updated the build-budget script for Vite asset output.
+  - Verification passed with `npm test`, `npm run verify:release:public`, and `npm audit --json` showing `0` frontend vulnerabilities.
+
+### P21-2 Docs and Runtime Path Calibration
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 0.5 day
+- Files:
+  - README.md
+  - SPRINT_BOARD.md
+- Scope:
+  - Calibrate the repo docs around the new Vite/Vitest toolchain and prove the migrated local runtime path with the supported alternate demo ports.
+  - Re-run the smoke checks against the Vite frontend instead of relying on stale CRA-era assumptions.
+- Acceptance Criteria:
+  - README reflects the Vite/Vitest frontend toolchain.
+  - The `3101 -> 3102` local runtime path passes both the deploy-runtime smoke and the local demo smoke checks.
+  - Sprint notes record the successful post-migration runtime verification.
+- Notes:
+  - Completed on 2026-03-08.
+  - Updated the README so the frontend stack and `npm start` behavior reflect Vite/Vitest instead of the old CRA toolchain wording.
+  - Verified the migrated local runtime path by launching the Vite frontend on `3101` against the demo backend on `3102`.
+  - Verification passed with `npm run smoke:deploy-runtime` using `FRONTEND_URL=http://localhost:3101` and `BACKEND_URL=http://localhost:3102`, plus `npm run smoke:local-demo`.
+
+### P21-3 Live Deploy URL Calibration
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 0.25 day
+- Files:
+  - README.md
+  - SPRINT_BOARD.md
+- Scope:
+  - Replace the stale documented live frontend/backend URLs with the current deployed Netlify and Render targets.
+  - Verify the deployed frontend/API boundary using the new runtime smoke path.
+- Acceptance Criteria:
+  - README demo URLs match the current live deployment.
+  - The deployed frontend passes the runtime smoke check against the deployed backend.
+- Notes:
+  - Completed on 2026-03-08.
+  - Updated the README live frontend URL to `https://mastertech4.netlify.app/` and the backend status endpoint to `https://mastertech-app-32jm.onrender.com/api/status`.
+  - Verification passed with `npm run smoke:deploy-runtime` using `FRONTEND_URL=https://mastertech4.netlify.app` and `BACKEND_URL=https://mastertech-app-32jm.onrender.com`.
+
+## Sprint 23 (Production Validation and Release Hardening)
+
+### P22-1 Deployed Contact Flow Validation
+- Status: [ ] Not Started
+- Owner: Frontend + Backend
+- Estimate: 0.5 day
+- Files:
+  - docs/DEPLOY_PREVIEW_VALIDATION.md
+  - README.md
+  - src/Contact.js
+  - backend/server.js
+- Scope:
+  - Validate the live deployed contact flow against the current Netlify and Render URLs, including the reCAPTCHA widget path and backend submission behavior.
+  - Record any production-only mismatches as concrete fixes instead of leaving the deploy path assumed healthy.
+- Acceptance Criteria:
+  - The deployed contact page loads the expected verification control for the live environment.
+  - A safe end-to-end contact submission check path is documented or automated.
+  - Any production-only contact mismatch is captured as a follow-up item with file targets.
+
+### P22-2 Production Smoke Script
+- Status: [ ] Not Started
+- Owner: Full-stack
+- Estimate: 0.5 day
+- Files:
+  - scripts/
+  - package.json
+  - README.md
+- Scope:
+  - Add one production-safe smoke path that checks the deployed frontend, status endpoint, and selected public routes without depending on local ports.
+  - Keep it separate from local demo smoke so deployment verification is easier to repeat.
+- Acceptance Criteria:
+  - One command can check the deployed production frontend and backend URLs.
+  - README documents the production smoke command and its required env vars.
+
+### P22-3 Runtime Warning and Log Cleanup
+- Status: [ ] Not Started
+- Owner: Frontend
+- Estimate: 0.5 day
+- Files:
+  - scripts/smoke-deploy-runtime.js
+  - src/setupTests.js
+  - package.json
+- Scope:
+  - Remove the remaining noisy runtime/test warnings introduced during the Vite/Vitest migration and make the smoke/test output cleaner.
+- Acceptance Criteria:
+  - Current Vite/Vitest local-storage warning is resolved or intentionally suppressed with justification.
+  - Release/smoke commands finish without avoidable warning noise.
 
 ## Completed Outside Sprint Scope
 - 2026-03-08: Fixed two Express 5 wildcard route incompatibilities in `backend/server.js` so the app can run locally on alternate ports without affecting the deployed environment.
