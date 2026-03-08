@@ -1,5 +1,5 @@
 [build]
-  command = "npm install && npm run build"
+  command = "npm install --include=dev && npm run build"
   publish = "build"
   functions = "netlify/functions"
 
@@ -17,5 +17,4 @@
 [build.environment]
   NODE_VERSION = "22"
   NPM_VERSION = "9"
-  NODE_ENV = "production"
   CI = "false"

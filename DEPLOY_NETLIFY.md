@@ -42,7 +42,7 @@ Important:
 
 1. Netlify: **Add new site** -> **Import an existing project**.
 2. Build settings:
-   - Build command: `npm run build`
+   - Build command: `npm install --include=dev && npm run build`
    - Publish directory: `build`
 3. Environment variables (Netlify Site settings -> Environment variables):
    - `BACKEND_API_URL=https://YOUR_RENDER_BACKEND_URL`

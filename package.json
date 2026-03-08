@@ -42,7 +42,7 @@
   },
   "scripts": {
     "start": "vite",
-    "build": "cross-env CI=false vite build",
+    "build": "vite build",
     "check:bundle-budget": "node scripts/check-build-budget.js",
     "check:deploy-config": "node scripts/check-deploy-config.js",
     "check:public-assets": "node scripts/check-public-assets.js",

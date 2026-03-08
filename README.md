@@ -209,6 +209,8 @@ Frontend build and test now run through Vite and Vitest.
 npm run build
 ```
 
+The frontend build now runs directly through Vite; it does not require `cross-env` for production builds.
+
 Other useful scripts:
 
 - `npm run verify:release` (build + frontend tests + backend tests)
@@ -344,6 +346,7 @@ Manual smoke checklist:
 
 Set `BACKEND_API_URL` in Netlify to your Render backend URL.
 For deployed preview checks, use [`docs/DEPLOY_PREVIEW_VALIDATION.md`](./docs/DEPLOY_PREVIEW_VALIDATION.md).
+The Netlify and Render static-frontend builds install devDependencies during the build step because the Vite toolchain lives in the frontend build dependency set.
 
 ## Security Notes
 
