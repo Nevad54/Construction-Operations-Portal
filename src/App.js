@@ -4,10 +4,19 @@ import { useLocation } from 'react-router-dom';
 import { ProjectProvider } from './context/ProjectContext';
 import './App.css';
 
+const routerFutureFlags = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
+
 // Lazy load components for code splitting
 const Home = lazy(() => import('./Home'));
 const About = lazy(() => import('./About'));
 const Services = lazy(() => import('./Services'));
+const IndustrialLandingPage = lazy(() => import('./IndustrialLandingPage'));
+const CommercialLandingPage = lazy(() => import('./CommercialLandingPage'));
+const RenovationLandingPage = lazy(() => import('./RenovationLandingPage'));
+const ResidentialLandingPage = lazy(() => import('./ResidentialLandingPage'));
 const VisionMission = lazy(() => import('./VisionMission'));
 const CoreValues = lazy(() => import('./CoreValues'));
 const Safety = lazy(() => import('./Safety'));
@@ -45,13 +54,17 @@ const ScrollToTop = () => {
 function App() {
   return (
     <ProjectProvider>
-      <Router>
+      <Router future={routerFutureFlags}>
         <ScrollToTop />
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />
+            <Route path="/solutions/industrial" element={<IndustrialLandingPage />} />
+            <Route path="/solutions/commercial" element={<CommercialLandingPage />} />
+            <Route path="/solutions/renovation" element={<RenovationLandingPage />} />
+            <Route path="/solutions/residential" element={<ResidentialLandingPage />} />
             <Route path="/vision-mission" element={<VisionMission />} />
             <Route path="/core-values" element={<CoreValues />} />
             <Route path="/safety" element={<Safety />} />

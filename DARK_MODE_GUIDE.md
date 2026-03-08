@@ -2,7 +2,7 @@
 
 ## ✅ Dark Mode System is Now Complete
 
-Your MASTERTECH INTERGROUPPE INC. webapp now has a fully functional global dark mode system with theme persistence and system preference detection.
+Your Construction Operations Portal webapp now has a fully functional global dark mode system with theme persistence and system preference detection.
 
 ---
 
@@ -251,3 +251,5 @@ export function Demo() {
 - **System preference not detected?** Check browser's "use system color preference" setting
 
 Dark mode is production-ready and requires zero additional configuration! 🚀
+
+

@@ -1,22 +1,22 @@
 # UI Component Library
 
-A comprehensive design system for the Mastertech construction company web application, built with React and Tailwind CSS.
+A comprehensive design system for the portfolio construction operations web application, built with React and Tailwind CSS.
 
 ## Design Philosophy
 
 - **Consistent**: Unified spacing, typography, and color system
 - **Accessible**: WCAG compliant with proper ARIA labels and keyboard navigation
 - **Responsive**: Mobile-first design with smooth breakpoints
-- **Professional**: Clean construction-industry aesthetic with orange brand color
+- **Professional**: Clean construction-industry aesthetic with green brand color
 - **Performant**: Optimized components with minimal re-renders
 
 ## Color System
 
 ### Brand Colors
-- `brand` (Primary): #f97316 (Orange)
-- `brand-hover`: #ea580c (Dark Orange)
-- `brand-light`: #ffedd5 (Light Orange)
-- `brand-dark`: #c2410c (Deep Orange)
+- `brand` (Primary): #2f6b3f (Green)
+- `brand-hover`: #285a35 (Dark Green)
+- `brand-light`: #e6f0e9 (Light Green)
+- `brand-dark`: #214c2c (Deep Green)
 
 ### Gray Scale
 - `gray-50`: #f9fafb (Background)
@@ -249,3 +249,4 @@ When adding new components:
 4. Test accessibility with screen readers
 5. Ensure responsive behavior
 6. Add to this README file
+

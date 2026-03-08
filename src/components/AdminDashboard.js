@@ -11,6 +11,24 @@ import AccountSettings from './auth/AccountSettings';
 import { api } from '../services/api';
 
 const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
+const formatDateTimeLocalValue = (value) => {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    const offsetMs = parsed.getTimezoneOffset() * 60000;
+    return new Date(parsed.getTime() - offsetMs).toISOString().slice(0, 16);
+};
+const getInquiryFollowUpTime = (value) => {
+    if (!value) return 0;
+    const parsed = new Date(value).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
+};
+const isClosedInquiryStatus = (status) => ['resolved', 'spam'].includes(String(status || '').toLowerCase());
+const isInquiryOverdue = (inquiry, now = Date.now()) => {
+    if (!inquiry || isClosedInquiryStatus(inquiry.status)) return false;
+    const followUpAt = getInquiryFollowUpTime(inquiry.nextFollowUpAt);
+    return followUpAt > 0 && followUpAt < now;
+};
 
 const Admin = () => {
     const { projects, addProject, updateProject, deleteProject, refreshProjects, loading, error: projectsError } = useProjects();
@@ -77,6 +95,12 @@ const Admin = () => {
 
     const [reportsLoading, setReportsLoading] = useState(false);
     const [reportsError, setReportsError] = useState('');
+    const [reportKpis, setReportKpis] = useState({
+        new_today: 0,
+        overdue_followups: 0,
+        qualified_rate: 0,
+        proposal_rate: 0,
+    });
     const [reportUsers, setReportUsers] = useState([]);
     const [reportFiles, setReportFiles] = useState([]);
     const [reportActivity, setReportActivity] = useState([]);
@@ -89,7 +113,8 @@ const Admin = () => {
     const [inquiryTotal, setInquiryTotal] = useState(0);
     const inquiryPageSize = 12;
     const [inquiryModal, setInquiryModal] = useState({ open: false, inquiry: null });
-    const [inquiryForm, setInquiryForm] = useState({ status: 'new', priority: 'normal', assignedTo: '', notes: '' });
+    const [inquiryForm, setInquiryForm] = useState({ status: 'new', priority: 'normal', owner: '', nextFollowUpAt: '', notes: '' });
+    const [inquiryFormErrors, setInquiryFormErrors] = useState({});
     const [inquirySaving, setInquirySaving] = useState(false);
 
     // Initialize AOS
@@ -446,16 +471,23 @@ const Admin = () => {
         try {
             setReportsLoading(true);
             setReportsError('');
-            const [users, files, activity, inquiriesList] = await Promise.all([
+            const [users, files, activity, inquiriesList, kpiResponse] = await Promise.all([
                 api.adminListUsers(),
                 api.getFiles(),
                 api.getActivityLogs({ limit: 40 }),
                 api.adminListInquiries({ status: 'all' }),
+                api.adminGetKpis(),
             ]);
             setReportUsers(Array.isArray(users) ? users : []);
             setReportFiles(Array.isArray(files) ? files : []);
             setReportActivity(Array.isArray(activity?.logs) ? activity.logs : []);
             setInquiries(Array.isArray(inquiriesList) ? inquiriesList : []);
+            setReportKpis({
+                new_today: Number(kpiResponse?.kpis?.new_today || 0),
+                overdue_followups: Number(kpiResponse?.kpis?.overdue_followups || 0),
+                qualified_rate: Number(kpiResponse?.kpis?.qualified_rate || 0),
+                proposal_rate: Number(kpiResponse?.kpis?.proposal_rate || 0),
+            });
         } catch (err) {
             setReportsError(err.message || 'Failed to load reports');
         } finally {
@@ -612,26 +644,46 @@ const Admin = () => {
         setInquiryForm({
             status: String(inquiry.status || 'new'),
             priority: String(inquiry.priority || 'normal'),
-            assignedTo: String(inquiry.assignedTo || ''),
+            owner: String(inquiry.owner || inquiry.assignedTo || ''),
+            nextFollowUpAt: formatDateTimeLocalValue(inquiry.nextFollowUpAt),
             notes: String(inquiry.notes || ''),
         });
+        setInquiryFormErrors({});
     }, []);
 
     const closeInquiryModal = useCallback(() => {
         if (inquirySaving) return;
         setInquiryModal({ open: false, inquiry: null });
+        setInquiryFormErrors({});
     }, [inquirySaving]);
 
     const handleSaveInquiry = useCallback(async (e) => {
         e.preventDefault();
         const id = inquiryModal?.inquiry?.id;
         if (!id) return;
+        const nextErrors = {};
+        if (!String(inquiryForm.status || '').trim()) {
+            nextErrors.status = 'Status is required';
+        }
+        if (!String(inquiryForm.owner || '').trim()) {
+            nextErrors.owner = 'Owner is required';
+        }
+        if (!['resolved', 'spam'].includes(String(inquiryForm.status || '')) && !String(inquiryForm.nextFollowUpAt || '').trim()) {
+            nextErrors.nextFollowUpAt = 'Next follow-up date is required for active inquiries';
+        }
+        if (Object.keys(nextErrors).length > 0) {
+            setInquiryFormErrors(nextErrors);
+            return;
+        }
         try {
             setInquirySaving(true);
+            setInquiryFormErrors({});
             await api.adminUpdateInquiry(id, {
                 status: inquiryForm.status,
                 priority: inquiryForm.priority,
-                assignedTo: inquiryForm.assignedTo,
+                owner: inquiryForm.owner,
+                assignedTo: inquiryForm.owner,
+                nextFollowUpAt: ['resolved', 'spam'].includes(String(inquiryForm.status || '')) ? '' : inquiryForm.nextFollowUpAt,
                 notes: inquiryForm.notes,
             });
             success('Inquiry updated');
@@ -643,7 +695,7 @@ const Admin = () => {
         } finally {
             setInquirySaving(false);
         }
-    }, [closeInquiryModal, error, inquiryForm.assignedTo, inquiryForm.notes, inquiryForm.priority, inquiryForm.status, inquiryModal?.inquiry?.id, isReportsPage, loadInquiries, loadReports, success]);
+    }, [closeInquiryModal, error, inquiryForm.nextFollowUpAt, inquiryForm.notes, inquiryForm.owner, inquiryForm.priority, inquiryForm.status, inquiryModal?.inquiry?.id, isReportsPage, loadInquiries, loadReports, success]);
 
     const handleDeleteInquiry = useCallback(async (inquiry) => {
         if (!inquiry?.id) return;
@@ -747,6 +799,59 @@ const Admin = () => {
             completedTotal: projects.filter((p) => p.status === 'completed').length,
         };
     }, [inquiries, projects, reportFiles, reportUsers]);
+
+    const overdueInquiries = useMemo(() => {
+        const now = Date.now();
+        return inquiries
+            .filter((item) => isInquiryOverdue(item, now))
+            .sort((a, b) => getInquiryFollowUpTime(a.nextFollowUpAt) - getInquiryFollowUpTime(b.nextFollowUpAt));
+    }, [inquiries]);
+
+    const handleReminderAction = useCallback(async (inquiry, action) => {
+        if (!inquiry?.id) return;
+
+        const owner = String(inquiry.owner || inquiry.assignedTo || '').trim();
+        if (!owner) {
+            error('This inquiry needs an owner before reminder actions can run.');
+            return;
+        }
+
+        try {
+            const payload = {
+                priority: inquiry.priority || 'normal',
+                owner,
+                assignedTo: owner,
+                notes: inquiry.notes || '',
+            };
+
+            if (action === 'snooze_1d') {
+                const nextFollowUpAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+                await api.adminUpdateInquiry(inquiry.id, {
+                    ...payload,
+                    status: inquiry.status || 'in_progress',
+                    nextFollowUpAt,
+                });
+                success(`Follow-up moved to ${new Date(nextFollowUpAt).toLocaleString()}`);
+            } else if (action === 'mark_resolved') {
+                await api.adminUpdateInquiry(inquiry.id, {
+                    ...payload,
+                    status: 'resolved',
+                    nextFollowUpAt: '',
+                });
+                success('Inquiry marked resolved');
+            } else {
+                return;
+            }
+
+            if (isReportsPage) {
+                await loadReports();
+            } else {
+                await loadInquiries();
+            }
+        } catch (err) {
+            error(err.message || 'Failed to update reminder');
+        }
+    }, [error, isReportsPage, loadInquiries, loadReports, success]);
 
 
     return (
@@ -917,7 +1022,11 @@ const Admin = () => {
                                         {inquiries.map((inquiry) => (
                                             <div
                                                 key={inquiry.id}
-                                                className="rounded-lg border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 p-3"
+                                                className={`rounded-lg border p-3 ${
+                                                    isInquiryOverdue(inquiry)
+                                                        ? 'border-yellow-500/40 bg-yellow-500/5 dark:border-yellow-600/40 dark:bg-yellow-500/10'
+                                                        : 'border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900'
+                                                }`}
                                             >
                                                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                                                     <div className="min-w-0">
@@ -927,20 +1036,25 @@ const Admin = () => {
                                                             {inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleString() : '-'}
                                                         </p>
                                                     </div>
-                                                    <Badge
-                                                        size="sm"
-                                                        variant={
-                                                            inquiry.status === 'resolved'
-                                                                ? 'success'
-                                                                : inquiry.status === 'in_progress'
-                                                                    ? 'warning'
-                                                                    : inquiry.status === 'spam'
-                                                                        ? 'error'
-                                                                        : 'info'
-                                                        }
-                                                    >
-                                                        {String(inquiry.status || 'new').replace('_', ' ')}
-                                                    </Badge>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <Badge
+                                                            size="sm"
+                                                            variant={
+                                                                inquiry.status === 'resolved'
+                                                                    ? 'success'
+                                                                    : inquiry.status === 'in_progress'
+                                                                        ? 'warning'
+                                                                        : inquiry.status === 'spam'
+                                                                            ? 'error'
+                                                                            : 'info'
+                                                            }
+                                                        >
+                                                            {String(inquiry.status || 'new').replace('_', ' ')}
+                                                        </Badge>
+                                                        {isInquiryOverdue(inquiry) ? (
+                                                            <Badge size="sm" variant="warning">Overdue</Badge>
+                                                        ) : null}
+                                                    </div>
                                                 </div>
                                                 <div className="flex flex-wrap items-center gap-2 mt-2">
                                                     <Badge
@@ -958,7 +1072,10 @@ const Admin = () => {
                                                         Priority: {String(inquiry.priority || 'normal')}
                                                     </Badge>
                                                     <span className="text-xs text-text-muted dark:text-gray-500">
-                                                        Assigned to: {inquiry.assignedTo || 'Unassigned'}
+                                                        Owner: {inquiry.owner || inquiry.assignedTo || 'Unassigned'}
+                                                    </span>
+                                                    <span className="text-xs text-text-muted dark:text-gray-500">
+                                                        Next follow-up: {inquiry.nextFollowUpAt ? new Date(inquiry.nextFollowUpAt).toLocaleString() : 'Not scheduled'}
                                                     </span>
                                                 </div>
                                                 <p className="text-sm text-text-secondary dark:text-gray-300 mt-2 whitespace-pre-wrap break-words">
@@ -970,6 +1087,16 @@ const Admin = () => {
                                                     </p>
                                                 ) : null}
                                                 <div className="flex flex-wrap gap-2 mt-3">
+                                                    {isInquiryOverdue(inquiry) ? (
+                                                        <>
+                                                            <Button variant="outline" size="sm" onClick={() => handleReminderAction(inquiry, 'snooze_1d')}>
+                                                                Snooze 1 Day
+                                                            </Button>
+                                                            <Button variant="outline" size="sm" onClick={() => handleReminderAction(inquiry, 'mark_resolved')}>
+                                                                Mark Resolved
+                                                            </Button>
+                                                        </>
+                                                    ) : null}
                                                     <Button variant="ghost" size="sm" onClick={() => openInquiryModal(inquiry)}>
                                                         Update
                                                     </Button>
@@ -1049,6 +1176,42 @@ const Admin = () => {
                             <>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4" data-aos="fade-up" data-aos-delay="80">
                                     <Card>
+                                        <CardHeader><CardTitle size="sm">New Today</CardTitle></CardHeader>
+                                        <CardContent className="space-y-1">
+                                            <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportKpis.new_today}</p>
+                                            <p className="text-sm text-text-secondary dark:text-gray-400">
+                                                New inquiries created since midnight
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader><CardTitle size="sm">Overdue Follow-ups</CardTitle></CardHeader>
+                                        <CardContent className="space-y-1">
+                                            <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportKpis.overdue_followups}</p>
+                                            <p className="text-sm text-text-secondary dark:text-gray-400">
+                                                Active inquiries that need follow-up now
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader><CardTitle size="sm">Qualified Rate</CardTitle></CardHeader>
+                                        <CardContent className="space-y-1">
+                                            <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportKpis.qualified_rate}%</p>
+                                            <p className="text-sm text-text-secondary dark:text-gray-400">
+                                                Inquiries moved beyond new status
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader><CardTitle size="sm">Proposal Rate</CardTitle></CardHeader>
+                                        <CardContent className="space-y-1">
+                                            <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportKpis.proposal_rate}%</p>
+                                            <p className="text-sm text-text-secondary dark:text-gray-400">
+                                                Resolved inquiries as a current conversion proxy
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
                                         <CardHeader><CardTitle size="sm">Projects</CardTitle></CardHeader>
                                         <CardContent className="space-y-1">
                                             <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportsOverview.projectsTotal}</p>
@@ -1095,6 +1258,63 @@ const Admin = () => {
                                         </CardContent>
                                     </Card>
                                 </div>
+
+                                <Card data-aos="fade-up" data-aos-delay="110">
+                                    <CardHeader className="flex-col items-start sm:flex-row sm:items-center sm:justify-between">
+                                        <div>
+                                            <CardTitle>Overdue Follow-up Queue</CardTitle>
+                                            <p className="text-sm text-text-secondary dark:text-gray-400 mt-1">
+                                                Immediate actions for active inquiries that have passed their follow-up date.
+                                            </p>
+                                        </div>
+                                        <Badge variant={overdueInquiries.length ? 'warning' : 'success'}>
+                                            {overdueInquiries.length} overdue
+                                        </Badge>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {overdueInquiries.length === 0 ? (
+                                            <EmptyState
+                                                title="No overdue follow-ups"
+                                                description="All active inquiries currently have valid next actions scheduled."
+                                            />
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {overdueInquiries.slice(0, 6).map((inquiry) => (
+                                                    <div
+                                                        key={`overdue-${inquiry.id}`}
+                                                        className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 dark:border-yellow-600/40 dark:bg-yellow-500/10 p-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"
+                                                    >
+                                                        <div className="min-w-0">
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <p className="font-medium text-text-primary dark:text-gray-100 truncate">{inquiry.name}</p>
+                                                                <Badge size="sm" variant="warning">
+                                                                    Due {inquiry.nextFollowUpAt ? new Date(inquiry.nextFollowUpAt).toLocaleString() : 'now'}
+                                                                </Badge>
+                                                            </div>
+                                                            <p className="text-sm text-text-secondary dark:text-gray-400 truncate">
+                                                                {inquiry.email}{inquiry.phone ? ` â€¢ ${inquiry.phone}` : ''}
+                                                            </p>
+                                                            <p className="text-xs text-text-muted dark:text-gray-500 mt-1">
+                                                                Owner: {inquiry.owner || inquiry.assignedTo || 'Unassigned'}
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            <Button variant="outline" size="sm" onClick={() => handleReminderAction(inquiry, 'snooze_1d')}>
+                                                                Snooze 1 Day
+                                                            </Button>
+                                                            <Button variant="outline" size="sm" onClick={() => handleReminderAction(inquiry, 'mark_resolved')}>
+                                                                Mark Resolved
+                                                            </Button>
+                                                            <Button variant="ghost" size="sm" onClick={() => openInquiryModal(inquiry)}>
+                                                                Open
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
 
                                 <Card data-aos="fade-up" data-aos-delay="120">
                                     <CardHeader>
@@ -1473,6 +1693,7 @@ const Admin = () => {
                         <Select
                             label="Status"
                             value={inquiryForm.status}
+                            error={inquiryFormErrors.status}
                             onChange={(e) => setInquiryForm((prev) => ({ ...prev, status: e.target.value }))}
                             options={[
                                 { value: 'new', label: 'New' },
@@ -1493,13 +1714,23 @@ const Admin = () => {
                             ]}
                         />
                         <Select
-                            label="Assigned To"
-                            value={inquiryForm.assignedTo}
-                            onChange={(e) => setInquiryForm((prev) => ({ ...prev, assignedTo: e.target.value }))}
+                            label="Owner"
+                            value={inquiryForm.owner}
+                            error={inquiryFormErrors.owner}
+                            helperText="Assign a single owner for the next action on this inquiry."
+                            onChange={(e) => setInquiryForm((prev) => ({ ...prev, owner: e.target.value }))}
                             options={[
-                                { value: '', label: 'Unassigned' },
+                                { value: '', label: 'Select owner' },
                                 ...adminUsers.map((u) => ({ value: u.username, label: `${u.username} (${u.role})` })),
                             ]}
+                        />
+                        <Input
+                            label="Next Follow-up"
+                            type="datetime-local"
+                            value={inquiryForm.nextFollowUpAt}
+                            error={inquiryFormErrors.nextFollowUpAt}
+                            helperText={['resolved', 'spam'].includes(String(inquiryForm.status || '')) ? 'Closed inquiries do not require a follow-up date.' : 'Required while the inquiry is active.'}
+                            onChange={(e) => setInquiryForm((prev) => ({ ...prev, nextFollowUpAt: e.target.value }))}
                         />
                         <Textarea
                             label="Internal Notes"

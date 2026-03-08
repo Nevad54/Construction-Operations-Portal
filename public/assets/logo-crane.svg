@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Construction Operations Portal crane logo</title>
+  <desc id="desc">A rounded orange construction badge featuring a crane, stacked structure, and task completion symbol.</desc>
+  <defs>
+    <linearGradient id="badge" x1="18" y1="14" x2="110" y2="114" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fdba74" />
+      <stop offset="1" stop-color="#f97316" />
+    </linearGradient>
+    <linearGradient id="steel" x1="40" y1="26" x2="92" y2="98" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1f2937" />
+      <stop offset="1" stop-color="#111827" />
+    </linearGradient>
+  </defs>
+  <rect x="14" y="14" width="100" height="100" rx="28" fill="url(#badge)" />
+  <circle cx="64" cy="64" r="38" fill="#fff7ed" opacity=".16" />
+  <path d="M40 94V38h8v56zM48 38h36v8H48zM76 38h12v8H76zM82 46h6v16h-6z" fill="url(#steel)" />
+  <path d="M42 88h28M42 78h24M42 68h20" stroke="#94a3b8" stroke-linecap="round" stroke-opacity=".45" stroke-width="4" />
+  <path d="M84 46h14" stroke="#fff7ed" stroke-linecap="round" stroke-width="5" />
+  <path d="M92 46v15" stroke="#fff7ed" stroke-linecap="round" stroke-width="5" />
+  <rect x="87" y="61" width="10" height="10" rx="2" fill="#fff7ed" />
+  <path d="M62 56l8 8 14-16" fill="none" stroke="#f97316" stroke-linecap="round" stroke-linejoin="round" stroke-width="8" />
+  <path d="M62 56l8 8 14-16" fill="none" stroke="#fff7ed" stroke-linecap="round" stroke-linejoin="round" stroke-width="4.5" />
+  <path d="M34 98h60" stroke="#7c2d12" stroke-linecap="round" stroke-opacity=".26" stroke-width="5" />
+</svg>

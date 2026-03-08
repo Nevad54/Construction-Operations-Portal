@@ -2,8 +2,8 @@
   {
     "id": "admin-1",
     "username": "admin",
-    "password": "1111",
-    "role": "admin"
+    "role": "admin",
+    "passwordHash": "pbkdf2$sha256$310000$2BeUwYbqOK2INO0mWStmIA==$hBNMeDUsnCuGiYHa19hT19yf4Zygg8We+iXt5LTI9gc="
   },
   {
     "id": "user-1",

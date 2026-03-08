@@ -31,6 +31,9 @@ const Project = require('./models/Projects');
 const FileItem = require('./models/FileItem');
 const ActivityLog = require('./models/ActivityLog');
 const Inquiry = require('./models/Inquiry');
+const { registerAuthRoutes } = require('./routes/auth');
+const { registerInquiryRoutes } = require('./routes/inquiries');
+const { normalizeContactPayload, validateContactPayload, buildContactEmailContent } = require('./contactPayload');
 
 // In-memory fallback storage for development when MongoDB is unavailable
 const fallbackFile = path.join(__dirname, 'dev_projects.json');
@@ -150,13 +153,45 @@ const persistFallbackInquiries = () => {
 dotenv.config({ path: path.join(__dirname, '../.env') });
 dotenv.config(); // fallback to backend/.env if exists
 
+const isProduction = process.env.NODE_ENV === 'production';
+const DEFAULT_SESSION_SECRET = '70f1e04a35336b79732f2f034b101d4d';
+
+const getCredentialValue = (envValue, fallbackValue) => {
+  const trimmed = String(envValue || '').trim();
+  if (trimmed) return trimmed;
+  return isProduction ? '' : fallbackValue;
+};
+
+const validateProductionConfig = () => {
+  if (!isProduction) return;
+
+  const errors = [];
+  if (!String(process.env.MONGO_URI || '').trim()) {
+    errors.push('MONGO_URI is required in production.');
+  }
+  if (!String(process.env.CORS_ORIGINS || '').trim()) {
+    errors.push('CORS_ORIGINS is required in production.');
+  }
+  if (!String(process.env.SESSION_SECRET || '').trim()) {
+    errors.push('SESSION_SECRET is required in production.');
+  } else if (String(process.env.SESSION_SECRET).trim() === DEFAULT_SESSION_SECRET) {
+    errors.push('SESSION_SECRET must not use the built-in development fallback in production.');
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Invalid production configuration:\n- ${errors.join('\n- ')}`);
+  }
+};
+
+validateProductionConfig();
+
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASS = process.env.ADMIN_PASS || '1111';
+const ADMIN_PASS = getCredentialValue(process.env.ADMIN_PASS, '1111');
 const EMP_USER = process.env.EMP_USER || 'employee';
-const EMP_PASS = process.env.EMP_PASS || '1111';
+const EMP_PASS = getCredentialValue(process.env.EMP_PASS, '1111');
 const CLIENT_USER = process.env.CLIENT_USER || 'client';
-const CLIENT_PASS = process.env.CLIENT_PASS || '1111';
-const ADMIN_SIGNUP_CODE = process.env.ADMIN_SIGNUP_CODE || ADMIN_PASS;
+const CLIENT_PASS = getCredentialValue(process.env.CLIENT_PASS, '1111');
+const ADMIN_SIGNUP_CODE = getCredentialValue(process.env.ADMIN_SIGNUP_CODE, ADMIN_PASS);
 console.log('ADMIN_USER:', ADMIN_USER);
 // Never log passwords/secrets.
 
@@ -165,8 +200,12 @@ const allowedOrigins = Array.from(
     [
       'http://localhost:3000',
       'http://127.0.0.1:3000',
-      'https://mastertech4.netlify.app',
-      'https://mastertech-frontend-yqjb.onrender.com',
+      'http://localhost:3001',
+      'http://127.0.0.1:3001',
+      'http://localhost:3101',
+      'http://127.0.0.1:3101',
+      'https://your-frontend.netlify.app',
+      'https://your-frontend.onrender.com',
       ...(process.env.CORS_ORIGINS || '')
         .split(',')
         .map((s) => s.trim())
@@ -242,7 +281,7 @@ app.use(cors({
 app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'self' https://www.google.com https://recaptcha.google.com https://www.gstatic.com https://mastertech-frontend-yqjb.onrender.com; frame-src 'self' https://www.google.com https://recaptcha.google.com https://www.gstatic.com;"
+    "default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'self' https://www.google.com https://recaptcha.google.com https://www.gstatic.com https://your-frontend.onrender.com; frame-src 'self' https://www.google.com https://recaptcha.google.com https://www.gstatic.com;"
   );
   next();
 });
@@ -360,7 +399,7 @@ setTimeout(() => {
 }, 30000);
 
 const sessionCookieSecure =
-  process.env.NODE_ENV === 'production' &&
+  isProduction &&
   String(process.env.SESSION_COOKIE_SECURE || '').toLowerCase() !== 'false';
 
 app.use(session({
@@ -373,7 +412,7 @@ app.use(session({
         }),
       }
     : {}),
-  secret: process.env.SESSION_SECRET || '70f1e04a35336b79732f2f034b101d4d',
+  secret: process.env.SESSION_SECRET || DEFAULT_SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -383,9 +422,6 @@ app.use(session({
     maxAge: 60 * 60 * 1000, // 1 hour
   },
 }));
-
-// Global OPTIONS handler for all routes
-app.options('*', cors(corsOptions));
 
 // Root Route
 app.get('/', (req, res) => {
@@ -458,7 +494,10 @@ app.get('/pages/:page', (req, res) => {
 });
 
 // MongoDB Connection
-const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/mti-projects';
+const mongoURI =
+  process.env.MONGO_URI ||
+  process.env.MONGODB_URI ||
+  'mongodb://localhost:27017/mti-projects';
 const isAtlas = mongoURI.includes('mongodb+srv://');
 console.log('Attempting to connect to MongoDB with URI:', mongoURI.replace(/:[^:@]+@/, ':****@'));
 const connectDB = async () => {
@@ -647,17 +686,35 @@ const normalizeInquiryPriority = (value) => {
   return 'normal';
 };
 
+const isClosedInquiryStatus = (status) => ['resolved', 'spam'].includes(normalizeInquiryStatus(status));
+
+const normalizeInquiryOwner = (value) => String(value || '').trim();
+
+const normalizeFollowUpAt = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+};
+
 const sanitizeInquiry = (item) => ({
   id: String(item.id || item._id || ''),
   name: String(item.name || ''),
   email: String(item.email || ''),
   phone: String(item.phone || ''),
+  companyName: String(item.companyName || ''),
+  projectType: String(item.projectType || ''),
+  siteLocation: String(item.siteLocation || ''),
+  timeline: String(item.timeline || ''),
+  serviceNeeded: String(item.serviceNeeded || ''),
   message: String(item.message || ''),
   source: String(item.source || 'contact_form'),
   ipAddress: String(item.ipAddress || ''),
   status: normalizeInquiryStatus(item.status),
   priority: normalizeInquiryPriority(item.priority),
+  owner: String(item.owner || item.assignedTo || ''),
   assignedTo: String(item.assignedTo || ''),
+  nextFollowUpAt: item.nextFollowUpAt || null,
   notes: String(item.notes || ''),
   handledBy: String(item.handledBy || ''),
   handledAt: item.handledAt || null,
@@ -665,17 +722,35 @@ const sanitizeInquiry = (item) => ({
   updatedAt: item.updatedAt || null,
 });
 
-const createInquiryRecord = async ({ name, email, phone, message, ipAddress = '' }) => {
+const createInquiryRecord = async ({
+  name,
+  email,
+  phone,
+  companyName,
+  projectType,
+  siteLocation,
+  timeline,
+  serviceNeeded,
+  message,
+  ipAddress = '',
+}) => {
   const payload = {
     name: String(name || '').trim(),
     email: String(email || '').trim(),
     phone: String(phone || '').trim(),
+    companyName: String(companyName || '').trim(),
+    projectType: String(projectType || '').trim(),
+    siteLocation: String(siteLocation || '').trim(),
+    timeline: String(timeline || '').trim(),
+    serviceNeeded: String(serviceNeeded || '').trim(),
     message: String(message || '').trim(),
     source: 'contact_form',
     ipAddress: String(ipAddress || '').trim(),
     status: 'new',
     priority: 'normal',
+    owner: '',
     assignedTo: '',
+    nextFollowUpAt: null,
     notes: '',
     handledBy: '',
     handledAt: null,
@@ -696,6 +771,38 @@ const createInquiryRecord = async ({ name, email, phone, message, ipAddress = ''
 
   const created = await Inquiry.create(payload);
   return sanitizeInquiry(created.toObject ? created.toObject() : created);
+};
+
+const calculateAdminKpis = ({ inquiries = [] }) => {
+  const now = Date.now();
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const total = inquiries.length;
+  const newToday = inquiries.filter((item) => {
+    const createdAt = item.createdAt ? new Date(item.createdAt).getTime() : 0;
+    return createdAt >= startOfDay.getTime();
+  }).length;
+
+  const overdueFollowups = inquiries.filter((item) => {
+    const status = normalizeInquiryStatus(item.status);
+    const followUpAt = item.nextFollowUpAt ? new Date(item.nextFollowUpAt).getTime() : 0;
+    return !isClosedInquiryStatus(status) && followUpAt > 0 && followUpAt < now;
+  }).length;
+
+  const qualifiedCount = inquiries.filter((item) => {
+    const status = normalizeInquiryStatus(item.status);
+    return status === 'in_progress' || status === 'resolved';
+  }).length;
+
+  const proposalCount = inquiries.filter((item) => normalizeInquiryStatus(item.status) === 'resolved').length;
+
+  return {
+    new_today: newToday,
+    overdue_followups: overdueFollowups,
+    qualified_rate: total ? Math.round((qualifiedCount / total) * 100) : 0,
+    proposal_rate: total ? Math.round((proposalCount / total) * 100) : 0,
+  };
 };
 
 const logActivity = async (req, payload) => {
@@ -732,147 +839,18 @@ const logActivity = async (req, payload) => {
 };
 
 // API Routes
-app.post('/api/auth/login', async (req, res) => {
-  const username = String(req.body.username || '').trim();
-  const password = String(req.body.password || '');
-  if (!username || !password) return res.status(400).json({ error: 'Username and password are required' });
-
-  if (isDbReady()) {
-    const user = await User.findOne({ usernameLower: username.toLowerCase() });
-    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-    const ok = await verifyPassword(password, user.passwordHash);
-    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-    req.session.authUser = sanitizeUser(user);
-  } else {
-    const user = AUTH_USERS.find(
-      (u) => String(u.username || '').toLowerCase() === username.toLowerCase()
-    );
-    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-
-    const hasHash = Boolean(user.passwordHash);
-    const ok = hasHash ? await verifyPassword(password, user.passwordHash) : user.password === password;
-    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-
-    // Opportunistically migrate plaintext fallback users to hashed passwords.
-    if (!hasHash) {
-      try {
-        user.passwordHash = await hashPassword(password);
-        delete user.password;
-        persistAuthUsers();
-      } catch (e) {
-        // ignore migration failure
-      }
-    }
-
-    req.session.authUser = sanitizeUser(user);
-  }
-  logActivity(req, {
-    action: 'auth.login',
-    targetType: 'session',
-    targetId: req.sessionID || '',
-    details: `${req.session.authUser.username} logged in`,
-  });
-  return res.json({ user: req.session.authUser });
-});
-
-app.post('/api/auth/register', async (req, res) => {
-  const username = String(req.body.username || '').trim();
-  const password = String(req.body.password || '');
-  const roleInput = String(req.body.role || 'user').trim().toLowerCase();
-  const adminCode = String(req.body.adminCode || '');
-  const role = ['admin', 'user', 'client'].includes(roleInput) ? roleInput : 'user';
-
-  if (!username || username.length < 3 || username.length > 32) {
-    return res.status(400).json({ error: 'Username must be 3 to 32 characters' });
-  }
-  if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
-    return res.status(400).json({ error: 'Username can only contain letters, numbers, dot, underscore, and dash' });
-  }
-  if (!password || password.length < 4) {
-    return res.status(400).json({ error: 'Password must be at least 4 characters' });
-  }
-  if (role === 'admin' && adminCode !== ADMIN_SIGNUP_CODE) {
-    return res.status(403).json({ error: 'Invalid admin signup code' });
-  }
-
-  if (isDbReady()) {
-    const exists = await User.findOne({ usernameLower: username.toLowerCase() }).lean();
-    if (exists) return res.status(409).json({ error: 'Username already exists' });
-    const passwordHash = await hashPassword(password);
-    const newUser = await User.create({ username, role, passwordHash });
-    req.session.authUser = sanitizeUser(newUser);
-  } else {
-    const exists = AUTH_USERS.some(
-      (u) => String(u.username || '').toLowerCase() === username.toLowerCase()
-    );
-    if (exists) {
-      return res.status(409).json({ error: 'Username already exists' });
-    }
-    const newUser = {
-      id: `${role}-${Date.now()}`,
-      username,
-      passwordHash: await hashPassword(password),
-      role,
-      projectIds: [],
-    };
-    AUTH_USERS.push(newUser);
-    persistAuthUsers();
-    req.session.authUser = sanitizeUser(newUser);
-  }
-  logActivity(req, {
-    action: 'auth.register',
-    targetType: 'user',
-    targetId: req.session.authUser.id,
-    details: `${req.session.authUser.username} registered as ${req.session.authUser.role}`,
-  });
-  return res.status(201).json({ user: req.session.authUser });
-});
-
-app.post('/api/auth/change-password', requireAuth, async (req, res) => {
-  const currentPassword = String(req.body.currentPassword || '');
-  const newPassword = String(req.body.newPassword || '');
-  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Current password and new password are required' });
-  // Keep legacy compatibility with existing demo passwords (e.g. 1111).
-  if (newPassword.length < 4) return res.status(400).json({ error: 'New password must be at least 4 characters' });
-
-  try {
-    if (isDbReady()) {
-      const user = await User.findById(req.authUser.id);
-      if (!user) return res.status(404).json({ error: 'User not found' });
-      const ok = await verifyPassword(currentPassword, user.passwordHash);
-      if (!ok) return res.status(401).json({ error: 'Invalid current password' });
-      user.passwordHash = await hashPassword(newPassword);
-      await user.save();
-      await logActivity(req, {
-        action: 'auth.change_password',
-        targetType: 'user',
-        targetId: String(user._id),
-        details: `${user.username} changed password`,
-      });
-      return res.json({ ok: true });
-    }
-
-    const record = AUTH_USERS.find((u) => String(u.id) === String(req.authUser.id));
-    if (!record) return res.status(404).json({ error: 'User not found' });
-    const ok = record.passwordHash
-      ? await verifyPassword(currentPassword, record.passwordHash)
-      : String(record.password || '') === currentPassword;
-    if (!ok) return res.status(401).json({ error: 'Invalid current password' });
-
-    record.passwordHash = await hashPassword(newPassword);
-    delete record.password;
-    persistAuthUsers();
-    await logActivity(req, {
-      action: 'auth.change_password',
-      targetType: 'user',
-      targetId: record.id,
-      details: `${record.username} changed password`,
-    });
-    return res.json({ ok: true });
-  } catch (err) {
-    console.error('Change password failed', err);
-    return res.status(500).json({ error: 'Server error' });
-  }
+registerAuthRoutes(app, {
+  User,
+  AUTH_USERS,
+  ADMIN_SIGNUP_CODE,
+  hashPassword,
+  verifyPassword,
+  sanitizeUser,
+  requireAuth,
+  persistAuthUsers,
+  logActivity,
+  isDbReady,
+  getSessionUser,
 });
 
 app.get('/api/admin/users', requireAuth, requireRoles(['admin']), async (req, res) => {
@@ -895,6 +873,26 @@ app.get('/api/admin/users', requireAuth, requireRoles(['admin']), async (req, re
     })));
   } catch (err) {
     console.error('List users failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/admin/kpis', requireAuth, requireRoles(['admin']), async (req, res) => {
+  try {
+    let inquiries = [];
+    if (useFallback || mongoose.connection.readyState !== 1) {
+      inquiries = fallbackInquiries.map((item) => sanitizeInquiry(item));
+    } else {
+      const list = await Inquiry.find().lean();
+      inquiries = list.map((item) => sanitizeInquiry(item));
+    }
+
+    return res.json({
+      kpis: calculateAdminKpis({ inquiries }),
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error('Load admin KPIs failed', err);
     return res.status(500).json({ error: 'Server error' });
   }
 });
@@ -1187,205 +1185,31 @@ app.delete('/api/admin/users/:id', requireAuth, requireRoles(['admin']), async (
   }
 });
 
-app.get('/api/admin/inquiries', requireAuth, requireRoles(['admin']), async (req, res) => {
-  try {
-    const statusFilter = String(req.query.status || '').trim().toLowerCase();
-    const q = String(req.query.q || '').trim().toLowerCase();
-    const limitRaw = Number(req.query.limit);
-    const skipRaw = Number(req.query.skip);
-    const usePaging = Number.isFinite(limitRaw) && limitRaw > 0;
-    const limit = usePaging ? Math.min(Math.max(Math.floor(limitRaw), 1), 200) : 0;
-    const skip = usePaging && Number.isFinite(skipRaw) && skipRaw > 0 ? Math.floor(skipRaw) : 0;
-
-    if (useFallback || mongoose.connection.readyState !== 1) {
-      let list = [...fallbackInquiries];
-      if (statusFilter && statusFilter !== 'all') {
-        list = list.filter((item) => normalizeInquiryStatus(item.status) === statusFilter);
-      }
-      if (q) {
-        list = list.filter((item) => {
-          const haystack = [item.name, item.email, item.phone, item.message, item.notes]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-          return haystack.includes(q);
-        });
-      }
-      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      const sanitized = list.map((item) => sanitizeInquiry(item));
-      if (!usePaging) return res.json(sanitized);
-      const items = sanitized.slice(skip, skip + limit);
-      return res.json({
-        items,
-        total: sanitized.length,
-        skip,
-        limit,
-        hasMore: skip + items.length < sanitized.length,
-      });
-    }
-
-    const query = {};
-    if (statusFilter && statusFilter !== 'all') {
-      query.status = statusFilter;
-    }
-    if (q) {
-      query.$or = [
-        { name: { $regex: q, $options: 'i' } },
-        { email: { $regex: q, $options: 'i' } },
-        { phone: { $regex: q, $options: 'i' } },
-        { message: { $regex: q, $options: 'i' } },
-        { notes: { $regex: q, $options: 'i' } },
-      ];
-    }
-    if (!usePaging) {
-      const list = await Inquiry.find(query).sort({ createdAt: -1 }).lean();
-      return res.json(list.map((item) => sanitizeInquiry(item)));
-    }
-    const [list, total] = await Promise.all([
-      Inquiry.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-      Inquiry.countDocuments(query),
-    ]);
-    return res.json({
-      items: list.map((item) => sanitizeInquiry(item)),
-      total,
-      skip,
-      limit,
-      hasMore: skip + list.length < total,
-    });
-  } catch (err) {
-    console.error('List inquiries failed', err);
-    return res.status(500).json({ error: 'Server error' });
-  }
+registerInquiryRoutes(app, {
+  Inquiry,
+  fallbackInquiries,
+  useFallback,
+  mongoose,
+  requireAuth,
+  requireRoles,
+  normalizeInquiryStatus,
+  normalizeInquiryPriority,
+  normalizeInquiryOwner,
+  normalizeFollowUpAt,
+  isClosedInquiryStatus,
+  sanitizeInquiry,
+  persistFallbackInquiries,
+  logActivity,
 });
 
-app.put('/api/admin/inquiries/:id', requireAuth, requireRoles(['admin']), async (req, res) => {
-  const id = String(req.params.id || '').trim();
-  if (!id) return res.status(400).json({ error: 'Inquiry id required' });
-
-  const updates = {};
-  if (req.body.status !== undefined) {
-    updates.status = normalizeInquiryStatus(req.body.status);
-    if (updates.status !== 'new') {
-      updates.handledBy = String(req.authUser.username || req.authUser.id || '');
-      updates.handledAt = new Date();
-    } else {
-      updates.handledBy = '';
-      updates.handledAt = null;
-    }
-  }
-  if (req.body.notes !== undefined) {
-    updates.notes = String(req.body.notes || '').trim();
-  }
-  if (req.body.priority !== undefined) {
-    updates.priority = normalizeInquiryPriority(req.body.priority);
-  }
-  if (req.body.assignedTo !== undefined) {
-    updates.assignedTo = String(req.body.assignedTo || '').trim();
-  }
-
-  try {
-    if (useFallback || mongoose.connection.readyState !== 1) {
-      const idx = fallbackInquiries.findIndex((item) => String(item._id) === id);
-      if (idx === -1) return res.status(404).json({ error: 'Inquiry not found' });
-      fallbackInquiries[idx] = {
-        ...fallbackInquiries[idx],
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      };
-      persistFallbackInquiries();
-      await logActivity(req, {
-        action: 'inquiry.update',
-        targetType: 'inquiry',
-        targetId: id,
-        details: `Updated inquiry from ${fallbackInquiries[idx].name}`,
-        metadata: updates,
-      });
-      return res.json({ inquiry: sanitizeInquiry(fallbackInquiries[idx]) });
-    }
-
-    const updated = await Inquiry.findByIdAndUpdate(
-      id,
-      { $set: updates },
-      { new: true, runValidators: true }
-    );
-    if (!updated) return res.status(404).json({ error: 'Inquiry not found' });
-    await logActivity(req, {
-      action: 'inquiry.update',
-      targetType: 'inquiry',
-      targetId: String(updated._id),
-      details: `Updated inquiry from ${updated.name}`,
-      metadata: updates,
-    });
-    return res.json({ inquiry: sanitizeInquiry(updated.toObject ? updated.toObject() : updated) });
-  } catch (err) {
-    console.error('Update inquiry failed', err);
-    return res.status(500).json({ error: 'Server error' });
-  }
-});
-
-app.delete('/api/admin/inquiries/:id', requireAuth, requireRoles(['admin']), async (req, res) => {
-  const id = String(req.params.id || '').trim();
-  if (!id) return res.status(400).json({ error: 'Inquiry id required' });
-  try {
-    if (useFallback || mongoose.connection.readyState !== 1) {
-      const idx = fallbackInquiries.findIndex((item) => String(item._id) === id);
-      if (idx === -1) return res.status(404).json({ error: 'Inquiry not found' });
-      const [removed] = fallbackInquiries.splice(idx, 1);
-      persistFallbackInquiries();
-      await logActivity(req, {
-        action: 'inquiry.delete',
-        targetType: 'inquiry',
-        targetId: id,
-        details: `Deleted inquiry from ${removed?.name || 'unknown'}`,
-      });
-      return res.json({ ok: true });
-    }
-
-    const deleted = await Inquiry.findByIdAndDelete(id).lean();
-    if (!deleted) return res.status(404).json({ error: 'Inquiry not found' });
-    await logActivity(req, {
-      action: 'inquiry.delete',
-      targetType: 'inquiry',
-      targetId: id,
-      details: `Deleted inquiry from ${deleted?.name || 'unknown'}`,
-    });
-    return res.json({ ok: true });
-  } catch (err) {
-    console.error('Delete inquiry failed', err);
-    return res.status(500).json({ error: 'Server error' });
-  }
-});
-
-app.post('/api/auth/logout', (req, res) => {
-  logActivity(req, {
-    action: 'auth.logout',
-    targetType: 'session',
-    targetId: req.sessionID || '',
-    details: 'User logged out',
+app.get('/api/health', (req, res) => {
+  const dbConnected = mongoose.connection && mongoose.connection.readyState === 1;
+  res.json({
+    ok: true,
+    dbConnected,
+    usingFallback: useFallback || !dbConnected,
+    mongoUriSource: process.env.MONGO_URI ? 'MONGO_URI' : (process.env.MONGODB_URI ? 'MONGODB_URI' : 'default'),
   });
-  req.session.destroy(() => {
-    res.json({ ok: true });
-  });
-});
-
-app.get('/api/auth/me', (req, res) => {
-  const sessionUser = getSessionUser(req);
-  if (!sessionUser) return res.status(401).json({ error: 'Unauthorized' });
-
-  // Refresh from DB so role/project changes made by admin apply without requiring re-login.
-  if (isDbReady()) {
-    User.findById(sessionUser.id).lean()
-      .then((dbUser) => {
-        if (!dbUser) return res.status(401).json({ error: 'Unauthorized' });
-        const safe = sanitizeUser(dbUser);
-        req.session.authUser = safe;
-        return res.json({ user: safe });
-      })
-      .catch(() => res.json({ user: sessionUser }));
-    return;
-  }
-
-  return res.json({ user: sessionUser });
 });
 
 app.get('/api/projects', async (req, res) => {
@@ -2786,27 +2610,42 @@ app.post('/api/contact', async (req, res) => {
       }
     });
 
+    const payload = normalizeContactPayload(req.body);
+
     console.log('Received contact form submission:', {
-      name: req.body.name,
-      email: req.body.email,
-      phone: req.body.phone,
-      hasMessage: !!req.body.message,
-      hasRecaptcha: !!req.body.recaptchaToken,
+      name: payload.name,
+      email: payload.email,
+      phone: payload.phone,
+      companyName: payload.companyName,
+      projectType: payload.projectType,
+      siteLocation: payload.siteLocation,
+      timeline: payload.timeline,
+      serviceNeeded: payload.serviceNeeded,
+      hasMessage: !!payload.message,
+      hasRecaptcha: !!payload.recaptchaToken,
       attemptsRemaining: 3 - req.session.contactAttempts.length
     });
 
-    const { name, email, phone, message, recaptchaToken } = req.body;
+    const {
+      name,
+      email,
+      phone,
+      companyName,
+      projectType,
+      siteLocation,
+      timeline,
+      serviceNeeded,
+      message,
+      recaptchaToken,
+    } = payload;
 
-    if (!name || !email || !message || !recaptchaToken) {
-      console.log('Missing required fields:', {
-        name: !!name,
-        email: !!email,
-        phone: !!phone,
-        message: !!message,
-        recaptchaToken: !!recaptchaToken
-      });
+    const validationErrors = validateContactPayload(payload, { requireRecaptcha: true });
+
+    if (Object.keys(validationErrors).length > 0) {
+      console.log('Missing or invalid contact fields:', validationErrors);
       return res.status(400).json({
-        error: 'All fields are required, including reCAPTCHA verification.'
+        error: 'Missing or invalid required contact fields.',
+        fields: validationErrors
       });
     }
 
@@ -2874,6 +2713,11 @@ app.post('/api/contact', async (req, res) => {
         name,
         email,
         phone,
+        companyName,
+        projectType,
+        siteLocation,
+        timeline,
+        serviceNeeded,
         message,
         ipAddress: clientIp || '',
       });
@@ -2881,6 +2725,8 @@ app.post('/api/contact', async (req, res) => {
       console.error('Failed to persist inquiry record:', inquiryErr);
       // Continue with email flow even if inquiry persistence fails.
     }
+
+    const emailContent = buildContactEmailContent(payload);
 
     // Check if email configuration is available
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
@@ -2907,11 +2753,8 @@ app.post('/api/contact', async (req, res) => {
         replyTo: email,
         to: process.env.CONTACT_EMAIL || process.env.EMAIL_USER,
         subject: `New Contact Form Submission from ${name}`,
-        text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\nMessage: ${message}`,
-        html: `<p><strong>Name:</strong> ${name}</p>
-               <p><strong>Email:</strong> ${email}</p>
-               <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-               <p><strong>Message:</strong> ${message}</p>`
+        text: emailContent.text,
+        html: emailContent.html
       };
 
       console.log('Sending email...');
@@ -2946,14 +2789,15 @@ app.get('/api/status', (req, res) => {
   res.json({ usingFallback: useFallback || !dbConnected, dbConnected, cloudStorageEnabled, cloudConvertEnabled });
 });
 
-// Serve React app for all other routes
-app.get('*', (req, res) => {
-    if (hasReactBuild) {
-      return res.sendFile(reactIndexPath);
-    }
-    return res.status(404).json({ error: 'Not found' });
+// Serve React app for all other routes.
+app.use((req, res) => {
+  if (hasReactBuild) {
+    return res.sendFile(reactIndexPath);
+  }
+  return res.status(404).json({ error: 'Not found' });
 });
 
 // Start Server
 const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+

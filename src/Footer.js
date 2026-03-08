@@ -1,5 +1,15 @@
 import React from 'react';
+import { trackEvent } from './utils/analytics';
 import './styles.css';
+
+const officeMapsUrl = 'https://www.google.com/maps/search/?api=1&query=Imus+Cavite';
+
+const coverageAreas = ['Industrial', 'Commercial', 'Renovation', 'Residential'];
+const contactChannels = [
+  { label: 'Office Base', value: 'Westfield Cavite operations desk' },
+  { label: 'Response', value: 'Next-business-day assessment follow-up' },
+  { label: 'Coordination', value: 'Phone, email, and structured site updates' },
+];
 
 const Footer = () => {
   return (
@@ -7,47 +17,76 @@ const Footer = () => {
       <section className="footer-info" aria-label="Company contact details">
         <div className="container">
           <div className="footer-item">
-            <h2>Send Us a Message</h2>
-            <p>If you have any questions or need a quote, feel free to contact us!</p>
-            <a href="mailto:inquiry@construction-ops.com" className="btn" aria-label="Send us an email">Email Us</a>
+            <p className="footer-kicker">Start the conversation</p>
+            <h2>Request Site Assessment</h2>
+            <p>Share the site, scope, or support need. We will reply with the next step.</p>
+            <a
+              href="/contact"
+              className="btn"
+              aria-label="Request a site assessment"
+              onClick={() => trackEvent('cta_click', { ctaId: 'footer_primary', destination: '/contact' })}
+            >
+              Request Site Assessment
+            </a>
+            <ul className="footer-bullets" aria-label="Assessment response details">
+              <li>Scope review for active work</li>
+              <li>Clear next-step recommendation</li>
+              <li>Practical follow-up path</li>
+            </ul>
           </div>
           <div className="footer-item">
-            <h2>Our Location</h2>
-            <p><i className="fas fa-map-marker-alt"></i> 320 Sta Rosa Tagaytay Road Purok 4 Brgy. Pasong Langka, Silang Cavite 4118</p>
-            <div className="map-container">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d244.93515605421877!2d120.9966971517091!3d14.16017202394409!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7b0053a0280d%3A0x99434f55287e9a94!2sRestaurant!5e1!3m2!1sen!2sph!4v1743742491118!5m2!1sen!2sph"
-                width="400"
-                height="300"
-                style={{ border: 0 }}
-                allowFullScreen=""
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title="Construction Office Location Map"
-              ></iframe>
+            <p className="footer-kicker">Coverage and Contact</p>
+            <h2>Built for field coordination across active sites</h2>
+            <p className="footer-location-line"><i className="fas fa-location-arrow" aria-hidden="true"></i> 245 Horizon Service Road, Brgy. San Miguel Norte, Westfield Cavite 4123</p>
+            <div className="location-card">
+              <div className="location-hero">
+                <div>
+                  <p className="location-hero-kicker">Primary Coverage</p>
+                  <h3>Site planning, stakeholder updates, and delivery follow-through from one operating base.</h3>
+                </div>
+                <a className="btn btn-secondary" href={officeMapsUrl} target="_blank" rel="noreferrer">
+                  View Office Area
+                </a>
+              </div>
+              <div className="coverage-pills" aria-label="Primary coverage sectors">
+                {coverageAreas.map((area) => (
+                  <span key={area} className="coverage-pill">{area}</span>
+                ))}
+              </div>
+              <div className="location-meta">
+                {contactChannels.map((item) => (
+                  <div key={item.label} className="location-meta-item">
+                    <strong>{item.label}</strong>
+                    <span>{item.value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
           <div className="footer-item">
-            <h2>Certifications</h2>
-            <img
-              src="/Uploads/showcase1.png"
-              alt="ISO 9001 Certification"
-              className="certification"
-              loading="lazy"
-            />
-            <img
-              src="/Uploads/showcase2.png"
-              alt="Safety Compliance Certification"
-              className="certification"
-              loading="lazy"
-            />
+            <p className="footer-kicker">Working standard</p>
+            <h2>Operations Standards</h2>
+            <div className="trust-list" aria-label="Operations standards summary">
+              <div className="trust-item">
+                <strong>Site Coordination</strong>
+                <span>Structured scheduling, reporting, and task handoff.</span>
+              </div>
+              <div className="trust-item">
+                <strong>Safety Records</strong>
+                <span>Permits, checklists, and compliance records kept in order.</span>
+              </div>
+              <div className="trust-item">
+                <strong>Client Reporting</strong>
+                <span>Status visibility, follow-up tracking, and closeout summaries.</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       <footer role="contentinfo">
         <div className="container_footer">
-          <p>&copy; 2025 Construction Operations Group. All Rights Reserved.</p>
+          <p>&copy; 2025 Construction Operations Portal. All Rights Reserved.</p>
         </div>
       </footer>
     </>
@@ -55,3 +94,4 @@ const Footer = () => {
 };
 
 export default Footer;
+

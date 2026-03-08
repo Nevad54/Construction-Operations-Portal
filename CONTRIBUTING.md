@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in improving `mastertech-app`.
+Thanks for your interest in improving `construction-operations-portal`.
 
 ## Development Setup
 
@@ -24,3 +24,4 @@ Use clear, imperative commit messages, for example:
 - `fix auth guard for admin routes`
 - `docs update deployment env variables`
 - `feat add inquiry status filter`
+

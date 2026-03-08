@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const nodemailer = require('nodemailer');
+const { normalizeContactPayload, validateContactPayload, buildContactEmailContent } = require('../../contactPayload');
 const basicAuth = require('express-basic-auth');
 const session = require('express-session');
 const multer = require('multer');
@@ -13,7 +14,7 @@ const router = express.Router();
 
 // Middleware
 app.use(cors({
-  origin: ['https://mastertech4.netlify.app', 'https://mastertech2.netlify.app', 'http://localhost:3000'],
+  origin: ['https://your-frontend.netlify.app', 'https://your-alt-frontend.netlify.app', 'http://localhost:3000'],
   credentials: true
 }));
 app.use(express.json());
@@ -39,7 +40,7 @@ const adminAuth = basicAuth({
 });
 
 // MongoDB connection
-const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/mastertech';
+const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/portfolio_ops';
 mongoose.connect(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -53,7 +54,28 @@ mongoose.connect(mongoUri, {
 // Contact form submission
 router.post('/contact', async (req, res) => {
   try {
-    const { name, email, phone, message, recaptchaToken } = req.body;
+    const payload = normalizeContactPayload(req.body);
+    const validationErrors = validateContactPayload(payload, { requireRecaptcha: true });
+
+    if (Object.keys(validationErrors).length > 0) {
+      return res.status(400).json({
+        error: 'Missing or invalid required contact fields.',
+        fields: validationErrors,
+      });
+    }
+
+    const {
+      name,
+      email,
+      phone,
+      companyName,
+      projectType,
+      siteLocation,
+      timeline,
+      serviceNeeded,
+      message,
+      recaptchaToken,
+    } = payload;
 
     // Verify reCAPTCHA
     const recaptchaResponse = await fetch('https://www.google.com/recaptcha/api/siteverify', {
@@ -73,6 +95,8 @@ router.post('/contact', async (req, res) => {
       });
     }
 
+    const emailContent = buildContactEmailContent(payload);
+
     // Send email
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -85,13 +109,10 @@ router.post('/contact', async (req, res) => {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: process.env.EMAIL_RECIPIENT,
-      subject: 'New Contact Form Submission',
-      text: `
-        Name: ${name}
-        Email: ${email}
-        Phone: ${phone}
-        Message: ${message}
-      `
+      replyTo: email,
+      subject: `New Contact Form Submission from ${name}`,
+      text: emailContent.text,
+      html: emailContent.html,
     };
 
     await transporter.sendMail(mailOptions);
@@ -117,3 +138,4 @@ app.use('/.netlify/functions/api', router);
 
 // Export the Express app as a Netlify function
 exports.handler = app; 
+

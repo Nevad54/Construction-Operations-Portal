@@ -17,7 +17,7 @@ const Home = () => {
     <div className="home">
       <section className="hero">
         <div className="hero-content" data-aos="fade-up">
-          <h1>Welcome to Construction Operations Group</h1>
+          <h1>Welcome to Construction Operations Portal</h1>
           <p className="hero-subtitle">Your Partner in Engineering Excellence</p>
           <a href="/contact" className="btn">Get Started</a>
         </div>
@@ -84,3 +84,4 @@ const Home = () => {
 };
 
 export default Home; 
+

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
 
 const ProjectContext = createContext();
@@ -9,29 +9,49 @@ export const ProjectProvider = ({ children }) => {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [assetBaseUrl, setAssetBaseUrl] = useState(() => api.getProjectAssetBaseUrl());
 
-    const fetchProjects = async () => {
+    const buildProjectLoadMessage = useCallback((err) => {
+        const configuredUrl = process.env.REACT_APP_API_URL || '';
+        const defaultTargets = 'http://localhost:3002 or http://localhost:3102';
+        const target = configuredUrl || `the local API proxy or a backend at ${defaultTargets}`;
+        const detail = String(err?.message || '').trim();
+
+        if (/Failed to fetch|NetworkError|Load failed/i.test(detail)) {
+            return `Could not reach project data. Public pages remain usable, but the backend must be running and reachable at ${target}.`;
+        }
+
+        if (/Expected JSON/i.test(detail)) {
+            return `Project data responded with an unexpected format. Check that the backend or proxy is serving the projects API at ${target}.`;
+        }
+
+        return `Could not load projects. Public pages remain usable, but project data needs the backend running and reachable at ${target}.`;
+    }, []);
+
+    const fetchProjects = useCallback(async ({ quiet = false } = {}) => {
         try {
-            console.log('Fetching projects...');
             setLoading(true);
             const allProjects = await api.getProjects();
-            console.log('Projects fetched successfully:', allProjects);
             setProjects(allProjects);
+            setAssetBaseUrl(api.getProjectAssetBaseUrl());
             setError(null);
             return allProjects;
         } catch (err) {
-            console.error('Error fetching projects:', err);
-            setError('Could not load projects. Make sure the backend is running (npm run start:backend) and reachable at ' + (process.env.REACT_APP_API_URL || 'the API URL') + '.');
+            setError(buildProjectLoadMessage(err));
+            setAssetBaseUrl(api.getProjectAssetBaseUrl());
             setProjects([]);
-            throw err;
+            if (!quiet) {
+                throw err;
+            }
+            return [];
         } finally {
             setLoading(false);
         }
-    };
+    }, [buildProjectLoadMessage]);
 
     useEffect(() => {
-        fetchProjects();
-    }, []);
+        fetchProjects({ quiet: true });
+    }, [fetchProjects]);
 
     const addProject = async (projectData) => {
         try {
@@ -72,10 +92,11 @@ export const ProjectProvider = ({ children }) => {
         projects,
         loading,
         error,
+        assetBaseUrl,
         addProject,
         updateProject,
         deleteProject,
-        refreshProjects: fetchProjects
+        refreshProjects: () => fetchProjects({ quiet: false })
         }}>
             {children}
         </ProjectContext.Provider>

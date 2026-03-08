@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
+import { trackEvent } from '../../utils/analytics';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '../ui';
 
 const roleHome = {
@@ -95,6 +96,10 @@ export default function RoleLogin({ role = 'user' }) {
         setError(`This account is ${currentRole || 'unknown'} role. Use ${role} credentials.`);
         return;
       }
+      trackEvent('login_success', {
+        role: currentRole,
+        entryRole: role,
+      });
       navigate(successPath, { replace: true });
     } catch (err) {
       setError(err.message || 'Login failed');

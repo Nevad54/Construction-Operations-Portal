@@ -1,5 +1,41 @@
 [
   {
+    "_id": "1772948116418",
+    "actorId": "admin-1",
+    "actorRole": "admin",
+    "action": "auth.login",
+    "targetType": "session",
+    "targetId": "b-45F_ddVoxe1PN-B4lrXSWQ2vm6ktT4",
+    "details": "admin logged in",
+    "metadata": {},
+    "createdAt": "2026-03-08T05:35:16.418Z",
+    "updatedAt": "2026-03-08T05:35:16.418Z"
+  },
+  {
+    "_id": "1772947955421",
+    "actorId": "admin-1",
+    "actorRole": "admin",
+    "action": "auth.login",
+    "targetType": "session",
+    "targetId": "TrAn9cMq5pCA2969lo_oJMiP-rRULqz6",
+    "details": "admin logged in",
+    "metadata": {},
+    "createdAt": "2026-03-08T05:32:35.421Z",
+    "updatedAt": "2026-03-08T05:32:35.421Z"
+  },
+  {
+    "_id": "1772947654326",
+    "actorId": "admin-1",
+    "actorRole": "admin",
+    "action": "auth.login",
+    "targetType": "session",
+    "targetId": "vJ9xQtSoT6XJSbDwS7rvsiTCe1TGh3i3",
+    "details": "admin logged in",
+    "metadata": {},
+    "createdAt": "2026-03-08T05:27:34.326Z",
+    "updatedAt": "2026-03-08T05:27:34.326Z"
+  },
+  {
     "_id": "act-sample-001",
     "actorId": "admin-1",
     "actorRole": "admin",

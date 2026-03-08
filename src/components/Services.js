@@ -23,6 +23,9 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import './Services.css';
 
+const officeMapsUrl = 'https://www.google.com/maps/search/?api=1&query=Imus+Cavite';
+const officeMapEmbedUrl = 'https://maps.google.com/maps?q=Imus%20Cavite&z=15&output=embed';
+
 const Services = () => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
@@ -99,7 +102,7 @@ const Services = () => {
             <button className="hamburger" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               <FontAwesomeIcon icon={faBars} />
             </button>
-            <img src="/assets/logo.svg" alt="Construction Portal Logo" className="logo" />
+            <img src="/assets/logo.svg" alt="Construction Operations Portal mark" className="logo" />
             <nav>
               <ul className="nav-links">
                 <li><a href="/"><FontAwesomeIcon icon={faHome} /> Home</a></li>
@@ -196,17 +199,24 @@ const Services = () => {
               data-aos-easing="ease-out-back"
             >
               <h2>Our Location</h2>
-              <p><FontAwesomeIcon icon={faMapMarkerAlt} /> 320 Sta Rosa Tagaytay Road Purok 4 Brgy. Pasong Langka, Silang Cavite 4118</p>
-              <div className="map-container">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d244.93515605421877!2d120.9966971517091!3d14.16017202394409!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7b0053a0280d%3A0x99434f55287e9a94!2sRestaurant!5e1!3m2!1sen!2sph!4v1743742491118!5m2!1sen!2sph"
-                  width="400"
-                  height="300"
-                  style={{ border: 0 }}
-                  allowFullScreen=""
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                ></iframe>
+              <p><FontAwesomeIcon icon={faMapMarkerAlt} /> 245 Horizon Service Road, Brgy. San Miguel Norte, Westfield Cavite 4123</p>
+              <div className="location-card">
+                <div className="map-container">
+                  <iframe
+                    src={officeMapEmbedUrl}
+                    width="400"
+                    height="300"
+                    style={{ border: 0 }}
+                    allowFullScreen=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Placeholder Office Location Map"
+                  ></iframe>
+                </div>
+                <p>Placeholder map preview for portfolio use.</p>
+                <a className="btn btn-secondary" href={officeMapsUrl} target="_blank" rel="noreferrer">
+                  Open in Google Maps
+                </a>
               </div>
             </div>
             <div 
@@ -215,36 +225,18 @@ const Services = () => {
               data-aos-duration="1000"
               data-aos-easing="ease-out-back"
             >
-              <h2>Certifications</h2>
-              <div 
-                className="certification" 
-                style={{
-                  backgroundColor: '#eee',
-                  width: '100%',
-                  height: '200px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#999',
-                  fontSize: '14px'
-                }}
-              >
-                No Image Available
+              <h2>Operations Standards</h2>
+              <div className="trust-item">
+                <strong>Project Controls</strong>
+                <span>Scope tracking, progress visibility, and scheduled site coordination.</span>
               </div>
-              <div 
-                className="certification" 
-                style={{
-                  backgroundColor: '#eee',
-                  width: '100%',
-                  height: '200px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#999',
-                  fontSize: '14px'
-                }}
-              >
-                No Image Available
+              <div className="trust-item">
+                <strong>Safety Records</strong>
+                <span>Placeholder block for permits, checklists, and compliance documentation.</span>
+              </div>
+              <div className="trust-item">
+                <strong>Client Updates</strong>
+                <span>Structured reporting for milestones, issues, and closeout handoff.</span>
               </div>
             </div>
           </div>
@@ -252,7 +244,7 @@ const Services = () => {
 
         <footer>
           <div className="container_footer">
-            <p>© 2025 Construction Operations Group. All Rights Reserved.</p>
+            <p>© 2025 Construction Operations Portal. All Rights Reserved.</p>
           </div>
         </footer>
       </div>
@@ -261,3 +253,4 @@ const Services = () => {
 };
 
 export default Services; 
+

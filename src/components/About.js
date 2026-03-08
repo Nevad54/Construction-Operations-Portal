@@ -17,7 +17,7 @@ const About = () => {
     <div className="about-page">
       <section className="about-hero">
         <div className="hero-content" data-aos="fade-up">
-          <h1>About Construction Operations Group</h1>
+          <h1>About Construction Operations Portal</h1>
           <p>Building Excellence Through Innovation</p>
         </div>
       </section>
@@ -111,3 +111,4 @@ const About = () => {
 };
 
 export default About; 
+

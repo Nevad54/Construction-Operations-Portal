@@ -1,6 +1,6 @@
 # Dark Mode Documentation Index
 
-## Complete Dark Mode Implementation for MASTERTECH INTERGROUPPE INC.
+## Complete Dark Mode Implementation for Construction Operations Portal
 
 Your webapp now has a fully functional global dark mode system. This index guides you to the right documentation for your needs.
 
@@ -510,3 +510,5 @@ Your webapp now has:
 **Version**: 1.0
 
 Start with the Summary file → Pick your role → Follow the reading guide → Enjoy dark mode! 🌙
+
+

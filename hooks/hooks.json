@@ -1,0 +1,29 @@
+{
+  "description": "Lightweight quality hooks for review-aware completion behavior.",
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Review the current conversation before allowing completion. If code or UI work was performed, verify that an appropriate review happened, such as findings-first code review, UI audit, tests, build checks, or an explicit statement of what could not be verified. Approve stopping only when the response is not skipping obvious verification or known issues. If verification is missing, block and explain what still needs to be checked.",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Before the subagent stops, verify that it completed the requested review or analysis task and returned concrete output rather than a vague summary. If the assigned task was code review or UI audit, ensure the result is findings-first or explicitly says no findings were found. Block stopping if the result is incomplete.",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

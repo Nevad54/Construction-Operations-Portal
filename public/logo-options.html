@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Construction Operations Portal Logo Options</title>
+    <style>
+      :root {
+        --bg: #f5f7fa;
+        --card: #ffffff;
+        --text: #0f172a;
+        --muted: #475569;
+        --border: #dbe3ec;
+        --accent: #2f6b3f;
+        --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(47, 107, 63, 0.12), transparent 30%),
+          linear-gradient(180deg, #f8fbf9 0%, var(--bg) 45%, #eef2f7 100%);
+        color: var(--text);
+      }
+
+      main {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 56px 24px 72px;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2rem, 4vw, 3.4rem);
+        line-height: 1.05;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 1.02rem;
+        line-height: 1.6;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-top: 32px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 22px;
+        box-shadow: var(--shadow);
+      }
+
+      .preview {
+        display: grid;
+        place-items: center;
+        min-height: 196px;
+        border-radius: 18px;
+        background:
+          linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.96)),
+          repeating-linear-gradient(
+            90deg,
+            rgba(148, 163, 184, 0.08) 0,
+            rgba(148, 163, 184, 0.08) 1px,
+            transparent 1px,
+            transparent 24px
+          );
+      }
+
+      .preview img {
+        width: 104px;
+        height: 104px;
+        display: block;
+      }
+
+      .pill {
+        display: inline-block;
+        margin-bottom: 12px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(47, 107, 63, 0.12);
+        color: #214c2c;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        margin: 16px 0 8px;
+        font-size: 1.15rem;
+      }
+
+      .path {
+        margin-top: 14px;
+        font-family: Consolas, monospace;
+        font-size: 0.85rem;
+        color: #214c2c;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="pill">Logo Exploration</span>
+      <h1>Construction Operations Portal marks</h1>
+      <p>Compare the current live logo with three alternate directions. The live mark is now aligned to the app's green brand system; the other concepts remain available as exploration directions.</p>
+
+      <section class="grid">
+        <article class="card">
+          <div class="preview"><img src="/assets/logo.svg" alt="Current logo" /></div>
+          <h2>Current</h2>
+          <p>Balanced construction badge with structural lines, crane motion, and a completion check.</p>
+          <div class="path">/assets/logo.svg</div>
+        </article>
+
+        <article class="card">
+          <div class="preview"><img src="/assets/logo-scaffold.svg" alt="Scaffold logo" /></div>
+          <h2>Scaffold</h2>
+          <p>Most industrial. Strong framing language and clearer jobsite energy.</p>
+          <div class="path">/assets/logo-scaffold.svg</div>
+        </article>
+
+        <article class="card">
+          <div class="preview"><img src="/assets/logo-crane.svg" alt="Crane logo" /></div>
+          <h2>Crane</h2>
+          <p>Most literal. Reads immediately as construction and field coordination.</p>
+          <div class="path">/assets/logo-crane.svg</div>
+        </article>
+
+        <article class="card">
+          <div class="preview"><img src="/assets/logo-grid.svg" alt="Grid logo" /></div>
+          <h2>Grid</h2>
+          <p>Most product-like. Blueprint geometry with a cleaner software-brand feel.</p>
+          <div class="path">/assets/logo-grid.svg</div>
+        </article>
+      </section>
+    </main>
+  </body>
+  </html>

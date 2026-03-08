@@ -1,0 +1,17 @@
+ADMIN_USER: admin
+Uploads directory: D:\Web App\Construction Operations Portal\backend\uploads
+Serving assets from: D:\Web App\Construction Operations Portal\assets
+Serving pages from: D:\Web App\Construction Operations Portal\pages
+Attempting to connect to MongoDB with URI: mongodb://mtiuser:****@ac-thlzd0c-shard-00-00.ayq9k3f.mongodb.net:27017,ac-thlzd0c-shard-00-01.ayq9k3f.mongodb.net:27017,ac-thlzd0c-shard-00-02.ayq9k3f.mongodb.net:27017/mti-projects?ssl=true&replicaSet=atlas-s9yn0c-shard-0&authSource=admin&retryWrites=true&w=majority&appName=mti-cluster
+Server running on port 3102 
+Mongoose connected to DB
+MongoDB connected successfully
+Scheduled export written: users.csv
+Scheduled export written: inquiries.csv
+Scheduled export written: activity_logs.csv
+Mongoose disconnected
+Mongoose connected to DB
+MongoDB connected successfully
+Mongoose disconnected
+Mongoose connected to DB
+MongoDB connected successfully

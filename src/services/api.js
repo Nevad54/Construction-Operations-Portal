@@ -4,29 +4,71 @@ const RAW_API_BASE_URL = (process.env.REACT_APP_API_URL || '').trim();
 // For deployed frontend, set REACT_APP_API_URL explicitly.
 const API_BASE_URL = RAW_API_BASE_URL || '';
 
-const getApiPrefix = () => {
-  if (!API_BASE_URL) return '/api';
+const LOCAL_BACKEND_BASE_URLS = [
+  'http://localhost:3102',
+  'http://127.0.0.1:3102',
+  'http://localhost:3002',
+  'http://127.0.0.1:3002',
+];
 
-  const normalizedBase = API_BASE_URL.replace(/\/$/, '');
-  const isNetlifyHost =
-    normalizedBase.includes('netlify.app') ||
-    normalizedBase.includes('netlify.com');
+let discoveredProjectBaseUrl = API_BASE_URL;
 
-  return isNetlifyHost
+const trimTrailingSlash = (value) => String(value || '').replace(/\/$/, '');
+
+const isNetlifyHost = (value) => {
+  const normalized = trimTrailingSlash(value);
+  return normalized.includes('netlify.app') || normalized.includes('netlify.com');
+};
+
+const buildApiPrefix = (baseUrl) => {
+  const normalizedBase = trimTrailingSlash(baseUrl);
+  if (!normalizedBase) return '/api';
+
+  return isNetlifyHost(normalizedBase)
     ? `${normalizedBase}/.netlify/functions/api`
     : `${normalizedBase}/api`;
+};
+
+const buildDirectAssetBaseUrl = (baseUrl) => {
+  const normalizedBase = trimTrailingSlash(baseUrl);
+  return normalizedBase || '';
+};
+
+const getProjectApiPrefixes = () => {
+  const prefixes = [buildApiPrefix(API_BASE_URL)];
+  const isLocalHost =
+    typeof window !== 'undefined' &&
+    ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+  if (!API_BASE_URL && isLocalHost) {
+    LOCAL_BACKEND_BASE_URLS.forEach((baseUrl) => {
+      prefixes.push(buildApiPrefix(baseUrl));
+    });
+  }
+
+  return Array.from(new Set(prefixes));
+};
+
+const getBaseUrlFromApiPrefix = (prefix) => {
+  if (!prefix || prefix === '/api') return '';
+  return trimTrailingSlash(prefix).replace(/\/\.netlify\/functions\/api$|\/api$/, '');
+};
+
+const getApiPrefix = () => {
+  return buildApiPrefix(API_BASE_URL);
 };
 
 const API_PREFIX = getApiPrefix();
 
 const isDev = process.env.NODE_ENV !== 'production';
+const isApiDebugEnabled = isDev && process.env.REACT_APP_DEBUG_API === 'true';
 const debugLog = (...args) => {
-  if (!isDev) return;
+  if (!isApiDebugEnabled) return;
   // eslint-disable-next-line no-console
   console.log(...args);
 };
 const debugError = (...args) => {
-  if (!isDev) return;
+  if (!isApiDebugEnabled) return;
   // eslint-disable-next-line no-console
   console.error(...args);
 };
@@ -243,6 +285,17 @@ export const api = {
         return handleResponse(response);
     },
 
+    adminGetKpis: async () => {
+        const response = await fetch(`${API_PREFIX}/admin/kpis`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            },
+            credentials: 'include',
+        });
+        return handleResponse(response);
+    },
+
     adminListInquiries: async (params = {}) => {
         const qs = new URLSearchParams();
         if (params.status) qs.set('status', String(params.status));
@@ -310,23 +363,34 @@ export const api = {
 
     // Projects
     getProjects: async () => {
-        const url = `${API_PREFIX}/projects`;
-        debugLog('Fetching projects from:', url);
-        
-        try {
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                },
-                credentials: 'include',
-            });
-            return handleResponse(response);
-        } catch (error) {
-            debugError('Error in getProjects:', error);
-            throw error;
+        const prefixes = getProjectApiPrefixes();
+        let lastError = null;
+
+        for (const prefix of prefixes) {
+            const url = `${prefix}/projects`;
+            debugLog('Fetching projects from:', url);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'include',
+                });
+                const projects = await handleResponse(response);
+                discoveredProjectBaseUrl = getBaseUrlFromApiPrefix(prefix);
+                return projects;
+            } catch (error) {
+                lastError = error;
+                debugError(`Error in getProjects via ${url}:`, error);
+            }
         }
+
+        throw lastError || new Error('Failed to load projects');
     },
+
+    getProjectAssetBaseUrl: () => buildDirectAssetBaseUrl(discoveredProjectBaseUrl),
 
     createProject: async (projectData) => {
         const url = `${API_PREFIX}/projects`;

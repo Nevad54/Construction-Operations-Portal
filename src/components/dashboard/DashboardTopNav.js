@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api';
+import BrandLockup from '../BrandLockup';
 
 export default function DashboardTopNav({
   onMenuClick,
@@ -96,15 +97,17 @@ export default function DashboardTopNav({
           )}
           
           {/* Brand */}
-          <Link
-            to="/"
+          <BrandLockup
             className={`flex items-center gap-2.5 min-w-0 hover:opacity-80 transition-opacity duration-fast ${showTopBrand ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none w-0 overflow-hidden'}`}
-            aria-hidden={!showTopBrand}
+            iconClassName="h-9 w-auto object-contain flex-shrink-0"
+            bodyClassName="hidden min-w-0 sm:flex sm:flex-col"
+            titleClassName="text-sm sm:text-[0.95rem] font-bold leading-tight text-text-primary dark:text-gray-100 truncate"
+            accentClassName="text-brand dark:text-brand-400"
+            subtitle="Project controls and field visibility"
+            subtitleClassName="text-[11px] leading-tight text-text-muted dark:text-gray-400 truncate"
+            ariaHidden={!showTopBrand}
             tabIndex={showTopBrand ? 0 : -1}
-          >
-            <img src="/assets/logo.svg" alt="Construction Portal Logo" className="h-9 w-auto object-contain flex-shrink-0" />
-            <span className="inline text-sm sm:text-base font-bold text-text-primary dark:text-gray-100 truncate">Construction Ops</span>
-          </Link>
+          />
         </div>
 
         {/* Center: search */}

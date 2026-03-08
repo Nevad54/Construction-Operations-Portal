@@ -15,11 +15,34 @@ const Safety = memo(() => {
   }, []);
 
   return (
-    <PageLayout>
+    <PageLayout
+      meta={{
+        title: 'Safety | Construction Operations Portal',
+        description: 'Review the safety commitment, risk prevention approach, and qualified oversight standards behind Construction Operations Portal delivery work.',
+      }}
+    >
       <section className="safety" role="main">
         <div className="container">
-          <h1 data-aos="fade-up">Commitment to Safety</h1>
-          <div className="safety-content" data-aos="fade-up" data-aos-delay="100">
+          <div className="commitment-hero" data-aos="fade-up">
+            <div className="commitment-hero-copy">
+              <p className="commitment-kicker">Commitment</p>
+              <h1>Commitment to Safety</h1>
+              <p className="commitment-intro">
+                Safety is presented here as an operating requirement, not just a compliance statement. The emphasis is on disciplined execution, qualified oversight, and responsible work practices.
+              </p>
+            </div>
+            <div className="commitment-hero-side">
+              <div className="commitment-stat">
+                <strong>People first</strong>
+                <span>Employees, subcontractors, partners, and the public are all inside the safety perimeter.</span>
+              </div>
+              <div className="commitment-stat">
+                <strong>Execution discipline</strong>
+                <span>Safe delivery improves consistency, reporting quality, and operational efficiency.</span>
+              </div>
+            </div>
+          </div>
+          <div className="safety-content commitment-card" data-aos="fade-up" data-aos-delay="100">
             <p data-aos="fade-up" data-aos-delay="200">
               Our management holds the highest regard for the health and safety of employees, subcontractors, partners, and the public. We are equally committed to environmental protection and do not compromise on this principle.
             </p>
@@ -29,6 +52,23 @@ const Safety = memo(() => {
             <p data-aos="fade-up" data-aos-delay="400">
               MTI will also ensure the employment of qualified safety personnel with the necessary authority and responsibility to implement and uphold these objectives. Furthermore, the company recognizes that an effective health and safety program significantly enhances operational efficiency.
             </p>
+          </div>
+          <div className="safety-pillars" data-aos="fade-up" data-aos-delay="150">
+            <div className="commitment-card">
+              <p className="commitment-card-kicker">Control</p>
+              <h2>Risk Prevention</h2>
+              <p>Unsafe practices are addressed early through planning, supervision, and visible accountability.</p>
+            </div>
+            <div className="commitment-card">
+              <p className="commitment-card-kicker">Oversight</p>
+              <h2>Qualified Safety Leadership</h2>
+              <p>Safety personnel are positioned with the authority and responsibility to uphold standards in the field.</p>
+            </div>
+            <div className="commitment-card">
+              <p className="commitment-card-kicker">Performance</p>
+              <h2>Operational Efficiency</h2>
+              <p>Effective safety programs reinforce quality execution, steadier workflows, and better project control.</p>
+            </div>
           </div>
         </div>
       </section>

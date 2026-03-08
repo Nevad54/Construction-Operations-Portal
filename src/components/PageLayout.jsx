@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from '../Sidebar';
 import Header from '../Header';
 import Footer from '../Footer';
+import { usePageMeta } from '../utils/pageMeta';
 
 // derive a simple page key from pathname for nav highlighting
 function getActivePage(path) {
@@ -28,9 +29,11 @@ function getActivePage(path) {
   }
 }
 
-export default function PageLayout({ children }) {
+export default function PageLayout({ children, meta }) {
   const location = useLocation();
   const activePage = getActivePage(location.pathname);
+
+  usePageMeta(meta || {});
 
   const [isSidebarActive, setIsSidebarActive] = useState(false);
   const [isNavLinksActive, setIsNavLinksActive] = useState(false);

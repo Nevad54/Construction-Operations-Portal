@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Construction Operations Portal scaffold logo</title>
+  <desc id="desc">An orange scaffold frame around a dark building core with a lifted beam and operations check.</desc>
+  <defs>
+    <linearGradient id="frame" x1="18" y1="14" x2="110" y2="114" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fb923c" />
+      <stop offset="1" stop-color="#ea580c" />
+    </linearGradient>
+    <linearGradient id="core" x1="34" y1="32" x2="94" y2="98" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#334155" />
+      <stop offset="1" stop-color="#0f172a" />
+    </linearGradient>
+  </defs>
+  <rect x="14" y="14" width="100" height="100" rx="24" fill="url(#frame)" />
+  <rect x="26" y="26" width="76" height="76" rx="18" fill="#fff7ed" opacity=".18" />
+  <rect x="34" y="30" width="60" height="68" rx="10" fill="url(#core)" />
+  <path d="M46 22v84M64 22v54M82 22v84M100 40H28M100 62H28M92 84H28" stroke="#ffedd5" stroke-linecap="round" stroke-opacity=".72" stroke-width="4" />
+  <path d="M52 42h24M52 56h24M52 70h12" stroke="#94a3b8" stroke-linecap="round" stroke-opacity=".45" stroke-width="4" />
+  <path d="M84 36h16v18" fill="none" stroke="#fff7ed" stroke-linecap="round" stroke-linejoin="round" stroke-width="5" />
+  <path d="M78 54l10 10 14-16" fill="none" stroke="#f97316" stroke-linecap="round" stroke-linejoin="round" stroke-width="8" />
+  <path d="M78 54l10 10 14-16" fill="none" stroke="#fff7ed" stroke-linecap="round" stroke-linejoin="round" stroke-width="4.5" />
+</svg>

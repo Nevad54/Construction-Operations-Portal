@@ -1,0 +1,19 @@
+{
+  "name": "construction-operations-portal",
+  "version": "0.1.0",
+  "description": "Claude Code plugin assets for the Construction Operations Portal workspace, including reusable agents and skills.",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "agents",
+    "commands",
+    "skills",
+    "sprint-planning",
+    "code-review",
+    "construction-operations"
+  ],
+  "commands": "./commands",
+  "agents": "./agents",
+  "skills": "./skills",
+  "hooks": "./hooks/hooks.json"
+}

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: mastertech-backend
+    name: portfolio-ops-backend
     env: node
     rootDir: backend
     buildCommand: npm install
@@ -22,6 +22,8 @@ services:
         value: ${EMAIL_PASS}
       - key: CONTACT_EMAIL
         value: ${CONTACT_EMAIL}
+      - key: RECAPTCHA_SECRET_KEY
+        value: ${RECAPTCHA_SECRET_KEY}
       - key: CORS_ORIGINS
         value: ${CORS_ORIGINS}
       - key: CLOUDINARY_CLOUD_NAME
@@ -34,7 +36,7 @@ services:
         value: ${CLOUDCONVERT_API_KEY}
 
   - type: web
-    name: mastertech-frontend
+    name: portfolio-ops-frontend
     env: static
     buildCommand: npm install && npm run build
     staticPublishPath: build
@@ -43,3 +45,4 @@ services:
         value: ${REACT_APP_API_URL}
       - key: REACT_APP_RECAPTCHA_SITE_KEY
         value: ${REACT_APP_RECAPTCHA_SITE_KEY}
+

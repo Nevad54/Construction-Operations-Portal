@@ -1,138 +1,195 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
-import PageLayout from './components/PageLayout';
-import './styles.css';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
+import PageLayout from './components/PageLayout';
+import { trackEvent } from './utils/analytics';
+import './styles.css';
+
+const officeMapsUrl = 'https://www.google.com/maps/search/?api=1&query=Imus+Cavite';
+
+const projectTypeOptions = [
+  'Industrial Retrofit',
+  'Commercial Fit-Out',
+  'Residential Renovation',
+  'Site Development',
+  'Plant Support',
+];
+
+const getFieldDescribedBy = (fieldErrorId, helperId, hasError) => {
+  return hasError ? `${helperId} ${fieldErrorId}` : helperId;
+};
+
+const buildContactEndpoint = () => {
+  const baseUrl = String(process.env.REACT_APP_API_URL || '').trim().replace(/\/$/, '');
+  if (!baseUrl) return '/api/contact';
+  if (baseUrl.includes('netlify.app') || baseUrl.includes('netlify.com')) {
+    return `${baseUrl}/.netlify/functions/api/contact`;
+  }
+  return `${baseUrl}/api/contact`;
+};
+
+const initialFormData = {
+  name: '',
+  email: '',
+  phone: '',
+  projectType: '',
+  message: '',
+};
+
+const isLocalDevelopmentHost = () => {
+  if (typeof window === 'undefined') return false;
+  return ['localhost', '127.0.0.1'].includes(window.location.hostname);
+};
 
 const Contact = () => {
-  // Initialize AOS
   useEffect(() => {
     AOS.init({
       duration: 800,
       once: true,
       offset: 100,
-      easing: 'ease-in-out'
+      easing: 'ease-in-out',
     });
   }, []);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || '';
-  // Use environment variable for reCAPTCHA site key with fallback
-  const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa';
+  const RECAPTCHA_SITE_KEY =
+    process.env.REACT_APP_RECAPTCHA_SITE_KEY || '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa';
+  const isLocalRecaptchaBypass = process.env.NODE_ENV !== 'production' && isLocalDevelopmentHost();
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    message: ''
-  });
+  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [recaptchaToken, setRecaptchaToken] = useState('');
-  const recaptchaRef = useRef(null);
   const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
+  const recaptchaRef = useRef(null);
   const [attemptsRemaining, setAttemptsRemaining] = useState(() => {
     const saved = localStorage.getItem('contactAttempts');
     const lastReset = localStorage.getItem('lastAttemptReset');
     const now = Date.now();
-    
-    // Reset attempts if it's been more than an hour
-    if (lastReset && (now - parseInt(lastReset)) > 3600000) {
+
+    if (lastReset && now - parseInt(lastReset, 10) > 3600000) {
       localStorage.setItem('contactAttempts', '3');
       localStorage.setItem('lastAttemptReset', now.toString());
       return 3;
     }
-    
-    return saved ? parseInt(saved) : 3;
+
+    return saved ? parseInt(saved, 10) : 3;
   });
   const [timeUntilReset, setTimeUntilReset] = useState(null);
-
-
+  const canSubmit = !isSubmitting && timeUntilReset === null && isRecaptchaVerified;
+  const submitButtonLabel = isSubmitting
+    ? 'Submitting Inquiry...'
+    : isLocalRecaptchaBypass && !isRecaptchaVerified
+      ? 'Complete Verification to Submit'
+      : 'Request Site Assessment';
+  const localVerificationStatus = isRecaptchaVerified ? 'Verified' : 'Required';
 
   const handleRecaptchaChange = (token) => {
     if (!token) {
-      setErrors(prev => ({ ...prev, captcha: 'reCAPTCHA verification failed. Please try again.' }));
+      setErrors((prev) => ({
+        ...prev,
+        captcha: 'reCAPTCHA verification failed. Please try again.',
+        captchaDetails: undefined,
+      }));
       setIsRecaptchaVerified(false);
       setRecaptchaToken('');
       return;
     }
+
     setRecaptchaToken(token);
     setIsRecaptchaVerified(true);
-    setErrors(prev => ({ ...prev, captcha: undefined }));
+    setErrors((prev) => ({ ...prev, captcha: undefined, captchaDetails: undefined }));
   };
 
   const handleRecaptchaExpired = () => {
     setRecaptchaToken('');
     setIsRecaptchaVerified(false);
-    setErrors(prev => ({ ...prev, captcha: 'reCAPTCHA verification expired. Please verify again.' }));
+    setErrors((prev) => ({
+      ...prev,
+      captcha: 'reCAPTCHA verification expired. Please verify again.',
+      captchaDetails: undefined,
+    }));
     if (recaptchaRef.current) {
       recaptchaRef.current.reset();
     }
   };
 
-  const handleRecaptchaError = (err) => {
-    console.error('reCAPTCHA error:', err);
+  const handleRecaptchaError = () => {
     setRecaptchaToken('');
     setIsRecaptchaVerified(false);
-    setErrors(prev => ({
+    setErrors((prev) => ({
       ...prev,
-      captcha: 'Error loading reCAPTCHA. Please refresh the page and try again.'
+      captcha: 'Error loading reCAPTCHA. Please refresh the page and try again.',
+      captchaDetails: undefined,
     }));
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  const handleLocalVerification = () => {
+    setRecaptchaToken('local-dev-bypass-token');
+    setIsRecaptchaVerified(true);
+    setErrors((prev) => ({ ...prev, captcha: undefined, captchaDetails: undefined }));
+  };
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
   const validateForm = () => {
-    const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    const nextErrors = {};
+
+    if (!formData.name.trim()) nextErrors.name = 'Name is required';
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      nextErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+      nextErrors.email = 'Email is invalid';
     }
-    if (formData.phone && !/^\+?[\d\s-()]+$/.test(formData.phone)) {
-      newErrors.phone = 'Phone number is invalid';
+    if (formData.phone && !/^\+?[\d\s\-()]+$/.test(formData.phone)) {
+      nextErrors.phone = 'Phone number is invalid';
     }
-    if (!formData.message.trim()) newErrors.message = 'Message is required';
+    if (!formData.message.trim()) nextErrors.message = 'Message is required';
     if (!isRecaptchaVerified || !recaptchaToken) {
-      newErrors.captcha = 'Please complete the reCAPTCHA verification';
+      nextErrors.captcha = 'Please complete the reCAPTCHA verification';
     }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setErrors({});
     setSubmitStatus(null);
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     if (attemptsRemaining <= 0) {
       setSubmitStatus({
         type: 'error',
-        message: 'Maximum attempts reached. Please try again later.'
+        message: 'Maximum attempts reached. Please try again later.',
       });
       return;
     }
 
     try {
       setIsSubmitting(true);
-      
-      const response = await fetch(`${API_BASE_URL}/.netlify/functions/api/contact`, {
+      trackEvent('contact_submit', {
+        formId: 'site_assessment',
+        projectType: formData.projectType || 'not_specified',
+        hasPhone: Boolean(formData.phone && formData.phone.trim()),
+      });
+
+      const response = await fetch(buildContactEndpoint(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           ...formData,
-          recaptchaToken
+          recaptchaToken,
         }),
       });
 
@@ -140,62 +197,68 @@ const Contact = () => {
 
       if (!response.ok) {
         if (response.status === 429) {
-          const timeLeft = parseInt(data.error.match(/\d+/)[0]);
-          setTimeUntilReset(timeLeft);
-          setSubmitStatus({
-            type: 'error',
-            message: data.error
-          });
+          const timeLeftMatch = data.error && data.error.match(/\d+/);
+          if (timeLeftMatch) {
+            setTimeUntilReset(parseInt(timeLeftMatch[0], 10));
+          }
+          setSubmitStatus({ type: 'error', message: data.error });
           return;
         }
-        
+
+        if (response.status === 400 && data.fields) {
+          const fieldErrors = { ...data.fields };
+          if (fieldErrors.recaptchaToken) {
+            fieldErrors.captcha = 'Please complete the reCAPTCHA verification';
+            delete fieldErrors.recaptchaToken;
+          }
+          setErrors(fieldErrors);
+        }
+
         if (response.status === 400 && data.error && data.error.includes('reCAPTCHA')) {
-          setErrors(prev => ({
+          setErrors((prev) => ({
             ...prev,
             captcha: 'reCAPTCHA verification failed. Please try again.',
-            captchaDetails: data.details || []
+            captchaDetails: data.details || [],
           }));
           if (recaptchaRef.current) {
             recaptchaRef.current.reset();
           }
           setRecaptchaToken('');
           setIsRecaptchaVerified(false);
-          throw new Error('reCAPTCHA verification failed. Please try again.');
         }
-        
+
         throw new Error(data.error || 'Failed to send message');
       }
 
       setSubmitStatus({
         type: 'success',
-        message: data.message || 'Message sent successfully!'
+        message: data.message || 'Project inquiry received successfully.',
       });
-      
-      // Reset form and reCAPTCHA only on success
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        message: ''
+
+      trackEvent('contact_success', {
+        formId: 'site_assessment',
+        projectType: formData.projectType || 'not_specified',
       });
+
+      setFormData(initialFormData);
       if (recaptchaRef.current) {
         recaptchaRef.current.reset();
       }
       setRecaptchaToken('');
       setIsRecaptchaVerified(false);
-      setAttemptsRemaining(prev => Math.max(0, prev - 1));
+      setAttemptsRemaining((prev) => Math.max(0, prev - 1));
+      setTimeUntilReset(null);
     } catch (err) {
       console.error('Contact form error:', err);
       setSubmitStatus({
         type: 'error',
-        message: err.message || 'Failed to send message. Please try again.'
+        message: err.message || 'Failed to send message. Please try again.',
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Update localStorage when attempts change
   useEffect(() => {
     localStorage.setItem('contactAttempts', attemptsRemaining.toString());
     if (attemptsRemaining === 3) {
@@ -203,180 +266,297 @@ const Contact = () => {
     }
   }, [attemptsRemaining]);
 
-  // Check for attempts reset every minute
   useEffect(() => {
-    const checkReset = () => {
+    const interval = setInterval(() => {
       const lastReset = localStorage.getItem('lastAttemptReset');
-      if (lastReset) {
-        const timeSinceReset = Date.now() - parseInt(lastReset);
-        if (timeSinceReset > 3600000) { // 1 hour in milliseconds
-          setAttemptsRemaining(3);
-          localStorage.setItem('contactAttempts', '3');
-          localStorage.setItem('lastAttemptReset', Date.now().toString());
-        }
-      }
-    };
+      if (!lastReset) return;
 
-    const interval = setInterval(checkReset, 60000); // Check every minute
+      const timeSinceReset = Date.now() - parseInt(lastReset, 10);
+      if (timeSinceReset > 3600000) {
+        setAttemptsRemaining(3);
+        setTimeUntilReset(null);
+        localStorage.setItem('contactAttempts', '3');
+        localStorage.setItem('lastAttemptReset', Date.now().toString());
+      }
+    }, 60000);
+
     return () => clearInterval(interval);
   }, []);
 
-  // Add error handling for missing reCAPTCHA key
   useEffect(() => {
-    if (!RECAPTCHA_SITE_KEY) {
-      console.error('reCAPTCHA site key is missing. Please check your environment variables.');
-      setErrors(prev => ({
+    if (!RECAPTCHA_SITE_KEY && !isLocalRecaptchaBypass) {
+      setErrors((prev) => ({
         ...prev,
-        captcha: 'reCAPTCHA configuration is missing. Please contact the administrator.'
+        captcha: 'reCAPTCHA configuration is missing. Please contact the administrator.',
       }));
     }
-  }, [RECAPTCHA_SITE_KEY]);
+  }, [RECAPTCHA_SITE_KEY, isLocalRecaptchaBypass]);
 
   return (
-    <PageLayout>
-      <section className="contact">
+    <PageLayout
+      meta={{
+        title: 'Contact | Construction Operations Portal',
+        description: 'Request a site assessment for industrial, commercial, renovation, or residential work and get a clear next-step recommendation from the operations team.',
+      }}
+    >
+      <section className="contact contact-page">
         <div className="container">
-          <h1 data-aos="fade-up">Contact Us</h1>
-          <p className="contact-intro" data-aos="fade-up" data-aos-delay="50">
-            Tell us what you need. Our team will review and respond with next steps.
-          </p>
-          <div className="contact-content">
-            <div className="contact-form" data-aos="fade-right" data-aos-delay="100">
-              <h2>Send Us a Message</h2>
+          <div className="contact-hero" data-aos="fade-up">
+            <div className="contact-hero-copy">
+              <p className="contact-kicker">Project Intake</p>
+              <h1>Request a Site Assessment</h1>
+              <p className="contact-intro">
+                Leave your basic contact details and a short note about the work. We can sort the deeper project
+                details in the follow-up instead of making the first step feel heavy.
+              </p>
+              <div className="contact-mini-points" aria-label="Response expectations">
+                <span>Quick first contact</span>
+                <span>Next-step recommendation</span>
+                <span>Simple follow-up flow</span>
+              </div>
+            </div>
+            <div className="contact-hero-aside">
+              <div className="contact-aside-card">
+                <strong>Best for</strong>
+                <p>Industrial, commercial, renovation, and site-support work that needs disciplined coordination.</p>
+              </div>
+              <div className="contact-aside-card">
+                <strong>Response target</strong>
+                <p>Next-business-day follow-up after the intake review.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="contact-content contact-content--modern">
+            <div className="contact-form contact-form--modern" data-aos="fade-right" data-aos-delay="80">
+              <div className="contact-panel-header">
+                <h2>Quick Inquiry</h2>
+                <p>Start with the essentials. If the work is a fit, we will gather scope, site, and timing in the follow-up.</p>
+              </div>
+
               {submitStatus && (
-                <div className={`alert ${submitStatus.type === 'success' ? 'alert-success' : 'alert-error'}`} data-aos="fade-up">
+                <div
+                  className={`alert ${submitStatus.type === 'success' ? 'alert-success' : 'alert-error'}`}
+                  role="status"
+                  aria-live="polite"
+                >
                   {submitStatus.message}
                 </div>
               )}
+
               <form onSubmit={handleSubmit} noValidate>
-                <div className="form-group" data-aos="fade-up" data-aos-delay="200">
-                  <label htmlFor="name">Name</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    aria-required="true"
-                    aria-describedby="name-error"
-                    disabled={isSubmitting}
-                  />
-                  {errors.name && <span id="name-error" className="error">{errors.name}</span>}
+                <div className="contact-field-grid">
+                  <div className="form-group">
+                    <label htmlFor="name">Full Name</label>
+                    <input
+                      id="name"
+                      name="name"
+                      type="text"
+                      value={formData.name}
+                      onChange={handleChange}
+                      disabled={isSubmitting}
+                      aria-invalid={Boolean(errors.name)}
+                      aria-describedby={getFieldDescribedBy('name-error', 'name-help', Boolean(errors.name))}
+                    />
+                    <span id="name-help" className="sr-only">Enter the primary contact name for this inquiry.</span>
+                    {errors.name && <span id="name-error" className="error" role="alert">{errors.name}</span>}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="email">Email</label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      disabled={isSubmitting}
+                      aria-invalid={Boolean(errors.email)}
+                      aria-describedby={getFieldDescribedBy('email-error', 'email-help', Boolean(errors.email))}
+                    />
+                    <span id="email-help" className="sr-only">Enter the best email address for follow-up.</span>
+                    {errors.email && <span id="email-error" className="error" role="alert">{errors.email}</span>}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="phone">Phone Number</label>
+                    <input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="+1 (123) 456-7890"
+                      disabled={isSubmitting}
+                      aria-invalid={Boolean(errors.phone)}
+                      aria-describedby={getFieldDescribedBy('phone-error', 'phone-help', Boolean(errors.phone))}
+                    />
+                    <span id="phone-help" className="sr-only">Phone number is optional and should include the best callback number.</span>
+                    {errors.phone && <span id="phone-error" className="error" role="alert">{errors.phone}</span>}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="projectType">Project Type</label>
+                    <select
+                      id="projectType"
+                      name="projectType"
+                      value={formData.projectType}
+                      onChange={handleChange}
+                      disabled={isSubmitting}
+                      aria-describedby="projectType-help"
+                    >
+                      <option value="">Select project type (optional)</option>
+                      {projectTypeOptions.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                    <span id="projectType-help" className="sr-only">Choose the closest project type if it helps classify the inquiry.</span>
+                  </div>
                 </div>
-                <div className="form-group" data-aos="fade-up" data-aos-delay="300">
-                  <label htmlFor="email">Email</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    aria-required="true"
-                    aria-describedby="email-error"
-                    disabled={isSubmitting}
-                  />
-                  {errors.email && <span id="email-error" className="error">{errors.email}</span>}
-                </div>
-                <div className="form-group" data-aos="fade-up" data-aos-delay="400">
-                  <label htmlFor="phone">Phone Number (Optional)</label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="+1 (123) 456-7890"
-                    aria-describedby="phone-error"
-                    disabled={isSubmitting}
-                  />
-                  {errors.phone && <span id="phone-error" className="error">{errors.phone}</span>}
-                </div>
-                <div className="form-group" data-aos="fade-up" data-aos-delay="500">
-                  <label htmlFor="message">Message</label>
+
+                <div className="form-group">
+                  <label htmlFor="message">Project Scope</label>
                   <textarea
                     id="message"
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
-                    rows="5"
-                    aria-required="true"
-                    aria-describedby="message-error"
+                    rows="6"
+                    placeholder="Describe the work, location, timing, or anything we should know."
                     disabled={isSubmitting}
-                  ></textarea>
-                  {errors.message && <span id="message-error" className="error">{errors.message}</span>}
-                </div>
-                
-                <div className="form-group captcha-group" data-aos="fade-up" data-aos-delay="600">
-                      <ReCAPTCHA
-                        ref={recaptchaRef}
-                        sitekey={RECAPTCHA_SITE_KEY}
-                        onChange={handleRecaptchaChange}
-                        onExpired={handleRecaptchaExpired}
-                        onErrored={handleRecaptchaError}
-                    className="recaptcha-container"
+                    aria-invalid={Boolean(errors.message)}
+                    aria-describedby={getFieldDescribedBy('message-error', 'message-help', Boolean(errors.message))}
                   />
+                  <span id="message-help" className="sr-only">Describe the work, location, timing, or the main delivery constraint.</span>
+                  {errors.message && <span id="message-error" className="error" role="alert">{errors.message}</span>}
+                </div>
+
+                <div
+                  className="form-group captcha-group"
+                  aria-describedby="captcha-help"
+                >
+                  {isLocalRecaptchaBypass ? (
+                    <div
+                      className="recaptcha-container recaptcha-container--local"
+                      data-testid="local-recaptcha-bypass"
+                      aria-live="polite"
+                    >
+                      <div className="recaptcha-local-header">
+                        <strong>Local development verification</strong>
+                        <span
+                          className={`recaptcha-local-pill ${
+                            isRecaptchaVerified ? 'recaptcha-local-pill--verified' : 'recaptcha-local-pill--pending'
+                          }`}
+                        >
+                          {localVerificationStatus}
+                        </span>
+                      </div>
+                      <p className="recaptcha-local-copy">
+                        {isRecaptchaVerified
+                          ? 'Verification is complete. The inquiry can be submitted from this local session now.'
+                          : 'Use the local verification step to unlock submit on localhost without depending on a Google site key.'}
+                      </p>
+                      <p className="recaptcha-local-note">
+                        This path is only active for local development on `3001/3002` and `3101/3102`.
+                      </p>
+                      <button
+                        type="button"
+                        className={`btn btn-secondary recaptcha-local-button ${
+                          isRecaptchaVerified ? 'recaptcha-local-button--verified' : ''
+                        }`}
+                        onClick={handleLocalVerification}
+                        disabled={isSubmitting || isRecaptchaVerified}
+                      >
+                        {isRecaptchaVerified ? 'Local Verification Complete' : 'Enable Local Verification'}
+                      </button>
+                    </div>
+                  ) : (
+                    <ReCAPTCHA
+                      ref={recaptchaRef}
+                      sitekey={RECAPTCHA_SITE_KEY}
+                      onChange={handleRecaptchaChange}
+                      onExpired={handleRecaptchaExpired}
+                      onErrored={handleRecaptchaError}
+                      className="recaptcha-container"
+                    />
+                  )}
+                  <span id="captcha-help" className="sr-only">Verification is required before the inquiry can be submitted.</span>
                   {errors.captcha && (
                     <div className="error" role="alert">
                       {errors.captcha}
-                      {errors.captchaDetails && (
-                        <small>Error details: {errors.captchaDetails.join(', ')}</small>
-                      )}
+                      {errors.captchaDetails && <small>Error details: {errors.captchaDetails.join(', ')}</small>}
                     </div>
                   )}
                 </div>
 
-                {timeUntilReset ? (
-                  <div className="attempts-info" data-aos="fade-up" data-aos-delay="700">
+                <div className="attempts-info" aria-live="polite">
+                  {timeUntilReset ? (
                     <p className="error">Please wait {timeUntilReset} minutes before trying again.</p>
-                  </div>
-                ) : (
-                  <div className="attempts-info" data-aos="fade-up" data-aos-delay="700">
-                    <p>Attempts remaining: {attemptsRemaining}</p>
-                  </div>
-                )}
+                  ) : isLocalRecaptchaBypass && isRecaptchaVerified ? (
+                    <p className="attempts-info-status attempts-info-status--ready">
+                      Verification complete. Attempts remaining: {attemptsRemaining}
+                    </p>
+                  ) : isLocalRecaptchaBypass ? (
+                    <p className="attempts-info-status">
+                      Complete local verification to enable submit. Attempts remaining: {attemptsRemaining}
+                    </p>
+                  ) : (
+                    <p className="attempts-info-status">Attempts remaining: {attemptsRemaining}</p>
+                  )}
+                </div>
 
-                <button 
-                  type="submit" 
-                  className="btn" 
-                  disabled={isSubmitting || timeUntilReset !== null || !isRecaptchaVerified}
-                  data-aos="fade-up" 
-                  data-aos-delay="800"
+                <button
+                  type="submit"
+                  className={`btn contact-submit-btn ${canSubmit ? 'contact-submit-btn--ready' : 'contact-submit-btn--locked'}`}
+                  disabled={!canSubmit}
                 >
-                  {isSubmitting ? 'Sending...' : 'Send Message'}
+                  {submitButtonLabel}
                 </button>
               </form>
             </div>
-            <div className="contact-info" data-aos="fade-left" data-aos-delay="100">
-              <h2>Contact Information</h2>
-              <div className="info-group" data-aos="fade-up" data-aos-delay="200">
-                <h3><i className="fas fa-building"></i> Office Address</h3>
-                <p>320 Sta Rosa Tagaytay Road Purok 4,<br />Brgy. Pasong Langka,<br />Silang Cavite 4118</p>
+
+            <div className="contact-info contact-info--modern" data-aos="fade-left" data-aos-delay="120">
+              <div className="contact-info-card">
+                <h2>What happens next</h2>
+                <div className="trust-list" aria-label="Contact intake standards">
+                  <div className="trust-item">
+                    <strong>Qualification First</strong>
+                    <span>We review scope, site, and timing before recommending the next conversation.</span>
+                  </div>
+                  <div className="trust-item">
+                    <strong>Clear Ownership</strong>
+                    <span>The intake goes into the same operations workflow used for follow-up and delivery visibility.</span>
+                  </div>
+                  <div className="trust-item">
+                    <strong>Site-Ready Briefing</strong>
+                    <span>Useful submissions include location, timeline, and the main execution constraint.</span>
+                  </div>
+                </div>
               </div>
-              <div className="info-group" data-aos="fade-up" data-aos-delay="300">
-                <h3><i className="fas fa-clock"></i> Office Hours</h3>
-                <p>Monday - Friday: 8:00 AM - 5:00 PM<br />Saturday: 8:00 AM - 12:00 PM<br />Sunday: Closed</p>
-              </div>
-              <div className="info-group" data-aos="fade-up" data-aos-delay="400">
-                <h3><i className="fas fa-phone-alt"></i> Phone & Email</h3>
-                <p>
-                  <a href="tel:+63465139424">(046) 513 9424</a><br />
-                  <a href="tel:+639669369678">0966 936 9678 - Melissa</a><br />
-                  <a href="tel:+639171668344">0917 166 8344 - Marlon</a><br />
-                  <a href="tel:+639178214720">0917 821 4720 - Gemma</a><br />
-                  <a href="mailto:inquiry@construction-ops.com">inquiry@construction-ops.com</a>
+
+              <div className="location-card contact-location-card">
+                <p className="footer-kicker">Office and Coverage</p>
+                <h2>Imus, Cavite</h2>
+                <p className="footer-location-line">
+                  245 Horizon Service Road, Brgy. San Miguel Norte, Westfield Cavite 4123
                 </p>
-              </div>
-              <div className="map-container" data-aos="fade-up" data-aos-delay="500">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d244.93515605421877!2d120.9966971517091!3d14.16017202394409!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7b0053a0280d%3A0x99434f55287e9a94!2sRestaurant!5e1!3m2!1sen!2sph!4v1743742491118!5m2!1sen!2sph"
-                  width="100%"
-                  height="300"
-                  style={{ border: 0 }}
-                  allowFullScreen=""
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Office Location Map"
-                ></iframe>
+                <div className="location-meta">
+                  <div className="location-meta-item">
+                    <strong>Office Hours</strong>
+                    <span>Monday to Friday, 9:00 AM to 6:00 PM. Saturday, 9:00 AM to 1:00 PM.</span>
+                  </div>
+                  <div className="location-meta-item">
+                    <strong>Coverage</strong>
+                    <span>Facilities, commercial, industrial, and renovation support across our core service area.</span>
+                  </div>
+                  <div className="location-meta-item">
+                    <strong>Direct Line</strong>
+                    <span><a href="tel:+63467001842">(046) 700 1842</a> / <a href="tel:+639185021436">0918 502 1436</a></span>
+                  </div>
+                </div>
+                <a className="btn btn-secondary" href={officeMapsUrl} target="_blank" rel="noreferrer">
+                  Open in Google Maps
+                </a>
               </div>
             </div>
           </div>

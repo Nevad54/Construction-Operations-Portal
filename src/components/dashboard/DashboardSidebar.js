@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import BrandLockup from '../BrandLockup';
 
 const defaultMenuItems = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -76,13 +77,18 @@ export default function DashboardSidebar({
       >
         {/* Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800">
-          <Link to={homePath} className={`flex items-center gap-3 transition-opacity duration-200 ${collapsed && !isMobile ? 'lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}>
-            <img src="/assets/logo.svg" alt="Construction Portal Logo" className="w-9 h-9 rounded-xl object-cover shadow-lg" />
-            <div className="flex flex-col">
-              <span className="font-bold text-gray-900 dark:text-white">Construction Ops</span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">Admin Portal</span>
-            </div>
-          </Link>
+          <BrandLockup
+            to={homePath}
+            className={`flex items-center gap-3 transition-opacity duration-200 ${collapsed && !isMobile ? 'lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
+            iconClassName="w-9 h-9 rounded-xl object-cover shadow-lg"
+            bodyClassName="flex min-w-0 flex-col"
+            eyebrow="Operations"
+            eyebrowClassName="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand dark:text-brand-400"
+            titleClassName="font-bold leading-tight text-gray-900 dark:text-white"
+            accentClassName="text-brand dark:text-brand-400"
+            subtitle="Admin portal"
+            subtitleClassName="text-xs text-gray-500 dark:text-gray-400"
+          />
           {!isMobile && (
             <button onClick={onToggleCollapse} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-200" aria-label="Toggle sidebar">
               <Icon d={collapsed ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"} className="w-4 h-4" />

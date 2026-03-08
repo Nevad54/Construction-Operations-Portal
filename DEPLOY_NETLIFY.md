@@ -15,13 +15,15 @@ Important: the Netlify redirect `"/api/*" -> "/.netlify/functions/api/:splat"` i
    - `NODE_ENV=production`
    - `MONGO_URI=...` (MongoDB Atlas connection string)
    - `SESSION_SECRET=...` (any long random string)
-   - `ADMIN_USER=admin` (optional)
-   - `ADMIN_PASS=1111` (optional, change it)
-   - `EMP_USER=employee` (optional)
-   - `EMP_PASS=1111` (optional, change it)
-   - `CLIENT_USER=client` (optional)
-   - `CLIENT_PASS=1111` (optional, change it)
+   - `RECAPTCHA_SECRET_KEY=...`
    - `CORS_ORIGINS=https://YOUR_NETLIFY_SITE.netlify.app`
+     - Required. Production startup now fails fast if this is missing.
+   - `ADMIN_USER=admin` (optional)
+   - `ADMIN_PASS=...` (optional, but must be explicitly set if you want a fallback demo admin account in production)
+   - `EMP_USER=employee` (optional)
+   - `EMP_PASS=...` (optional, but must be explicitly set if you want a fallback demo employee account in production)
+   - `CLIENT_USER=client` (optional)
+   - `CLIENT_PASS=...` (optional, but must be explicitly set if you want a fallback demo client account in production)
    - Cloudinary:
      - `CLOUDINARY_CLOUD_NAME=...`
      - `CLOUDINARY_API_KEY=...`
@@ -30,7 +32,11 @@ Important: the Netlify redirect `"/api/*" -> "/.netlify/functions/api/:splat"` i
      - `CLOUDCONVERT_API_KEY=...`
 
 After deploy, copy your backend base URL, for example:
-`https://mastertech-backend.onrender.com`
+`https://your-backend.onrender.com`
+
+Important:
+- The backend now fails fast in production if `MONGO_URI`, `SESSION_SECRET`, or `CORS_ORIGINS` are missing.
+- Production no longer falls back to built-in demo passwords like `1111`.
 
 ## 2) Deploy Frontend on Netlify
 
@@ -40,12 +46,14 @@ After deploy, copy your backend base URL, for example:
    - Publish directory: `build`
 3. Environment variables (Netlify Site settings -> Environment variables):
    - `BACKEND_API_URL=https://YOUR_RENDER_BACKEND_URL`
-     - Example: `https://mastertech-backend.onrender.com`
+     - Example: `https://your-backend.onrender.com`
      - Do not include `/api` at the end.
+   - `REACT_APP_RECAPTCHA_SITE_KEY=...`
+     - Required for deployed preview and production contact-form testing.
 
 Deploy the site.
 
-## 3) Verify Production
+## 3) Verify Preview Or Production
 
 Open the deployed Netlify site and verify:
 
@@ -55,6 +63,13 @@ Open the deployed Netlify site and verify:
    - Upload works
    - Preview works (PDF, images)
    - Office preview conversion works if `CLOUDCONVERT_API_KEY` is set
+4. Public site:
+   - Theme toggle works on the public routes
+   - Contact renders the live reCAPTCHA widget, not the localhost verification card
+   - The reCAPTCHA widget does not show a Google domain error
+   - Marketing-route titles and descriptions update per route
+
+For a stricter public preview sign-off flow, use `docs/DEPLOY_PREVIEW_VALIDATION.md`.
 
 ## Common Issues
 
@@ -62,4 +77,10 @@ Open the deployed Netlify site and verify:
   - Confirm Netlify env var `BACKEND_API_URL` is set.
   - Confirm Render env var `CORS_ORIGINS` contains your Netlify site URL.
   - Confirm backend is reachable directly at `https://.../api/status`.
+- If the contact widget fails in preview:
+  - Confirm Netlify has `REACT_APP_RECAPTCHA_SITE_KEY`.
+  - Confirm Render has `RECAPTCHA_SECRET_KEY`.
+  - Confirm both values come from the same Google reCAPTCHA project.
+  - Confirm the Google site-key allowlist includes the exact preview hostname.
+
 

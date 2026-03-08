@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Construction Operations Portal favicon</title>
+  <desc id="desc">A geometric operations mark with a green frame, blueprint grid, and bold check path.</desc>
+  <defs>
+    <linearGradient id="shell" x1="16" y1="16" x2="112" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5f8c6d" />
+      <stop offset="1" stop-color="#214c2c" />
+    </linearGradient>
+    <linearGradient id="panel" x1="32" y1="28" x2="96" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0f172a" />
+      <stop offset="1" stop-color="#334155" />
+    </linearGradient>
+  </defs>
+  <path d="M28 18h50l22 22v48c0 12.15-9.85 22-22 22H28c-12.15 0-22-9.85-22-22V40c0-12.15 9.85-22 22-22z" transform="translate(8 0)" fill="url(#shell)" />
+  <path d="M78 18v22h22" fill="#d7e7dc" opacity=".9" />
+  <rect x="30" y="30" width="68" height="68" rx="14" fill="url(#panel)" />
+  <path d="M42 46h44M42 60h44M42 74h28M54 38v52M72 38v36M88 38v18" stroke="#cbd5e1" stroke-linecap="round" stroke-opacity=".4" stroke-width="4" />
+  <path d="M62 80l9 9 21-25" fill="none" stroke="#2f6b3f" stroke-linecap="round" stroke-linejoin="round" stroke-width="9" />
+  <path d="M62 80l9 9 21-25" fill="none" stroke="#f4f6f8" stroke-linecap="round" stroke-linejoin="round" stroke-width="5" />
+  <circle cx="92" cy="36" r="5" fill="#f4f6f8" />
+</svg>
