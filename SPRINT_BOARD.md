@@ -1513,6 +1513,67 @@ Date: 2026-03-08
   - Updated the Vitest-backed `npm test` and `npm run smoke:public-ui` scripts to export `NODE_NO_WARNINGS=1` and run through `node --no-warnings`, which removes the environment-level warning spam while leaving test failures and normal stderr intact.
   - Verified the frontend test suite and public smoke suite complete cleanly without the repeated local-storage warning lines.
 
+## Sprint 24 (Production Visibility and Runbooks)
+
+### P23-1 Production Health Snapshot Command
+- Status: [x] Complete
+- Owner: Full-stack
+- Estimate: 0.5 day
+- Files:
+  - scripts/report-production-health.js
+  - package.json
+  - README.md
+  - SPRINT_BOARD.md
+- Scope:
+  - Add a non-destructive deployed health reporting command that captures the current frontend/backend route status and timings after a release.
+  - Keep it complementary to the strict smoke commands so the repo has both pass/fail verification and a readable status snapshot.
+- Acceptance Criteria:
+  - One command prints a deployed health snapshot for key frontend routes and API boundaries.
+  - The command supports the current Netlify frontend and optional Render backend URL inputs.
+  - README documents the command and its environment variables.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added `npm run report:production-health` to record the deployed status and timing for `/`, `/services`, `/projects`, `/contact`, `/api/status`, and `/api/auth/me` on the frontend origin, plus optional backend `/api/status`.
+  - Added optional `REPORT_JSON=1` output for release notes or incident evidence capture.
+  - Verified with `FRONTEND_URL=https://mastertech4.netlify.app BACKEND_URL=https://mastertech-app-32jm.onrender.com npm run report:production-health`.
+
+### P23-2 Post-Deploy Evidence Capture Template
+- Status: [x] Complete
+- Owner: Full-stack
+- Estimate: 0.25 day
+- Files:
+  - docs/
+  - README.md
+- Scope:
+  - Add a short template for recording release evidence after a production deploy using the smoke and reporting commands.
+  - Keep the template lightweight enough to use during normal deploys.
+- Acceptance Criteria:
+  - The repo has a reusable post-deploy evidence template.
+  - The template references the current production smoke and reporting commands.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added `docs/POST_DEPLOY_EVIDENCE_TEMPLATE.md` as a lightweight deploy record covering release context, automated checks, UI checks, contact/reCAPTCHA checks, metadata checks, and final approval status.
+  - The template references the current deployed verification commands: `verify:release:public`, `smoke:production`, `smoke:deploy-contact`, and `report:production-health`.
+  - Linked the template from the README so post-deploy evidence capture is discoverable from the main release guidance.
+
+### P23-3 Production Alert Threshold Notes
+- Status: [x] Complete
+- Owner: Full-stack
+- Estimate: 0.25 day
+- Files:
+  - docs/
+  - README.md
+- Scope:
+  - Define lightweight operational thresholds for when a failed smoke result or slow health report should block release or trigger follow-up.
+  - Keep the guidance specific to the current Netlify + Render deployment setup.
+- Acceptance Criteria:
+  - The repo documents basic production follow-up thresholds for route failure and slow response timings.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added `docs/PRODUCTION_ALERT_THRESHOLDS.md` to define release blockers, follow-up thresholds, and the healthy deployed baseline for the current Netlify + Render production path.
+  - Linked the threshold guidance from the README and the post-deploy evidence template so release sign-off can classify outcomes consistently.
+  - The thresholds are calibrated to the current production health snapshot: frontend core routes should stay under `1000ms`, while backend `/api/status` should stay under `2000ms`.
+
 ## Completed Outside Sprint Scope
 - 2026-03-08: Fixed two Express 5 wildcard route incompatibilities in `backend/server.js` so the app can run locally on alternate ports without affecting the deployed environment.
 - 2026-03-08: Replaced public-facing office address, hours, phone numbers, and maps link with fictional portfolio-safe contact details across the marketing site.

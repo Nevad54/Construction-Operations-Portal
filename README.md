@@ -220,6 +220,7 @@ Other useful scripts:
 - `npm run check:deploy-config` (fails if deployment templates/docs drift away from the supported Netlify + Render and Render-static env expectations)
 - `npm run check:bundle-budget` (fails if the built JS output exceeds the local demo budget)
 - `npm run check:public-assets` (fails if the tracked public marketing assets exceed the local demo budget)
+- `npm run report:production-health` (prints a live deployed health snapshot with status codes and timings for key public and API routes)
 - `npm run report:unused-uploads` (lists oversized public upload files that are not referenced by the current frontend source)
 - `npm run smoke:local-demo` (checks local frontend + backend demo routes on `3001/3002` or `3101/3102`)
 - `npm run smoke:production` (checks a deployed frontend across core public routes plus `/api/status`, `/api/auth/me`, and a production-safe invalid-token contact probe)
@@ -279,6 +280,12 @@ For one production-safe deploy smoke command that covers the core public routes 
 FRONTEND_URL=https://your-preview-or-production-site BACKEND_URL=https://your-backend-host npm run smoke:production
 ```
 
+For a non-destructive deployed health snapshot with timings, run:
+
+```bash
+FRONTEND_URL=https://your-preview-or-production-site BACKEND_URL=https://your-backend-host npm run report:production-health
+```
+
 Before releasing a deployed contact-flow change, also confirm:
 
 - the backend service has `RECAPTCHA_SECRET_KEY`
@@ -290,8 +297,12 @@ Before releasing a deployed contact-flow change, also confirm:
 
 `smoke:production` combines the deployed public-route shell check with the same-origin API boundary checks and the invalid-token contact probe. It verifies `/`, `/services`, `/projects`, `/contact`, `/api/status`, `/api/auth/me`, and `/api/contact` from the deployed frontend origin, and optionally checks the backend base `/api/status` directly when `BACKEND_URL` is provided.
 
+`report:production-health` is the lighter companion to `smoke:production`: it records status codes and timings for the deployed frontend shell, key public routes, and API boundary. Set `REPORT_JSON=1` if you want the command to also print a JSON payload that can be attached to release notes or incident notes.
+
 Detailed public release sign-off is documented in [`docs/PUBLIC_RELEASE_CHECKLIST.md`](./docs/PUBLIC_RELEASE_CHECKLIST.md).
 Deployed preview sign-off is documented in [`docs/DEPLOY_PREVIEW_VALIDATION.md`](./docs/DEPLOY_PREVIEW_VALIDATION.md).
+Use [`docs/POST_DEPLOY_EVIDENCE_TEMPLATE.md`](./docs/POST_DEPLOY_EVIDENCE_TEMPLATE.md) to capture the actual evidence after a preview or production deploy.
+Use [`docs/PRODUCTION_ALERT_THRESHOLDS.md`](./docs/PRODUCTION_ALERT_THRESHOLDS.md) to decide whether the current smoke/report results should block release or just create follow-up work.
 
 `smoke:local-demo` checks:
 
