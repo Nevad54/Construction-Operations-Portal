@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,5 +23,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build frontend
-        run: npm run build
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Verify public release checks
+        run: npm run verify:release:public
+
+      - name: Verify security audit state
+        run: npm run check:security-audit

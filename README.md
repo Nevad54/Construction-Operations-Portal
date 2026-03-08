@@ -217,10 +217,12 @@ Other useful scripts:
 - `npm run smoke:public-ui` (focused public-route smoke coverage for theme toggle, mobile nav, shared layout, and localhost contact verification)
 - `npm run verify:public-ui` (build + focused public-route smoke coverage)
 - `npm run verify:release:public` (public build, public-route smoke coverage, bundle budget, and tracked public-asset budget)
+- `npm run verify:ci` (runs the same public release and security audit checks used by the GitHub Actions CI workflow)
 - `npm run verify:production` (runs the deployed production smoke, deployed contact probe, and production health report in one pass)
 - `npm run check:deploy-config` (fails if deployment templates/docs drift away from the supported Netlify + Render and Render-static env expectations)
 - `npm run check:bundle-budget` (fails if the built JS output exceeds the local demo budget)
 - `npm run check:public-assets` (fails if the tracked public marketing assets exceed the local demo budget)
+- `npm run check:security-audit` (runs frontend and backend `npm audit --json` checks and fails if either side still has vulnerabilities)
 - `npm run report:production-health` (prints a live deployed health snapshot with status codes and timings for key public and API routes)
 - `npm run report:unused-uploads` (lists oversized public upload files that are not referenced by the current frontend source)
 - `npm run smoke:local-demo` (checks local frontend + backend demo routes on `3001/3002` or `3101/3102`)
@@ -244,6 +246,7 @@ Short operator path:
 5. Classify the outcome with [`docs/PRODUCTION_ALERT_THRESHOLDS.md`](./docs/PRODUCTION_ALERT_THRESHOLDS.md)
 
 The compressed operator version is documented in [`docs/RELEASE_OPERATOR_CHECKLIST.md`](./docs/RELEASE_OPERATOR_CHECKLIST.md).
+For a local reproduction of the current GitHub Actions gate, run `npm run verify:ci`.
 
 Run this sequence before shipping demo or production changes:
 
@@ -324,6 +327,8 @@ Use [`docs/RELEASE_OPERATOR_CHECKLIST.md`](./docs/RELEASE_OPERATOR_CHECKLIST.md)
 Use [`docs/POST_DEPLOY_EVIDENCE_TEMPLATE.md`](./docs/POST_DEPLOY_EVIDENCE_TEMPLATE.md) to capture the actual evidence after a preview or production deploy.
 Use [`docs/PRODUCTION_HEALTH_REPORT_EXAMPLE.md`](./docs/PRODUCTION_HEALTH_REPORT_EXAMPLE.md) if you need a concrete `REPORT_JSON=1` example for release notes or incident notes.
 Use [`docs/PRODUCTION_ALERT_THRESHOLDS.md`](./docs/PRODUCTION_ALERT_THRESHOLDS.md) to decide whether the current smoke/report results should block release or just create follow-up work.
+Use [`docs/VULNERABILITY_REMEDIATION_PLAN.md`](./docs/VULNERABILITY_REMEDIATION_PLAN.md) to reconcile the current clean local audits with any stale GitHub security banner counts.
+The GitHub Actions CI workflow now runs `npm run verify:release:public` and `npm run check:security-audit` on pushes and pull requests to `main`.
 
 `smoke:local-demo` checks:
 

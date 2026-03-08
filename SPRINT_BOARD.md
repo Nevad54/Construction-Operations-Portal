@@ -1632,6 +1632,70 @@ Date: 2026-03-08
   - Linked the example from the README, release operator checklist, and post-deploy evidence template so operators have a reference shape when attaching JSON evidence to release or incident notes.
   - Captured the example from a real run against `https://mastertech4.netlify.app` and `https://mastertech-app-32jm.onrender.com`, while keeping the doc positioned as a formatting reference rather than a fixed SLA snapshot.
 
+## Sprint 26 (Security Signal Reconciliation)
+
+### P25-1 Vulnerability Remediation Plan
+- Status: [x] Complete
+- Owner: Full-stack
+- Estimate: 0.5 day
+- Files:
+  - scripts/check-security-audit.js
+  - package.json
+  - docs/VULNERABILITY_REMEDIATION_PLAN.md
+  - README.md
+  - SPRINT_BOARD.md
+- Scope:
+  - Reconcile the current GitHub vulnerability banner with the actual dependency state in the repo.
+  - Add a repo-level security audit command and document the follow-up path if GitHub still reports stale alerts.
+- Acceptance Criteria:
+  - The repo has one command that checks frontend and backend `npm audit` state together.
+  - The remediation plan documents the current findings and the next follow-up path for stale GitHub alerts.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added `npm run check:security-audit`, which runs `npm audit --json` for both the frontend and backend and fails if either side still has vulnerabilities.
+  - Added `docs/VULNERABILITY_REMEDIATION_PLAN.md` documenting that current local audits are clean (`0` frontend, `0` backend) and that the remaining GitHub `14 high` banner is likely stale or tied to older alert state.
+  - Verified with `npm audit --json` in the repo root, `npm audit --json` in `backend/`, and `npm run check:security-audit`.
+
+### P25-2 Deploy Config CI Gate
+- Status: [x] Complete
+- Owner: Full-stack
+- Estimate: 0.5 day
+- Files:
+  - .github/
+  - package.json
+  - README.md
+- Scope:
+  - Add CI coverage for the current release/deploy verification path so config drift is caught before manual release time.
+  - Keep the workflow focused on the repo's current public release and security commands.
+- Acceptance Criteria:
+  - CI runs the repo's public release verification and security audit checks.
+- Notes:
+  - Completed on 2026-03-08.
+  - Updated the existing GitHub Actions workflow in `.github/workflows/ci.yml` so pushes and pull requests to `main` now run the repo's public release verification path and the combined frontend/backend security audit check.
+  - The workflow now installs both root and backend dependencies before running `npm run verify:release:public` and `npm run check:security-audit`.
+  - Updated the README to document that the CI gate now covers the public release checks and security audit state.
+
+### P25-3 CI Parity Command
+- Status: [x] Complete
+- Owner: Full-stack
+- Estimate: 0.25 day
+- Files:
+  - scripts/verify-ci.js
+  - package.json
+  - README.md
+  - SPRINT_BOARD.md
+- Scope:
+  - Add one local command that mirrors the current GitHub Actions CI gate so CI failures are easier to reproduce before pushing.
+  - Keep the parity command aligned with the workflow's current public release and security audit checks.
+- Acceptance Criteria:
+  - One command runs the same checks as the current CI workflow.
+  - README documents the CI parity command.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added `npm run verify:ci`, which runs `verify:release:public` and `check:security-audit` in sequence and fails fast if either step fails.
+  - Implemented the wrapper as a Node script so it behaves consistently across Windows and non-Windows environments, matching the current operator-command pattern used elsewhere in the repo.
+  - Updated the README so the CI parity path is visible from the release guidance.
+
 ## Completed Outside Sprint Scope
 - 2026-03-08: Fixed two Express 5 wildcard route incompatibilities in `backend/server.js` so the app can run locally on alternate ports without affecting the deployed environment.
 - 2026-03-08: Replaced public-facing office address, hours, phone numbers, and maps link with fictional portfolio-safe contact details across the marketing site.
