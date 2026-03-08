@@ -65,6 +65,7 @@
     "smoke:admin": "node backend/scripts/smoke-admin-dashboard.js",
     "smoke:contact": "node backend/scripts/smoke-contact.js",
     "verify:demo": "node scripts/verify-demo.js",
+    "verify:production": "node scripts/verify-production.js",
     "verify:public-ui": "npm run build && npm run smoke:public-ui",
     "verify:release:public": "npm run verify:public-ui && npm run check:bundle-budget && npm run check:public-assets && npm run check:deploy-config",
     "smoke:rbac": "node backend/scripts/smoke-rbac.js",

@@ -34,6 +34,8 @@ If useful, paste the health summary lines here:
 Summary:
 ```
 
+If you need the JSON shape for a release note or incident note, use [`PRODUCTION_HEALTH_REPORT_EXAMPLE.md`](./PRODUCTION_HEALTH_REPORT_EXAMPLE.md) as the reference.
+
 ## UI Checks
 
 - light mode checked:

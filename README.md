@@ -217,6 +217,7 @@ Other useful scripts:
 - `npm run smoke:public-ui` (focused public-route smoke coverage for theme toggle, mobile nav, shared layout, and localhost contact verification)
 - `npm run verify:public-ui` (build + focused public-route smoke coverage)
 - `npm run verify:release:public` (public build, public-route smoke coverage, bundle budget, and tracked public-asset budget)
+- `npm run verify:production` (runs the deployed production smoke, deployed contact probe, and production health report in one pass)
 - `npm run check:deploy-config` (fails if deployment templates/docs drift away from the supported Netlify + Render and Render-static env expectations)
 - `npm run check:bundle-budget` (fails if the built JS output exceeds the local demo budget)
 - `npm run check:public-assets` (fails if the tracked public marketing assets exceed the local demo budget)
@@ -233,6 +234,16 @@ Other useful scripts:
 - `npm run optimize` (build + bundle analysis)
 
 ### Release Gate
+
+Short operator path:
+
+1. Run `npm run verify:release:public`
+2. Deploy
+3. Run `FRONTEND_URL=... BACKEND_URL=... npm run verify:production`
+4. Record the result in [`docs/POST_DEPLOY_EVIDENCE_TEMPLATE.md`](./docs/POST_DEPLOY_EVIDENCE_TEMPLATE.md)
+5. Classify the outcome with [`docs/PRODUCTION_ALERT_THRESHOLDS.md`](./docs/PRODUCTION_ALERT_THRESHOLDS.md)
+
+The compressed operator version is documented in [`docs/RELEASE_OPERATOR_CHECKLIST.md`](./docs/RELEASE_OPERATOR_CHECKLIST.md).
 
 Run this sequence before shipping demo or production changes:
 
@@ -286,6 +297,12 @@ For a non-destructive deployed health snapshot with timings, run:
 FRONTEND_URL=https://your-preview-or-production-site BACKEND_URL=https://your-backend-host npm run report:production-health
 ```
 
+For one operator-facing production verification pass, run:
+
+```bash
+FRONTEND_URL=https://your-preview-or-production-site BACKEND_URL=https://your-backend-host npm run verify:production
+```
+
 Before releasing a deployed contact-flow change, also confirm:
 
 - the backend service has `RECAPTCHA_SECRET_KEY`
@@ -299,9 +316,13 @@ Before releasing a deployed contact-flow change, also confirm:
 
 `report:production-health` is the lighter companion to `smoke:production`: it records status codes and timings for the deployed frontend shell, key public routes, and API boundary. Set `REPORT_JSON=1` if you want the command to also print a JSON payload that can be attached to release notes or incident notes.
 
+`verify:production` runs `smoke:production`, `smoke:deploy-contact`, and `report:production-health` in sequence, so deployed verification can be repeated with one command during release sign-off.
+
 Detailed public release sign-off is documented in [`docs/PUBLIC_RELEASE_CHECKLIST.md`](./docs/PUBLIC_RELEASE_CHECKLIST.md).
 Deployed preview sign-off is documented in [`docs/DEPLOY_PREVIEW_VALIDATION.md`](./docs/DEPLOY_PREVIEW_VALIDATION.md).
+Use [`docs/RELEASE_OPERATOR_CHECKLIST.md`](./docs/RELEASE_OPERATOR_CHECKLIST.md) for the fastest operator path during deploys.
 Use [`docs/POST_DEPLOY_EVIDENCE_TEMPLATE.md`](./docs/POST_DEPLOY_EVIDENCE_TEMPLATE.md) to capture the actual evidence after a preview or production deploy.
+Use [`docs/PRODUCTION_HEALTH_REPORT_EXAMPLE.md`](./docs/PRODUCTION_HEALTH_REPORT_EXAMPLE.md) if you need a concrete `REPORT_JSON=1` example for release notes or incident notes.
 Use [`docs/PRODUCTION_ALERT_THRESHOLDS.md`](./docs/PRODUCTION_ALERT_THRESHOLDS.md) to decide whether the current smoke/report results should block release or just create follow-up work.
 
 `smoke:local-demo` checks:

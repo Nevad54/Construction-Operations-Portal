@@ -1574,6 +1574,64 @@ Date: 2026-03-08
   - Linked the threshold guidance from the README and the post-deploy evidence template so release sign-off can classify outcomes consistently.
   - The thresholds are calibrated to the current production health snapshot: frontend core routes should stay under `1000ms`, while backend `/api/status` should stay under `2000ms`.
 
+## Sprint 25 (Deploy Operator Workflow)
+
+### P24-1 Unified Production Verification Command
+- Status: [x] Complete
+- Owner: Full-stack
+- Estimate: 0.25 day
+- Files:
+  - scripts/verify-production.js
+  - package.json
+  - README.md
+  - SPRINT_BOARD.md
+- Scope:
+  - Add one operator-facing command that runs the deployed production smoke, contact probe, and health report in one sequence.
+  - Reduce release friction by removing the need to remember the individual deployed verification commands.
+- Acceptance Criteria:
+  - One command verifies the deployed frontend and optional backend URLs end to end.
+  - README documents the command and required env vars.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added `npm run verify:production`, which runs `smoke:production`, `smoke:deploy-contact`, and `report:production-health` in sequence and fails fast if any step fails.
+  - The verification wrapper is implemented as a Node script instead of shell chaining so it behaves consistently across Windows and non-Windows environments.
+  - Verified with `FRONTEND_URL=https://mastertech4.netlify.app BACKEND_URL=https://mastertech-app-32jm.onrender.com npm run verify:production`.
+
+### P24-2 Release Operator Checklist Compression
+- Status: [x] Complete
+- Owner: Full-stack
+- Estimate: 0.25 day
+- Files:
+  - README.md
+  - docs/
+- Scope:
+  - Compress the release operator guidance so the primary deploy path is faster to scan under time pressure.
+  - Keep the detailed docs, but surface the short path first.
+- Acceptance Criteria:
+  - The repo has a short-form release operator checklist that points at the current unified production verification command.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added `docs/RELEASE_OPERATOR_CHECKLIST.md` as the compressed operator path for pre-deploy verification, deploy, post-deploy `verify:production`, evidence capture, and block/follow-up handling.
+  - Updated the README release section so the short operator path appears before the longer command reference and deeper deployment docs.
+  - The compressed checklist points at the current unified production verification command instead of the older individual deploy checks.
+
+### P24-3 Production Evidence JSON Example
+- Status: [x] Complete
+- Owner: Full-stack
+- Estimate: 0.25 day
+- Files:
+  - docs/
+- Scope:
+  - Add one concrete example of the `REPORT_JSON=1` health-report output so release evidence is easier to standardize.
+  - Keep the example fictional but structurally accurate.
+- Acceptance Criteria:
+  - The repo includes a copy/paste-safe example of the current production evidence payload.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added `docs/PRODUCTION_HEALTH_REPORT_EXAMPLE.md` with a structurally accurate `REPORT_JSON=1` sample from the current production health report flow.
+  - Linked the example from the README, release operator checklist, and post-deploy evidence template so operators have a reference shape when attaching JSON evidence to release or incident notes.
+  - Captured the example from a real run against `https://mastertech4.netlify.app` and `https://mastertech-app-32jm.onrender.com`, while keeping the doc positioned as a formatting reference rather than a fixed SLA snapshot.
+
 ## Completed Outside Sprint Scope
 - 2026-03-08: Fixed two Express 5 wildcard route incompatibilities in `backend/server.js` so the app can run locally on alternate ports without affecting the deployed environment.
 - 2026-03-08: Replaced public-facing office address, hours, phone numbers, and maps link with fictional portfolio-safe contact details across the marketing site.
