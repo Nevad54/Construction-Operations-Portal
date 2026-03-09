@@ -1,6 +1,6 @@
 # Construction Operations Portal
 
-A full-stack construction company web app with a public marketing site, role-based dashboards, project tracking, file management, and contact inquiry operations.
+A full-stack hybrid construction operations platform: public contractor marketing, client-facing portal positioning, and role-based internal dashboards for project visibility, files, and inquiry operations.
 
 ![Node](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=222)
@@ -14,49 +14,58 @@ A full-stack construction company web app with a public marketing site, role-bas
 
 ## Screenshots
 
-- `docs/screenshots/home-light.png` - Public homepage (light mode)
-- `docs/screenshots/home-dark.png` - Public homepage (dark mode)
-- `docs/screenshots/projects-list.png` - Projects listing with filters
-- `docs/screenshots/contact-form.png` - Contact + reCAPTCHA flow
-- `docs/screenshots/admin-dashboard.png` - Admin overview dashboard
-- `docs/screenshots/admin-inquiries.png` - Inquiry status/priority management
-- `docs/screenshots/admin-reports.png` - Analytics cards and activity
-- `docs/screenshots/mobile-nav.png` - Mobile navigation and responsive layout
+- `docs/screenshots/home-light-hero.png` - Public homepage hero (light mode)
+- `docs/screenshots/home-dark-hero.png` - Public homepage hero (dark mode)
+- `docs/screenshots/projects-case-studies.png` - Projects route with case-study proof framing
+- `docs/screenshots/residential-landing.png` - Residential segment landing page
+- `docs/screenshots/about-hybrid-positioning.png` - About page hybrid positioning section
+- `docs/screenshots/client-portal.png` - Public client-portal positioning page
+- `docs/screenshots/client-workspace.png` - Authenticated client workspace summary
+- `docs/screenshots/admin-projects-dashboard.png` - Admin projects dashboard
+- `docs/screenshots/admin-accounts-queue.png` - Admin accounts and inquiry queue
+- `docs/screenshots/admin-reporting-overview.png` - Admin reporting overview
 
 ### Public Experience
 
-![Home Light](docs/screenshots/home-light.png)
-![Home Dark](docs/screenshots/home-dark.png)
-![Projects List](docs/screenshots/projects-list.png)
-![Contact Form](docs/screenshots/contact-form.png)
+![Home Light Hero](docs/screenshots/home-light-hero.png)
+![Home Dark Hero](docs/screenshots/home-dark-hero.png)
+![Projects Case Studies](docs/screenshots/projects-case-studies.png)
+![Residential Landing](docs/screenshots/residential-landing.png)
+![About Hybrid Positioning](docs/screenshots/about-hybrid-positioning.png)
+![Client Portal](docs/screenshots/client-portal.png)
+
+### Client Experience
+
+![Client Workspace](docs/screenshots/client-workspace.png)
 
 ### Admin Experience
 
-![Admin Dashboard](docs/screenshots/admin-dashboard.png)
-![Admin Inquiries](docs/screenshots/admin-inquiries.png)
-![Admin Reports](docs/screenshots/admin-reports.png)
-
-### Mobile
-
-![Mobile Navigation](docs/screenshots/mobile-nav.png)
-![Mobile Home Light](docs/screenshots/mobile-home-light.png)
-![Mobile Home Dark](docs/screenshots/mobile-home-dark.png)
-![Mobile Projects](docs/screenshots/mobile-projects.png)
-![Mobile Contact](docs/screenshots/mobile-contact.png)
-![Mobile Admin Dashboard](docs/screenshots/mobile-admin-dashboard.png)
-![Mobile Sidebar](docs/screenshots/mobile-sidebar.png)
-![Mobile Reports](docs/screenshots/mobile-reports.png)
+![Admin Projects Dashboard](docs/screenshots/admin-projects-dashboard.png)
+![Admin Accounts Queue](docs/screenshots/admin-accounts-queue.png)
+![Admin Reporting Overview](docs/screenshots/admin-reporting-overview.png)
 
 ## Highlights
 
-- Public client pages: home, about, services, projects, contact
+- Public hybrid positioning: contractor marketing plus a dedicated client-portal value story
+- Public client pages: home, about, services, projects, client portal, safety, contact
 - Admin dashboard: projects, contacts/inquiries, analytics, account management, settings
-- User dashboard: assigned projects and workspace
+- User workspace: files and account settings with a simplified dashboard shell
+- Client workspace: summary view plus shared file library for current handoff visibility
 - Role-based auth: admin, employee (`user`), client
 - Project lifecycle: ongoing/completed, CRUD, media support
 - File management workspace with visibility controls and activity tracking
 - Contact workflow: reCAPTCHA-protected submissions, inquiry status/priority/assignment updates
 - Responsive UI with mobile navigation/sidebar improvements
+
+## Product Positioning
+
+This repo is positioned as a hybrid construction operations product.
+
+- The public site sells the service business: sectors served, project proof, safety posture, and contact intake.
+- The client portal side sells the operating experience: shared files, current workspace visibility, and cleaner handoffs.
+- The admin and user dashboards prove the internal system behind that promise: role-aware routing, inquiry ownership, reporting, and release verification.
+
+That framing is stronger than treating the app as a pure brochure site or pretending it is a generic SaaS product with no delivery context.
 
 ## Tech Stack
 
@@ -80,10 +89,17 @@ A full-stack construction company web app with a public marketing site, role-bas
   - `/about`
   - `/services`
   - `/projects`
+  - `/client-portal`
+  - `/safety`
   - `/contact`
+  - `/solutions/industrial`
+  - `/solutions/commercial`
+  - `/solutions/renovation`
+  - `/solutions/residential`
 - Auth:
   - `/login/admin`
   - `/login/user`
+  - `/login/client`
 - Admin:
   - `/admin/dashboard/projects`
   - `/admin/dashboard/files`
@@ -92,6 +108,9 @@ A full-stack construction company web app with a public marketing site, role-bas
   - `/admin/dashboard/settings`
 - User:
   - `/user/dashboard`
+- Client:
+  - `/client/workspace`
+  - `/client/files`
 
 ## API Surface (selected)
 
@@ -229,6 +248,7 @@ Other useful scripts:
 - `npm run smoke:production` (checks a deployed frontend across core public routes plus `/api/status`, `/api/auth/me`, and a production-safe invalid-token contact probe)
 - `npm run smoke:deploy-runtime` (checks a frontend origin and its API boundary via `/`, `/api/status`, and anonymous `/api/auth/me`)
 - `npm run smoke:deploy-contact` (checks a deployed contact route and sends a production-safe invalid reCAPTCHA probe to `/api/contact`)
+- `npm run smoke:admin-authenticated` (checks local or deployed admin shell routes plus authenticated admin APIs through the frontend origin)
 - `npm run smoke:admin` (logs in as admin and checks the dashboard API shape locally)
 - `npm run smoke:contact` (submits a local demo inquiry to the public contact endpoint)
 - `npm run verify:demo` (builds, checks the bundle budget, boots an isolated demo backend, and runs the full local demo smoke set)
@@ -265,6 +285,7 @@ If the backend is running locally, also run:
 ```bash
 npm run smoke:public-ui
 npm run smoke:local-demo
+npm run smoke:admin-authenticated
 npm run smoke:admin
 npm run smoke:contact
 npm run smoke:rbac
@@ -287,6 +308,14 @@ For a deployed contact-flow check that does not create a real inquiry, run:
 ```bash
 FRONTEND_URL=https://your-preview-or-production-site npm run smoke:deploy-contact
 ```
+
+For an authenticated admin smoke pass through the frontend origin, run:
+
+```bash
+FRONTEND_URL=https://your-preview-or-production-site npm run smoke:admin-authenticated
+```
+
+On localhost, the same command can auto-detect `3101` or `3001` and will create a temporary admin account only if the default admin login is rejected. On any non-local frontend URL, it will not create an account and instead requires valid `ADMIN_USER` and `ADMIN_PASS` credentials in the environment.
 
 For one production-safe deploy smoke command that covers the core public routes and contact path together, run:
 
@@ -316,6 +345,8 @@ Before releasing a deployed contact-flow change, also confirm:
 `smoke:deploy-contact` validates the deployed `/contact` route and then posts a fictional inquiry with an intentionally invalid reCAPTCHA token. The expected result is a `400` JSON response with the reCAPTCHA failure payload, which proves the deployed contact path is wired up without generating a real inquiry.
 
 `smoke:production` combines the deployed public-route shell check with the same-origin API boundary checks and the invalid-token contact probe. It verifies `/`, `/services`, `/projects`, `/contact`, `/api/status`, `/api/auth/me`, and `/api/contact` from the deployed frontend origin, and optionally checks the backend base `/api/status` directly when `BACKEND_URL` is provided.
+
+`smoke:admin-authenticated` extends the deployed or local smoke coverage into the admin side. It verifies `/login/admin`, `/admin/dashboard/projects`, and `/admin/dashboard/reports` through the frontend origin, logs in as admin, confirms `/api/auth/me`, `/api/projects`, `/api/admin/kpis`, and `/api/admin/inquiries?limit=3`, then verifies logout returns the session to `401 Unauthorized`.
 
 `report:production-health` is the lighter companion to `smoke:production`: it records status codes and timings for the deployed frontend shell, key public routes, and API boundary. Set `REPORT_JSON=1` if you want the command to also print a JSON payload that can be attached to release notes or incident notes.
 
@@ -425,7 +456,9 @@ The Netlify and Render static-frontend builds install devDependencies during the
 
 For portfolio presentation, frame this as:
 
-- A production-style SMB web platform
+- A hybrid construction operations product, not just a brochure site
+- Contractor marketing paired with a client-portal value proposition
+- A client workspace that turns the portal promise into a usable in-app summary, not just a file dump
 - Practical RBAC + operations dashboard implementation
 - Full workflow from lead capture to operational handling
 - Emphasis on responsive UX, reliability fallback, and deployment-ready setup

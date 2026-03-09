@@ -89,6 +89,11 @@ const renderAdminDashboard = (route) =>
     </MemoryRouter>
   );
 
+const setViewportWidth = (width) => {
+  window.innerWidth = width;
+  window.dispatchEvent(new Event('resize'));
+};
+
 describe('AdminDashboard route shell', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -221,6 +226,15 @@ describe('AdminDashboard route shell', () => {
     expect(screen.queryByRole('searchbox', { name: 'Search work orders' })).not.toBeInTheDocument();
   });
 
+  test('reports route shows the operator summary before detailed KPI cards', async () => {
+    renderAdminDashboard('/admin/dashboard/reports');
+
+    expect(await screen.findByText('Operations Summary')).toBeInTheDocument();
+    expect(screen.getByText('Response posture')).toBeInTheDocument();
+    expect(screen.getByText('Inquiry pressure')).toBeInTheDocument();
+    expect(screen.getByText('Follow-up drift present')).toBeInTheDocument();
+  });
+
   test('files route renders the admin file manager shell without work-order search', async () => {
     renderAdminDashboard('/admin/dashboard/files');
 
@@ -254,5 +268,42 @@ describe('AdminDashboard route shell', () => {
     expect(await screen.findByText('Could not load projects.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(refreshProjects).toHaveBeenCalledTimes(1);
+  });
+
+  test('projects route supports the mobile menu drawer and mobile search toggle', async () => {
+    setViewportWidth(390);
+    renderAdminDashboard('/admin/dashboard/projects');
+
+    expect(await screen.findByRole('button', { name: 'Toggle sidebar' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Close sidebar overlay' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle sidebar' }));
+
+    expect(await screen.findByText('Admin portal')).toBeInTheDocument();
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close sidebar overlay' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close sidebar overlay' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Close sidebar overlay' })).not.toBeInTheDocument();
+    });
+
+    expect(screen.getAllByRole('searchbox', { name: 'Search work orders' })).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    expect(await screen.findAllByRole('searchbox', { name: 'Search work orders' })).toHaveLength(2);
+    expect(screen.getAllByPlaceholderText('Search work orders, locations, or owners')).toHaveLength(2);
+  });
+
+  test('reports route keeps mobile navigation available without exposing project search', async () => {
+    setViewportWidth(390);
+    renderAdminDashboard('/admin/dashboard/reports');
+
+    expect(await screen.findByRole('heading', { name: 'Read operational health before issues compound.' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Toggle sidebar' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Search' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle sidebar' }));
+    expect(await screen.findByText('Analytics')).toBeInTheDocument();
   });
 });

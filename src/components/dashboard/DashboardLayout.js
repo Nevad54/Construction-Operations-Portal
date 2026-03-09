@@ -18,7 +18,7 @@ export default function DashboardLayout({
   rightSidebar = null,
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [desktopSidebarExpanded, setDesktopSidebarExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isXlUp, setIsXlUp] = useState(false);
   const [authUser, setAuthUser] = useState(null);
@@ -30,6 +30,8 @@ export default function DashboardLayout({
       setIsXlUp(window.innerWidth >= 1280);
       if (window.innerWidth >= 1024) {
         setSidebarOpen(false); // Close mobile sidebar on desktop
+      } else {
+        setDesktopSidebarExpanded(false);
       }
     };
 
@@ -58,16 +60,16 @@ export default function DashboardLayout({
 
   const toggleSidebar = () => setSidebarOpen((o) => !o);
   const closeSidebar = () => setSidebarOpen(false);
-  const toggleSidebarCollapse = () => setSidebarCollapsed((c) => !c);
+  const desktopSidebarWidthClass = desktopSidebarExpanded ? 'lg:pl-64' : 'lg:pl-20';
+  const desktopTopbarOffsetClass = desktopSidebarExpanded ? 'lg:left-64' : 'lg:left-20';
 
   return (
     <div className="min-h-screen bg-surface-page dark:bg-gray-950 text-text-primary dark:text-gray-100 transition-colors duration-fast">
       <DashboardTopNav 
         onMenuClick={toggleSidebar} 
         sidebarOpen={sidebarOpen}
-        onToggleSidebarCollapse={toggleSidebarCollapse}
-        sidebarCollapsed={sidebarCollapsed}
         isMobile={isMobile}
+        desktopOffsetClass={desktopTopbarOffsetClass}
         searchQuery={searchQuery}
         onSearchChange={onSearchChange}
         showSearch={showSearch}
@@ -77,9 +79,9 @@ export default function DashboardLayout({
       />
       <DashboardSidebar
         open={sidebarOpen}
-        collapsed={sidebarCollapsed}
+        expanded={desktopSidebarExpanded}
         onClose={closeSidebar}
-        onToggleCollapse={toggleSidebarCollapse}
+        onExpandChange={setDesktopSidebarExpanded}
         isMobile={isMobile}
         menuItems={sidebarMenuItems}
         homePath={sidebarHomePath}
@@ -89,7 +91,7 @@ export default function DashboardLayout({
       <main 
         className={`
           pt-16 flex transition-all duration-300 ease-out min-h-screen
-          ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}
+          ${desktopSidebarWidthClass}
         `}
       >
         <div className="flex-1 min-w-0 w-full flex flex-col">

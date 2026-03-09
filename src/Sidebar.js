@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Dropdown from './Dropdown';
 import { useTheme } from './context/ThemeContext';
 
 const Sidebar = ({ isSidebarActive, setIsSidebarActive, setIsNavLinksActive, activePage }) => {
@@ -10,10 +9,6 @@ const Sidebar = ({ isSidebarActive, setIsSidebarActive, setIsNavLinksActive, act
     setIsSidebarActive(false);
     setIsNavLinksActive(false);
   };
-  const closeNavLinks = () => {
-    setIsNavLinksActive(false);
-  };
-
   return (
     <>
       <div
@@ -52,14 +47,19 @@ const Sidebar = ({ isSidebarActive, setIsSidebarActive, setIsNavLinksActive, act
             <i className="fas fa-cogs"></i> Services
           </Link>
         </li>
-        <Dropdown
-          isActive={activePage === 'vision-mission' ? 'vision-mission' : activePage === 'core-values' ? 'core-values' : activePage === 'safety' ? 'safety' : false}
-          closeSidebar={closeSidebar}
-          closeNavLinks={closeNavLinks}
-        />
         <li>
           <Link to="/projects" onClick={closeSidebar} className={activePage === 'projects' ? 'active' : ''}>
             <i className="fas fa-project-diagram"></i> Projects
+          </Link>
+        </li>
+        <li>
+          <Link to="/client-portal" onClick={closeSidebar} className={activePage === 'client-portal' ? 'active' : ''}>
+            <i className="fas fa-layer-group"></i> Client Portal
+          </Link>
+        </li>
+        <li>
+          <Link to="/safety" onClick={closeSidebar} className={activePage === 'safety' ? 'active' : ''}>
+            <i className="fas fa-shield-alt"></i> Safety
           </Link>
         </li>
         <li>

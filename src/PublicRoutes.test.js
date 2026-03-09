@@ -7,11 +7,11 @@ import { ThemeProvider } from './context/ThemeContext';
 import { trackEvent } from './utils/analytics';
 import Home from './Home';
 import Services from './Services';
+import ClientPortal from './ClientPortal';
 import ResidentialLandingPage from './ResidentialLandingPage';
 import IndustrialLandingPage from './IndustrialLandingPage';
 import CommercialLandingPage from './CommercialLandingPage';
 import RenovationLandingPage from './RenovationLandingPage';
-import VisionMission from './VisionMission';
 import About from './About';
 import Contact from './Contact';
 import { pageMetaDefaults } from './utils/pageMeta';
@@ -104,13 +104,13 @@ const renderPublicRoute = (initialPath, element) => render(
         <Route path="/" element={<Home />} />
         <Route path="/services" element={<Services />} />
         <Route path="/about" element={<About />} />
+        <Route path="/client-portal" element={<ClientPortal />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/projects" element={<div>Projects Route</div>} />
         <Route path="/solutions/industrial" element={<IndustrialLandingPage />} />
         <Route path="/solutions/commercial" element={<CommercialLandingPage />} />
         <Route path="/solutions/renovation" element={<RenovationLandingPage />} />
         <Route path="/solutions/residential" element={<ResidentialLandingPage />} />
-        <Route path="/vision-mission" element={<VisionMission />} />
         <Route path="*" element={element} />
       </Routes>
     </MemoryRouter>
@@ -234,10 +234,10 @@ describe('public route rendering', () => {
     );
   });
 
-  test('commitment route keeps the shared header balanced and marks the dropdown section active', async () => {
+  test('client portal route keeps the shared header balanced and marks the portal nav item active', async () => {
     localStorage.setItem('theme', 'dark');
 
-    renderPublicRoute('/vision-mission', <VisionMission />);
+    renderPublicRoute('/client-portal', <ClientPortal />);
 
     await waitFor(() => {
       expect(document.documentElement.classList.contains('dark')).toBe(true);
@@ -248,11 +248,23 @@ describe('public route rendering', () => {
     expect(within(brandLink).getByText('Ops')).toBeInTheDocument();
 
     const headerBanner = screen.getByRole('banner');
-    const commitmentTrigger = within(headerBanner).getByRole('button', { name: /Commitment/i });
-    expect(commitmentTrigger).toHaveAttribute('aria-current', 'page');
-    expect(commitmentTrigger.closest('li')).toHaveClass('active');
+    const portalLink = within(headerBanner).getByRole('link', { name: /Client Portal/i });
+    expect(portalLink).toHaveAttribute('aria-current', 'page');
+    expect(portalLink.closest('li')).toHaveClass('active');
 
     expect(screen.getAllByRole('button', { name: /Switch to light mode/i }).length).toBeGreaterThan(0);
+  });
+
+  test('client portal route explains the hybrid portal value clearly', async () => {
+    renderPublicRoute('/client-portal', <ClientPortal />);
+
+    expect(screen.getByRole('heading', {
+      name: /Client visibility built into the delivery workflow/i,
+    })).toBeInTheDocument();
+    expect(screen.getByRole('heading', {
+      name: /What the portal already supports/i,
+    })).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByRole('link', { name: /Request a site assessment/i })).toBeInTheDocument();
   });
 
   test('services route renders in dark mode with the primary CTA and service copy', async () => {
@@ -311,6 +323,19 @@ describe('public route rendering', () => {
     })).toBeInTheDocument();
   });
 
+  test('residential landing route sells owner visibility and portal-backed turnover, not just generic fit-out copy', async () => {
+    renderPublicRoute('/solutions/residential', <ResidentialLandingPage />);
+
+    expect(screen.getByRole('heading', {
+      name: /Premium residential execution for renovations and fit-outs that need finish quality, owner clarity, and disciplined turnover/i,
+    })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /How residential clients stay aligned/i })).toBeInTheDocument();
+    expect(screen.getByText(/Selection and approval visibility/i)).toBeInTheDocument();
+    expect(screen.getByText(/portal keeps that communication in one visible place/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Bright premium residential interior with a renovated living room and minimalist finishes/i)).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getAllByRole('link', { name: /Request a site assessment/i }).length).toBeGreaterThan(0);
+  });
+
   test('contact route keeps its support cards and location module aligned in light mode', async () => {
     renderPublicRoute('/contact', <Contact />);
 
@@ -350,6 +375,28 @@ describe('public route rendering', () => {
       expect(screen.getByRole('button', { name: /Local Verification Complete/i })).toBeDisabled();
       expect(screen.getByRole('button', { name: /^Request Site Assessment$/i })).toBeEnabled();
     });
+  });
+
+  test('contact route accepts prefilled client workspace follow-up context', async () => {
+    renderPublicRoute(
+      '/contact?projectType=Residential+Renovation&source=client-workspace&message=Need+follow-up+on+homeowner-closeout-package.pdf',
+      <Contact />
+    );
+
+    expect(await screen.findByText(/prefilled from the client workspace/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Project Type/i)).toHaveValue('Residential Renovation');
+    expect(screen.getByLabelText(/Project Scope/i)).toHaveValue('Need follow-up on homeowner-closeout-package.pdf');
+  });
+
+  test('contact route adjusts the prefill notice for client approval decisions', async () => {
+    renderPublicRoute(
+      '/contact?projectType=Commercial+Fit-Out&source=client-workspace&context=approval-approved&message=Approving+permit+set',
+      <Contact />
+    );
+
+    expect(await screen.findByText(/approval was prefilled from the client workspace/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Project Type/i)).toHaveValue('Commercial Fit-Out');
+    expect(screen.getByLabelText(/Project Scope/i)).toHaveValue('Approving permit set');
   });
 
   test('contact route exposes accessible validation state for required fields', async () => {
@@ -407,6 +454,35 @@ describe('public route rendering', () => {
     );
   });
 
+  test('contact route keeps client workspace source metadata on submission and offers a return path', async () => {
+    renderPublicRoute(
+      '/contact?projectType=Industrial+Retrofit&source=client-workspace&context=follow-up-request&message=Need+status+on+permit+set',
+      <Contact />
+    );
+
+    await userEvent.type(screen.getByLabelText(/Full Name/i), 'Client Follow Up');
+    await userEvent.type(screen.getByLabelText(/Email/i), 'client.followup@example.com');
+    await userEvent.click(screen.getByRole('button', { name: /Enable Local Verification/i }));
+    await userEvent.click(screen.getByRole('button', { name: /^Request Site Assessment$/i }));
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    const [, requestOptions] = global.fetch.mock.calls[0];
+    expect(JSON.parse(requestOptions.body)).toMatchObject({
+      name: 'Client Follow Up',
+      email: 'client.followup@example.com',
+      projectType: 'Industrial Retrofit',
+      message: 'Need status on permit set',
+      source: 'client-workspace',
+      context: 'follow-up-request',
+      recaptchaToken: 'local-dev-bypass-token',
+    });
+
+    expect(await screen.findByRole('link', { name: /Return to client workspace/i })).toHaveAttribute('href', '/client/workspace');
+  });
+
   test('contact route keeps the intake and location modules readable in dark mode', async () => {
     localStorage.setItem('theme', 'dark');
 
@@ -448,5 +524,13 @@ describe('public route rendering', () => {
 
     const residentialCard = screen.getByRole('link', { name: /Residential Projects/i });
     expect(residentialCard).toHaveAttribute('href', '/solutions/residential');
+  });
+
+  test('home route includes residential proof alongside the other sector case stories', async () => {
+    renderPublicRoute('/', <Home />);
+
+    expect(screen.getByText(/Residential Fit-Out/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Homeowner update rhythm for finish-sensitive work/i })).toBeInTheDocument();
+    expect(screen.getByText(/Made weekly progress updates easier for homeowners to follow/i)).toBeInTheDocument();
   });
 });

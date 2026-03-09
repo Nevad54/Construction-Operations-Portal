@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import ReCAPTCHA from 'react-google-recaptcha';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -43,6 +44,8 @@ const isLocalDevelopmentHost = () => {
 };
 
 const Contact = () => {
+  const location = useLocation();
+
   useEffect(() => {
     AOS.init({
       duration: 800,
@@ -62,7 +65,10 @@ const Contact = () => {
   const [submitStatus, setSubmitStatus] = useState(null);
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
+  const [prefillNotice, setPrefillNotice] = useState('');
+  const [prefillMeta, setPrefillMeta] = useState({ source: '', context: '' });
   const recaptchaRef = useRef(null);
+  const hasAppliedPrefillRef = useRef(false);
   const [attemptsRemaining, setAttemptsRemaining] = useState(() => {
     const saved = localStorage.getItem('contactAttempts');
     const lastReset = localStorage.getItem('lastAttemptReset');
@@ -84,6 +90,37 @@ const Contact = () => {
       ? 'Complete Verification to Submit'
       : 'Request Site Assessment';
   const localVerificationStatus = isRecaptchaVerified ? 'Verified' : 'Required';
+
+  useEffect(() => {
+    if (hasAppliedPrefillRef.current) return;
+
+    const searchParams = new URLSearchParams(location.search);
+    const projectType = searchParams.get('projectType');
+    const message = searchParams.get('message');
+    const source = searchParams.get('source');
+    const context = searchParams.get('context');
+
+    if (!projectType && !message) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      projectType: projectType && projectTypeOptions.includes(projectType) ? projectType : prev.projectType,
+      message: message || prev.message,
+    }));
+
+    if (source === 'client-workspace') {
+      setPrefillNotice(
+        context === 'approval-approved'
+          ? 'This approval was prefilled from the client workspace so you can confirm the item without rewriting the project context.'
+          : context === 'approval-changes'
+            ? 'This revision request was prefilled from the client workspace so you can flag changes without rewriting the project context.'
+            : 'This inquiry was prefilled from the client workspace so you can request follow-up without rewriting the project context.'
+      );
+    }
+    setPrefillMeta({ source: source || '', context: context || '' });
+
+    hasAppliedPrefillRef.current = true;
+  }, [location.search]);
 
   const handleRecaptchaChange = (token) => {
     if (!token) {
@@ -189,6 +226,8 @@ const Contact = () => {
         credentials: 'include',
         body: JSON.stringify({
           ...formData,
+          source: prefillMeta.source,
+          context: prefillMeta.context,
           recaptchaToken,
         }),
       });
@@ -334,6 +373,12 @@ const Contact = () => {
                 <p>Start with the essentials. If the work is a fit, we will gather scope, site, and timing in the follow-up.</p>
               </div>
 
+              {prefillNotice && (
+                <div className="alert alert-success" role="status" aria-live="polite">
+                  {prefillNotice}
+                </div>
+              )}
+
               {submitStatus && (
                 <div
                   className={`alert ${submitStatus.type === 'success' ? 'alert-success' : 'alert-error'}`}
@@ -341,6 +386,13 @@ const Contact = () => {
                   aria-live="polite"
                 >
                   {submitStatus.message}
+                  {submitStatus.type === 'success' && prefillMeta.source === 'client-workspace' && (
+                    <div className="mt-3">
+                      <Link to="/client/workspace" className="btn btn-secondary">
+                        Return to client workspace
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )}
 

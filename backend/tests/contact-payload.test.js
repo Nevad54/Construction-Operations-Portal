@@ -11,10 +11,14 @@ test('contact payload only requires basic fields plus recaptcha', () => {
     name: 'Pat Demo',
     email: 'pat@example.com',
     message: 'Need help with a facility upgrade.',
+    source: 'client-workspace',
+    context: 'follow-up-request',
     recaptchaToken: 'demo-token',
   });
 
   assert.deepEqual(validateContactPayload(payload, { requireRecaptcha: true }), {});
+  assert.equal(payload.source, 'client-workspace');
+  assert.equal(payload.context, 'follow-up-request');
 });
 
 test('contact email content omits empty optional fields', () => {

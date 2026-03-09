@@ -86,7 +86,7 @@ function buildSampleProjects() {
     ['Substation Civil Works', 'Foundation, cable trenching, and equipment pads for substation upgrade.', 'Power Corridor East', 'Grid Services Contractor', ['/Uploads/1744086896698.png', '/Uploads/1744080293122.png']],
     ['Factory Ventilation Upgrade', 'Duct routing, fan support structures, and airflow balancing works in production halls.', 'Plant Zone 3', 'Northline Fabrication', ['/Uploads/1744085193927.png', '/Uploads/1744085840617.png']],
     ['School Building Retrofit', 'Structural strengthening and accessibility upgrades for academic facilities.', 'Education District', 'School Facilities Board', ['/Uploads/showcase2.png', '/Uploads/residential.jpg']],
-    ['Water Line Distribution Upgrade', 'Mainline replacement and branch tie-ins to improve pressure and reliability.', 'South Residential Cluster', 'Waterworks Operations', ['/Uploads/1744087191359.png', '/Uploads/1743834690463.jpg']],
+    ['Homeowner Condo Fit-Out', 'Premium residential interior renovation with kitchen rework, finish approvals, and portal-backed homeowner updates through closeout.', 'South Tower Residences', 'Private Homeowner', ['/Uploads/residential-hero.jpg', '/Uploads/residential.jpg']],
   ];
 
   return templates.map((t, idx) => {
@@ -107,9 +107,44 @@ function buildSampleProjects() {
 
 function buildSampleFiles(projectIds) {
   const visibilities = ['team', 'client', 'private'];
+  const clientFacingTemplates = {
+    1: {
+      originalName: 'owner-approval-log.xlsx',
+      folder: 'Projects/Ongoing/Approvals',
+      tags: ['construction', 'ongoing', 'approval', 'owner'],
+      notes: 'Owner approval tracker for active design decisions and pending site responses.',
+    },
+    4: {
+      originalName: 'plant-shutdown-coordination-pack.pdf',
+      folder: 'Projects/Ongoing/Coordination',
+      tags: ['construction', 'ongoing', 'coordination', 'shutdown'],
+      notes: 'Coordination pack for shutdown sequencing, access windows, and client-side hold points.',
+    },
+    7: {
+      originalName: 'flood-channel-closeout-checklist.xlsx',
+      folder: 'Projects/Completed/Closeout',
+      tags: ['construction', 'completed', 'closeout', 'checklist'],
+      notes: 'Closeout checklist covering remaining handoff items and final client review steps.',
+    },
+    10: {
+      originalName: 'school-retrofit-progress-photos.pdf',
+      folder: 'Projects/Completed/Updates',
+      tags: ['construction', 'completed', 'progress', 'photo'],
+      notes: 'Compiled visual progress update for final review of retrofit scope and outstanding observations.',
+    },
+  };
+
   return projectIds.slice(0, 12).map((pid, idx) => {
-    const ext = idx % 2 === 0 ? 'pdf' : 'xlsx';
-    const fileName = `project-${idx + 1}-package.${ext}`;
+    const isResidentialCloseout = idx === 11;
+    const clientTemplate = clientFacingTemplates[idx];
+    const ext = isResidentialCloseout
+      ? 'pdf'
+      : clientTemplate
+        ? path.extname(clientTemplate.originalName).replace('.', '') || (idx % 2 === 0 ? 'pdf' : 'xlsx')
+        : (idx % 2 === 0 ? 'pdf' : 'xlsx');
+    const fileName = isResidentialCloseout
+      ? 'homeowner-closeout-package.pdf'
+      : clientTemplate?.originalName || `project-${idx + 1}-package.${ext}`;
     return {
       _id: `file-sample-${String(idx + 1).padStart(3, '0')}`,
       originalName: fileName,
@@ -118,14 +153,22 @@ function buildSampleFiles(projectIds) {
       mimeType: ext === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       size: 65000 + (idx * 5173),
       ownerId: idx % 3 === 0 ? 'admin-1' : 'user-1',
-      visibility: visibilities[idx % visibilities.length],
-      folder: idx < 6 ? 'Projects/Ongoing' : 'Projects/Completed',
+      visibility: isResidentialCloseout ? 'client' : visibilities[idx % visibilities.length],
+      folder: isResidentialCloseout
+        ? 'Projects/Completed/Residential'
+        : clientTemplate?.folder || (idx < 6 ? 'Projects/Ongoing' : 'Projects/Completed'),
       projectId: String(pid || ''),
       sharedWithUsers: [],
-      sharedWithRoles: idx % 3 === 1 ? ['admin', 'client'] : ['admin', 'user'],
-      linkAccess: idx % 3 === 2 ? 'none' : 'view',
-      tags: ['construction', idx < 6 ? 'ongoing' : 'completed'],
-      notes: 'Sample operational document for demo use.',
+      sharedWithRoles: isResidentialCloseout
+        ? ['admin', 'client']
+        : (idx % 3 === 1 ? ['admin', 'client'] : ['admin', 'user']),
+      linkAccess: isResidentialCloseout ? 'view' : (idx % 3 === 2 ? 'none' : 'view'),
+      tags: isResidentialCloseout
+        ? ['construction', 'completed', 'residential', 'closeout']
+        : clientTemplate?.tags || ['construction', idx < 6 ? 'ongoing' : 'completed'],
+      notes: isResidentialCloseout
+        ? 'Sample homeowner closeout package for demo use.'
+        : clientTemplate?.notes || 'Sample operational document for demo use.',
       cloudProvider: '',
       cloudPublicId: '',
       previewProvider: '',
@@ -143,6 +186,7 @@ function buildSampleFolders() {
     { _id: 'folder-sample-001', path: 'Projects/Ongoing', ownerId: 'admin-1', createdAt: nowIso(-20) },
     { _id: 'folder-sample-002', path: 'Projects/Completed', ownerId: 'admin-1', createdAt: nowIso(-20) },
     { _id: 'folder-sample-003', path: 'Documents/Permits', ownerId: 'admin-1', createdAt: nowIso(-18) },
+    { _id: 'folder-sample-004', path: 'Projects/Completed/Residential', ownerId: 'admin-1', createdAt: nowIso(-12) },
   ];
 }
 
@@ -177,22 +221,23 @@ function buildSampleInquiries() {
 }
 
 function buildSampleActivity() {
-  const actions = [
-    'data.sanitized',
-    'project.seeded',
-    'file.seeded',
-    'inquiry.seeded',
-    'report.generated',
-    'dashboard.refresh',
+  const entries = [
+    { action: 'data.sanitized', targetType: 'system', targetId: 'sample-1', details: 'Sample data set sanitized for safe demo use.' },
+    { action: 'project.seeded', targetType: 'project', targetId: 'prj-sample-012', details: 'Residential closeout sample project seeded for homeowner-facing proof.' },
+    { action: 'file.seeded', targetType: 'file', targetId: 'file-sample-012', details: 'Homeowner closeout package seeded with client-visible access.' },
+    { action: 'file.permissions_update', targetType: 'file', targetId: 'file-sample-012', details: 'Residential closeout package shared with client role for final handoff review.' },
+    { action: 'report.generated', targetType: 'system', targetId: 'sample-5', details: 'Sample report generated for dashboard review.' },
+    { action: 'dashboard.refresh', targetType: 'system', targetId: 'sample-6', details: 'Dashboard refresh sample created for demo activity.' },
   ];
-  return actions.map((action, idx) => ({
+
+  return entries.map((entry, idx) => ({
     _id: `act-sample-${String(idx + 1).padStart(3, '0')}`,
     actorId: 'admin-1',
     actorRole: 'admin',
-    action,
-    targetType: 'system',
-    targetId: `sample-${idx + 1}`,
-    details: `Sample activity created for ${action}.`,
+    action: entry.action,
+    targetType: entry.targetType,
+    targetId: entry.targetId,
+    details: entry.details,
     metadata: { source: 'sanitize-demo-data' },
     createdAt: nowIso(-idx),
     updatedAt: nowIso(-idx),

@@ -722,6 +722,23 @@ const sanitizeInquiry = (item) => ({
   updatedAt: item.updatedAt || null,
 });
 
+const sanitizeClientFollowUpInquiry = (item) => {
+  const inquiry = sanitizeInquiry(item);
+  return {
+    id: inquiry.id,
+    projectType: inquiry.projectType,
+    message: inquiry.message,
+    source: inquiry.source,
+    notes: inquiry.notes,
+    status: inquiry.status,
+    priority: inquiry.priority,
+    owner: inquiry.owner,
+    nextFollowUpAt: inquiry.nextFollowUpAt,
+    createdAt: inquiry.createdAt,
+    updatedAt: inquiry.updatedAt,
+  };
+};
+
 const createInquiryRecord = async ({
   name,
   email,
@@ -732,6 +749,8 @@ const createInquiryRecord = async ({
   timeline,
   serviceNeeded,
   message,
+  source = 'contact_form',
+  notes = '',
   ipAddress = '',
 }) => {
   const payload = {
@@ -744,14 +763,14 @@ const createInquiryRecord = async ({
     timeline: String(timeline || '').trim(),
     serviceNeeded: String(serviceNeeded || '').trim(),
     message: String(message || '').trim(),
-    source: 'contact_form',
+    source: String(source || 'contact_form').trim() || 'contact_form',
     ipAddress: String(ipAddress || '').trim(),
     status: 'new',
     priority: 'normal',
     owner: '',
     assignedTo: '',
     nextFollowUpAt: null,
-    notes: '',
+    notes: String(notes || '').trim(),
     handledBy: '',
     handledAt: null,
   };
@@ -771,6 +790,30 @@ const createInquiryRecord = async ({
 
   const created = await Inquiry.create(payload);
   return sanitizeInquiry(created.toObject ? created.toObject() : created);
+};
+
+const getInquiryByIds = async (ids = []) => {
+  const normalizedIds = Array.from(
+    new Set(
+      ids
+        .map((value) => String(value || '').trim())
+        .filter(Boolean)
+    )
+  );
+
+  if (!normalizedIds.length) return [];
+
+  if (useFallback || mongoose.connection.readyState !== 1) {
+    return fallbackInquiries
+      .filter((item) => normalizedIds.includes(String(item._id || item.id || '').trim()))
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime())
+      .map(sanitizeClientFollowUpInquiry);
+  }
+
+  const records = await Inquiry.find({ _id: { $in: normalizedIds } }).lean();
+  return records
+    .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime())
+    .map(sanitizeClientFollowUpInquiry);
 };
 
 const calculateAdminKpis = ({ inquiries = [] }) => {
@@ -1965,6 +2008,19 @@ app.get('/api/activity-logs', requireAuth, requireRoles(['admin']), async (req, 
   }
 });
 
+app.get('/api/client/follow-ups', requireAuth, requireRoles(['client']), async (req, res) => {
+  try {
+    const sessionIds = Array.isArray(req.session?.clientWorkspaceInquiryIds)
+      ? req.session.clientWorkspaceInquiryIds
+      : [];
+    const items = await getInquiryByIds(sessionIds);
+    return res.json({ items });
+  } catch (err) {
+    console.error('Error loading client follow-ups:', err);
+    return res.status(500).json({ error: 'Failed to load client follow-up status' });
+  }
+});
+
 app.options('/api/files', cors(corsOptions));
 app.options('/api/files/:id', cors(corsOptions));
 app.options('/api/files/:id/view', cors(corsOptions));
@@ -2636,6 +2692,8 @@ app.post('/api/contact', async (req, res) => {
       timeline,
       serviceNeeded,
       message,
+      source,
+      context,
       recaptchaToken,
     } = payload;
 
@@ -2708,8 +2766,9 @@ app.post('/api/contact', async (req, res) => {
       }
     }
 
+    let createdInquiry = null;
     try {
-      await createInquiryRecord({
+      createdInquiry = await createInquiryRecord({
         name,
         email,
         phone,
@@ -2719,8 +2778,17 @@ app.post('/api/contact', async (req, res) => {
         timeline,
         serviceNeeded,
         message,
+        source: source || 'contact_form',
+        notes: context ? `Context: ${context}` : '',
         ipAddress: clientIp || '',
       });
+
+      if (String(source || '').trim() === 'client-workspace' && createdInquiry?.id) {
+        const nextIds = Array.isArray(req.session.clientWorkspaceInquiryIds)
+          ? req.session.clientWorkspaceInquiryIds
+          : [];
+        req.session.clientWorkspaceInquiryIds = Array.from(new Set([createdInquiry.id, ...nextIds])).slice(0, 20);
+      }
     } catch (inquiryErr) {
       console.error('Failed to persist inquiry record:', inquiryErr);
       // Continue with email flow even if inquiry persistence fails.
@@ -2732,7 +2800,8 @@ app.post('/api/contact', async (req, res) => {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
       console.log('Email configuration missing. Returning success without sending email.');
       return res.status(200).json({ 
-        message: 'Message received successfully. We will get back to you soon.'
+        message: 'Message received successfully. We will get back to you soon.',
+        inquiry: createdInquiry ? sanitizeClientFollowUpInquiry(createdInquiry) : null,
       });
     }
 
@@ -2761,11 +2830,15 @@ app.post('/api/contact', async (req, res) => {
       await transporter.sendMail(mailOptions);
       console.log('Email sent successfully');
       
-      res.status(200).json({ message: 'Message sent successfully' });
+      res.status(200).json({
+        message: 'Message sent successfully',
+        inquiry: createdInquiry ? sanitizeClientFollowUpInquiry(createdInquiry) : null,
+      });
     } catch (emailError) {
       console.error('Error sending email:', emailError);
       res.status(200).json({ 
-        message: 'Message received successfully. We will get back to you soon.'
+        message: 'Message received successfully. We will get back to you soon.',
+        inquiry: createdInquiry ? sanitizeClientFollowUpInquiry(createdInquiry) : null,
       });
     }
   } catch (err) {

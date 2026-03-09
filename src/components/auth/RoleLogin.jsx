@@ -7,12 +7,13 @@ import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '../ui';
 const roleHome = {
   admin: '/admin/dashboard',
   user: '/user/dashboard',
-  client: '/client/files',
+  client: '/client/workspace',
 };
 
 const roleHints = {
   admin: { username: 'admin', password: '1111' },
   user: { username: 'employee', password: '1111' },
+  client: { username: 'client', password: '1111' },
 };
 
 export default function RoleLogin({ role = 'user' }) {
@@ -30,16 +31,26 @@ export default function RoleLogin({ role = 'user' }) {
   });
 
   const fromPath = location.state?.from;
-  const title = role === 'admin'
-    ? (mode === 'login' ? 'Admin Login' : 'Create Admin Account')
-    : (mode === 'login' ? 'User Login' : 'Create User Account');
-  const subtitle = role === 'admin'
-    ? (mode === 'login'
+  const titleByRole = {
+    admin: mode === 'login' ? 'Admin Login' : 'Create Admin Account',
+    user: mode === 'login' ? 'User Login' : 'Create User Account',
+    client: mode === 'login' ? 'Client Login' : 'Create Client Account',
+  };
+
+  const subtitleByRole = {
+    admin: mode === 'login'
       ? 'Sign in to access admin dashboard and management features.'
-      : 'Create a new admin account. Admin signup code is required.')
-    : (mode === 'login'
+      : 'Create a new admin account. Admin signup code is required.',
+    user: mode === 'login'
       ? 'Sign in to access employee dashboard and files.'
-      : 'Create a new employee user account.');
+      : 'Create a new employee user account.',
+    client: mode === 'login'
+      ? 'Sign in to review shared files, project handoff updates, and current next actions.'
+      : 'Create a new client account for shared project visibility.',
+  };
+
+  const title = titleByRole[role] || titleByRole.user;
+  const subtitle = subtitleByRole[role] || subtitleByRole.user;
 
   const successPath = useMemo(() => {
     if (typeof fromPath === 'string' && fromPath.trim()) return fromPath;
@@ -178,6 +189,8 @@ export default function RoleLogin({ role = 'user' }) {
             <p className="mt-4 text-sm text-text-secondary dark:text-gray-400">
               {role === 'admin' ? (
                 <>Need employee access? <Link className="text-brand hover:underline" to="/login/user">Go to User Login</Link></>
+              ) : role === 'client' ? (
+                <>Need team access? <Link className="text-brand hover:underline" to="/login/user">User Login</Link> or <Link className="text-brand hover:underline" to="/login/admin">Admin Login</Link></>
               ) : (
                 <>Need admin access? <Link className="text-brand hover:underline" to="/login/admin">Go to Admin Login</Link></>
               )}

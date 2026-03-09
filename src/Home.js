@@ -22,8 +22,8 @@ const expertiseCards = [
     image: `${process.env.PUBLIC_URL || ''}/Uploads/residential.jpg`,
     fallbackClass: 'category-card--residential',
     kicker: 'Premium Homes',
-    summary: 'High-touch residential delivery with cleaner owner communication, scope tracking, and handoff discipline.',
-    highlights: ['Owner updates', 'Finish coordination']
+    summary: 'Occupied-home renovations and premium fit-outs with cleaner owner updates, finish coordination, and portal-backed turnover visibility.',
+    highlights: ['Owner approvals', 'Room-by-room turnover']
   },
   {
     title: 'Commercial',
@@ -93,7 +93,8 @@ const Home = memo(() => {
               </h1>
               <p className="hero-subtitle">
                 Construction Operations Portal gives facilities, commercial, and industrial teams one visible place to
-                track scope, remove coordination drag, and keep execution moving.
+                track scope, remove coordination drag, and keep execution moving, while giving clients a cleaner view of
+                files, follow-ups, and project communication.
               </p>
               <div className="hero-actions">
                 <Link
@@ -193,6 +194,25 @@ const Home = memo(() => {
             </div>
           </div>
         </section>
+      <section className="home-portal-teaser" aria-labelledby="portal-teaser-heading">
+        <div className="container">
+          <div className="about-portal-strip">
+            <div>
+              <p className="about-kicker">Client Portal</p>
+              <h2 id="portal-teaser-heading">The client app is part of the delivery promise, not a separate afterthought.</h2>
+              <p>
+                Clients get a clearer project record once work is active: shared files, cleaner status visibility, and
+                fewer loose follow-ups drifting between calls and email threads.
+              </p>
+            </div>
+            <div className="about-portal-actions">
+              <Link to="/client-portal" className="btn btn-secondary" aria-label="Explore the client portal">
+                Explore Client Portal
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
       <section className="portfolio-proof" aria-labelledby="proof-heading">
         <div className="container">
           <div className="proof-header">
@@ -228,6 +248,19 @@ const Home = memo(() => {
                 <li>Standardized inquiry stages across admin users</li>
                 <li>Added KPI reporting for qualification and proposal flow</li>
                 <li>Surfaced overdue follow-ups before they became lost leads</li>
+              </ul>
+            </article>
+            <article className="proof-case">
+              <span className="proof-tag">Residential Fit-Out</span>
+              <h3>Homeowner update rhythm for finish-sensitive work</h3>
+              <p>
+                Structured room sequencing, owner approvals, and shared handoff files so a premium residential project
+                stayed legible without forcing the client to chase decisions across messages and site calls.
+              </p>
+              <ul>
+                <li>Kept finish selections and next approvals in one visible flow</li>
+                <li>Reduced closeout ambiguity with shared punch and handoff records</li>
+                <li>Made weekly progress updates easier for homeowners to follow</li>
               </ul>
             </article>
             <article className="proof-case">

@@ -1,95 +1,59 @@
 [
   {
-    "_id": "1772948116418",
-    "actorId": "admin-1",
-    "actorRole": "admin",
-    "action": "auth.login",
-    "targetType": "session",
-    "targetId": "b-45F_ddVoxe1PN-B4lrXSWQ2vm6ktT4",
-    "details": "admin logged in",
-    "metadata": {},
-    "createdAt": "2026-03-08T05:35:16.418Z",
-    "updatedAt": "2026-03-08T05:35:16.418Z"
-  },
-  {
-    "_id": "1772947955421",
-    "actorId": "admin-1",
-    "actorRole": "admin",
-    "action": "auth.login",
-    "targetType": "session",
-    "targetId": "TrAn9cMq5pCA2969lo_oJMiP-rRULqz6",
-    "details": "admin logged in",
-    "metadata": {},
-    "createdAt": "2026-03-08T05:32:35.421Z",
-    "updatedAt": "2026-03-08T05:32:35.421Z"
-  },
-  {
-    "_id": "1772947654326",
-    "actorId": "admin-1",
-    "actorRole": "admin",
-    "action": "auth.login",
-    "targetType": "session",
-    "targetId": "vJ9xQtSoT6XJSbDwS7rvsiTCe1TGh3i3",
-    "details": "admin logged in",
-    "metadata": {},
-    "createdAt": "2026-03-08T05:27:34.326Z",
-    "updatedAt": "2026-03-08T05:27:34.326Z"
-  },
-  {
     "_id": "act-sample-001",
     "actorId": "admin-1",
     "actorRole": "admin",
     "action": "data.sanitized",
     "targetType": "system",
     "targetId": "sample-1",
-    "details": "Sample activity created for data.sanitized.",
+    "details": "Sample data set sanitized for safe demo use.",
     "metadata": {
       "source": "sanitize-demo-data"
     },
-    "createdAt": "2026-02-25T06:24:16.374Z",
-    "updatedAt": "2026-02-25T06:24:16.374Z"
+    "createdAt": "2026-03-08T13:48:11.644Z",
+    "updatedAt": "2026-03-08T13:48:11.644Z"
   },
   {
     "_id": "act-sample-002",
     "actorId": "admin-1",
     "actorRole": "admin",
     "action": "project.seeded",
-    "targetType": "system",
-    "targetId": "sample-2",
-    "details": "Sample activity created for project.seeded.",
+    "targetType": "project",
+    "targetId": "prj-sample-012",
+    "details": "Residential closeout sample project seeded for homeowner-facing proof.",
     "metadata": {
       "source": "sanitize-demo-data"
     },
-    "createdAt": "2026-02-24T06:24:16.374Z",
-    "updatedAt": "2026-02-24T06:24:16.374Z"
+    "createdAt": "2026-03-07T13:48:11.644Z",
+    "updatedAt": "2026-03-07T13:48:11.644Z"
   },
   {
     "_id": "act-sample-003",
     "actorId": "admin-1",
     "actorRole": "admin",
     "action": "file.seeded",
-    "targetType": "system",
-    "targetId": "sample-3",
-    "details": "Sample activity created for file.seeded.",
+    "targetType": "file",
+    "targetId": "file-sample-012",
+    "details": "Homeowner closeout package seeded with client-visible access.",
     "metadata": {
       "source": "sanitize-demo-data"
     },
-    "createdAt": "2026-02-23T06:24:16.374Z",
-    "updatedAt": "2026-02-23T06:24:16.374Z"
+    "createdAt": "2026-03-06T13:48:11.644Z",
+    "updatedAt": "2026-03-06T13:48:11.644Z"
   },
   {
     "_id": "act-sample-004",
     "actorId": "admin-1",
     "actorRole": "admin",
-    "action": "inquiry.seeded",
-    "targetType": "system",
-    "targetId": "sample-4",
-    "details": "Sample activity created for inquiry.seeded.",
+    "action": "file.permissions_update",
+    "targetType": "file",
+    "targetId": "file-sample-012",
+    "details": "Residential closeout package shared with client role for final handoff review.",
     "metadata": {
       "source": "sanitize-demo-data"
     },
-    "createdAt": "2026-02-22T06:24:16.374Z",
-    "updatedAt": "2026-02-22T06:24:16.374Z"
+    "createdAt": "2026-03-05T13:48:11.644Z",
+    "updatedAt": "2026-03-05T13:48:11.644Z"
   },
   {
     "_id": "act-sample-005",
@@ -98,12 +62,12 @@
     "action": "report.generated",
     "targetType": "system",
     "targetId": "sample-5",
-    "details": "Sample activity created for report.generated.",
+    "details": "Sample report generated for dashboard review.",
     "metadata": {
       "source": "sanitize-demo-data"
     },
-    "createdAt": "2026-02-21T06:24:16.374Z",
-    "updatedAt": "2026-02-21T06:24:16.374Z"
+    "createdAt": "2026-03-04T13:48:11.644Z",
+    "updatedAt": "2026-03-04T13:48:11.644Z"
   },
   {
     "_id": "act-sample-006",
@@ -112,11 +76,11 @@
     "action": "dashboard.refresh",
     "targetType": "system",
     "targetId": "sample-6",
-    "details": "Sample activity created for dashboard.refresh.",
+    "details": "Dashboard refresh sample created for demo activity.",
     "metadata": {
       "source": "sanitize-demo-data"
     },
-    "createdAt": "2026-02-20T06:24:16.374Z",
-    "updatedAt": "2026-02-20T06:24:16.374Z"
+    "createdAt": "2026-03-03T13:48:11.644Z",
+    "updatedAt": "2026-03-03T13:48:11.644Z"
   }
 ]

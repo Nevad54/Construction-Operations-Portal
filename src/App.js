@@ -12,20 +12,19 @@ const routerFutureFlags = {
 // Lazy load components for code splitting
 const Home = lazy(() => import('./Home'));
 const About = lazy(() => import('./About'));
+const ClientPortal = lazy(() => import('./ClientPortal'));
 const Services = lazy(() => import('./Services'));
 const IndustrialLandingPage = lazy(() => import('./IndustrialLandingPage'));
 const CommercialLandingPage = lazy(() => import('./CommercialLandingPage'));
 const RenovationLandingPage = lazy(() => import('./RenovationLandingPage'));
 const ResidentialLandingPage = lazy(() => import('./ResidentialLandingPage'));
-const VisionMission = lazy(() => import('./VisionMission'));
-const CoreValues = lazy(() => import('./CoreValues'));
 const Safety = lazy(() => import('./Safety'));
 const Projects = lazy(() => import('./components/Projects'));
 const Contact = lazy(() => import('./Contact'));
 const Admin = lazy(() => import('./components/Admin'));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const UserDashboard = lazy(() => import('./components/UserDashboard'));
-const UserFiles = lazy(() => import('./components/UserFiles'));
+const ClientWorkspace = lazy(() => import('./components/ClientWorkspace'));
 const ClientFiles = lazy(() => import('./components/ClientFiles'));
 const RoleLogin = lazy(() => import('./components/auth/RoleLogin'));
 const ProtectedRoute = lazy(() => import('./components/auth/ProtectedRoute'));
@@ -60,18 +59,18 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
+            <Route path="/client-portal" element={<ClientPortal />} />
             <Route path="/services" element={<Services />} />
             <Route path="/solutions/industrial" element={<IndustrialLandingPage />} />
             <Route path="/solutions/commercial" element={<CommercialLandingPage />} />
             <Route path="/solutions/renovation" element={<RenovationLandingPage />} />
             <Route path="/solutions/residential" element={<ResidentialLandingPage />} />
-            <Route path="/vision-mission" element={<VisionMission />} />
-            <Route path="/core-values" element={<CoreValues />} />
             <Route path="/safety" element={<Safety />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/login/admin" element={<RoleLogin role="admin" />} />
             <Route path="/login/user" element={<RoleLogin role="user" />} />
+            <Route path="/login/client" element={<RoleLogin role="client" />} />
             <Route
               path="/admin"
               element={(
@@ -113,11 +112,34 @@ function App() {
               path="/user/files"
               element={(
                 <ProtectedRoute role="user">
-                  <UserFiles />
+                  <Navigate to="/user/dashboard/files" replace />
                 </ProtectedRoute>
               )}
             />
-            <Route path="/client/files" element={<ClientFiles />} />
+            <Route
+              path="/client"
+              element={(
+                <ProtectedRoute role="client">
+                  <Navigate to="/client/workspace" replace />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/client/workspace"
+              element={(
+                <ProtectedRoute role="client">
+                  <ClientWorkspace />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/client/files"
+              element={(
+                <ProtectedRoute role="client">
+                  <ClientFiles />
+                </ProtectedRoute>
+              )}
+            />
           </Routes>
         </Suspense>
       </Router>

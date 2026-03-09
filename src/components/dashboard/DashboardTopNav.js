@@ -7,9 +7,8 @@ import BrandLockup from '../BrandLockup';
 export default function DashboardTopNav({
   onMenuClick,
   sidebarOpen,
-  onToggleSidebarCollapse,
-  sidebarCollapsed,
   isMobile,
+  desktopOffsetClass = 'lg:left-20',
   searchQuery = '',
   onSearchChange = () => {},
   showSearch = true,
@@ -30,7 +29,7 @@ export default function DashboardTopNav({
   const settingsPath = isAdminArea ? '/admin/dashboard/settings' : '/user/dashboard/settings';
   const loginPath = isAdminArea ? '/login/admin' : '/login/user';
   const profileInitial = String(currentUser?.username || 'A').charAt(0).toUpperCase();
-  const showTopBrand = true;
+  const showTopBrand = isMobile;
 
   useEffect(() => {
     if (!isMobile) setMobileSearchOpen(false);
@@ -61,7 +60,10 @@ export default function DashboardTopNav({
   };
 
   return (
-    <div role="banner" className="fixed top-0 left-0 right-0 min-h-16 bg-surface-card dark:bg-gray-900 border-b border-stroke dark:border-gray-700 z-50 px-3 sm:px-4 shadow-sm transition-colors duration-fast">
+    <div
+      role="banner"
+      className={`fixed top-0 left-0 right-0 min-h-16 bg-surface-card dark:bg-gray-900 border-b border-stroke dark:border-gray-700 z-50 px-3 sm:px-4 shadow-sm transition-[left,color,background-color,border-color] duration-200 ${desktopOffsetClass}`}
+    >
       <div className="flex items-center justify-between w-full max-w-[1920px] mx-auto h-16">
         {/* Left: menu + logo + collapse button */}
         <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
@@ -79,29 +81,9 @@ export default function DashboardTopNav({
               )}
             </svg>
           </button>
-          
-          {/* Collapse button (desktop only) */}
-          {!isMobile && (
-            <button
-              type="button"
-              onClick={onToggleSidebarCollapse}
-              className="hidden lg:flex flex-shrink-0 w-10 h-10 items-center justify-center rounded-lg text-text-muted dark:text-gray-400 hover:text-text-primary dark:hover:text-gray-200 hover:bg-surface-muted dark:hover:bg-gray-800 active:bg-surface-interactive dark:active:bg-gray-700 transition-colors duration-fast"
-              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {sidebarCollapsed ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                )}
-              </svg>
-            </button>
-          )}
-          
           {/* Brand */}
           <BrandLockup
-            className={`flex items-center gap-2.5 min-w-0 hover:opacity-80 transition-opacity duration-fast ${showTopBrand ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none w-0 overflow-hidden'}`}
+            className={`flex items-center gap-2.5 min-w-0 hover:opacity-80 transition-[opacity,width] duration-fast ${showTopBrand ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none w-0 overflow-hidden'}`}
             iconClassName="h-9 w-auto object-contain flex-shrink-0"
             bodyClassName="hidden min-w-0 sm:flex sm:flex-col"
             titleClassName="text-sm sm:text-[0.95rem] font-bold leading-tight text-text-primary dark:text-gray-100 truncate"

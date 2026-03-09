@@ -68,6 +68,51 @@
   margin-bottom: var(--space-6);
 }
 
+.projects-proof-band {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.9fr);
+  gap: var(--space-5);
+  align-items: center;
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(47, 107, 63, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
+  box-shadow: var(--shadow-sm);
+}
+
+.projects-proof-band__copy h2 {
+  margin: 0 0 0.7rem;
+  color: var(--text-primary);
+  font-size: clamp(1.35rem, 2.4vw, 1.8rem);
+}
+
+.projects-proof-band__copy p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.projects-proof-band__pillars {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.projects-proof-band__pillars span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: var(--font-medium);
+}
+
 .projects-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -322,6 +367,15 @@
   flex: 1;
 }
 
+.project-sector {
+  margin: 0;
+  color: #5b7a99;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+
 .project-title {
   margin: 0;
   font-size: var(--text-lg);
@@ -350,10 +404,61 @@
   color: var(--text-secondary);
   font-size: var(--text-sm);
   line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+}
+
+.project-case-study {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+}
+
+.project-case-study div {
+  padding: 0.85rem 0.9rem;
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.project-case-study dt {
+  margin-bottom: 0.28rem;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+
+.project-case-study dd {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 0.92rem;
+}
+
+.project-visibility-note {
+  padding: 0.95rem 1rem;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top left, rgba(47, 107, 63, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 247, 245, 0.98));
+  border: 1px solid rgba(47, 107, 63, 0.16);
+}
+
+.project-visibility-note strong {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.project-visibility-note p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  font-size: 0.92rem;
 }
 
 .status-badge {
@@ -501,7 +606,8 @@
 }
 
 html.dark .projects-story-eyebrow,
-html.dark .projects-summary-label {
+html.dark .projects-summary-label,
+html.dark .project-sector {
   color: #93c5fd;
 }
 
@@ -516,9 +622,34 @@ html.dark .projects-summary-detail {
 }
 
 html.dark .projects-summary-chip,
-html.dark .controls-container {
+html.dark .controls-container,
+html.dark .projects-proof-band {
   border-color: rgba(71, 85, 105, 0.78);
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.86));
+}
+
+html.dark .projects-proof-band__copy h2,
+html.dark .projects-proof-band__pillars span,
+html.dark .project-case-study dt,
+html.dark .project-visibility-note strong {
+  color: #f8fafc;
+}
+
+html.dark .projects-proof-band__copy p,
+html.dark .project-case-study dd,
+html.dark .project-visibility-note p {
+  color: #cbd5e1;
+}
+
+html.dark .projects-proof-band__pillars span,
+html.dark .project-case-study div {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(71, 85, 105, 0.68);
+}
+
+html.dark .project-visibility-note {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(22, 34, 50, 0.9));
+  border-color: rgba(47, 107, 63, 0.32);
 }
 
 html.dark .search-box {
@@ -577,6 +708,7 @@ html.dark .projects-section-empty {
   }
 
   .projects-summary,
+  .projects-proof-band,
   .controls-container {
     grid-template-columns: 1fr;
   }

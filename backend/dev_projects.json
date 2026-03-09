@@ -6,7 +6,7 @@
     "location": "North District",
     "owner": "City Infrastructure Office",
     "image": "/Uploads/1744087023216.png",
-    "date": "2026-02-15T06:24:16.371Z",
+    "date": "2026-02-26T13:48:11.639Z",
     "status": "ongoing",
     "featured": true
   },
@@ -17,7 +17,7 @@
     "location": "Logistics Park",
     "owner": "LogiBuild Partners",
     "image": "/Uploads/showcase3.png",
-    "date": "2026-01-28T06:24:16.371Z",
+    "date": "2026-02-08T13:48:11.640Z",
     "status": "ongoing",
     "featured": false
   },
@@ -28,7 +28,7 @@
     "location": "West Access Road",
     "owner": "Municipal Engineering Office",
     "image": "/Uploads/1744082626975.png",
-    "date": "2026-01-10T06:24:16.372Z",
+    "date": "2026-01-21T13:48:11.640Z",
     "status": "ongoing",
     "featured": false
   },
@@ -39,7 +39,7 @@
     "location": "South Utility Zone",
     "owner": "Regional Public Works",
     "image": "/Uploads/1744082424394.png",
-    "date": "2025-12-23T06:24:16.372Z",
+    "date": "2026-01-03T13:48:11.640Z",
     "status": "ongoing",
     "featured": true
   },
@@ -50,7 +50,7 @@
     "location": "Industrial Strip A",
     "owner": "Apex Manufacturing",
     "image": "/Uploads/1743834690463.jpg",
-    "date": "2025-12-05T06:24:16.372Z",
+    "date": "2025-12-16T13:48:11.641Z",
     "status": "ongoing",
     "featured": false
   },
@@ -61,7 +61,7 @@
     "location": "Central Commercial Block",
     "owner": "BlueStone Properties",
     "image": "/Uploads/commercial.jpg",
-    "date": "2025-11-17T06:24:16.372Z",
+    "date": "2025-11-28T13:48:11.641Z",
     "status": "ongoing",
     "featured": false
   },
@@ -72,7 +72,7 @@
     "location": "Cargo Access Road",
     "owner": "Port Logistics Authority",
     "image": "/Uploads/showcase1.png",
-    "date": "2025-10-30T06:24:16.372Z",
+    "date": "2025-11-10T13:48:11.641Z",
     "status": "completed",
     "featured": true
   },
@@ -83,7 +83,7 @@
     "location": "Riverside Sector",
     "owner": "Provincial Engineering Unit",
     "image": "/Uploads/1744082424394.png",
-    "date": "2025-10-12T06:24:16.372Z",
+    "date": "2025-10-23T13:48:11.641Z",
     "status": "completed",
     "featured": false
   },
@@ -94,7 +94,7 @@
     "location": "Power Corridor East",
     "owner": "Grid Services Contractor",
     "image": "/Uploads/1744086896698.png",
-    "date": "2025-09-24T06:24:16.372Z",
+    "date": "2025-10-05T13:48:11.641Z",
     "status": "completed",
     "featured": false
   },
@@ -105,7 +105,7 @@
     "location": "Plant Zone 3",
     "owner": "Northline Fabrication",
     "image": "/Uploads/1744085193927.png",
-    "date": "2025-09-06T06:24:16.373Z",
+    "date": "2025-09-17T13:48:11.641Z",
     "status": "completed",
     "featured": true
   },
@@ -116,18 +116,18 @@
     "location": "Education District",
     "owner": "School Facilities Board",
     "image": "/Uploads/showcase2.png",
-    "date": "2025-08-19T06:24:16.373Z",
+    "date": "2025-08-30T13:48:11.642Z",
     "status": "completed",
     "featured": false
   },
   {
     "_id": "prj-sample-012",
-    "title": "Water Line Distribution Upgrade",
-    "description": "Mainline replacement and branch tie-ins to improve pressure and reliability.",
-    "location": "South Residential Cluster",
-    "owner": "Waterworks Operations",
-    "image": "/Uploads/1744087191359.png",
-    "date": "2025-08-01T06:24:16.373Z",
+    "title": "Homeowner Condo Fit-Out",
+    "description": "Premium residential interior renovation with kitchen rework, finish approvals, and portal-backed homeowner updates through closeout.",
+    "location": "South Tower Residences",
+    "owner": "Private Homeowner",
+    "image": "/Uploads/residential-hero.jpg",
+    "date": "2025-08-12T13:48:11.642Z",
     "status": "completed",
     "featured": false
   }

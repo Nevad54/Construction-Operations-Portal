@@ -16,6 +16,8 @@ const normalizeContactPayload = (body = {}) => ({
   timeline: trimValue(body.timeline),
   serviceNeeded: trimValue(body.serviceNeeded),
   message: trimValue(body.message),
+  source: trimValue(body.source),
+  context: trimValue(body.context),
   recaptchaToken: trimValue(body.recaptchaToken),
 });
 
@@ -51,6 +53,8 @@ const buildContactEmailContent = (payload) => {
     payload.serviceNeeded ? `Primary Service: ${payload.serviceNeeded}` : null,
     payload.siteLocation ? `Site Location: ${payload.siteLocation}` : null,
     payload.timeline ? `Timeline: ${payload.timeline}` : null,
+    payload.source ? `Source: ${payload.source}` : null,
+    payload.context ? `Context: ${payload.context}` : null,
   ].filter(Boolean);
 
   const lines = [`Name: ${payload.name}`, `Email: ${payload.email}`, ...optionalRows, `Message: ${payload.message}`];
@@ -64,6 +68,8 @@ const buildContactEmailContent = (payload) => {
     payload.serviceNeeded ? `<p><strong>Primary Service:</strong> ${payload.serviceNeeded}</p>` : '',
     payload.siteLocation ? `<p><strong>Site Location:</strong> ${payload.siteLocation}</p>` : '',
     payload.timeline ? `<p><strong>Timeline:</strong> ${payload.timeline}</p>` : '',
+    payload.source ? `<p><strong>Source:</strong> ${payload.source}</p>` : '',
+    payload.context ? `<p><strong>Context:</strong> ${payload.context}</p>` : '',
     `<p><strong>Message:</strong> ${payload.message}</p>`,
   ].filter(Boolean);
 

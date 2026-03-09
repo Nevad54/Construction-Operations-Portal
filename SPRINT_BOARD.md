@@ -10,10 +10,14 @@ Date: 2026-03-08
 - Local project data now connects to the Mongo-backed repo backend on `3102`, with a health endpoint confirming `dbConnected: true` and `usingFallback: false`.
 - Residential public routing is now consistent with the other solution pages and no longer depends on the projects route.
 - Contact intake has been simplified again so first contact no longer asks for heavy qualification details.
+- The public site is now positioned as a hybrid offer: contractor delivery plus a marketed client portal, with low-value standalone brand pages removed.
+- Clients now land on a protected workspace summary before the file library, so the marketed portal promise maps to a more intentional in-app experience.
+- Residential is now treated as a real supported segment with owner-facing delivery framing and portal-backed communication instead of acting like a placeholder route.
 - Sprint 16 public UI audit work is complete: header/nav balance, home-page section rebuilds, copy cleanup, projects-page reduction, and footer/location redesign are now in place.
 - Sprint 17 stabilization is complete: duplicate landing CTA overrides are cleaned up, shared public-route regression coverage is broader, the public visual QA sweep is recorded, and local runtime console noise is reduced.
 - Sprint 18 is complete: localhost contact intake now uses a deliberate development verification path instead of a broken reCAPTCHA widget.
-- Sprint 27 admin hardening is underway: the admin shell now has route-aware page framing and only shows top-nav search where it is operationally meaningful.
+- Sprint 27 admin hardening is complete: the admin shell, inquiry triage flow, accessibility semantics, and focused admin smoke coverage are now in place.
+- Production verification is currently clean after the latest admin release: `verify:production` passed against Netlify and Render with `7 ok, 0 warnings, 0 failures`.
 
 ## Sprint 1 (Weeks 1-2) - Foundation
 
@@ -1104,17 +1108,11 @@ Date: 2026-03-08
 - Overdue follow-up count
 
 ## Next 7-Day Focus
-- [x] Complete Sprint 16 public UI audit fixes across header, home, copy, projects, and footer
-- [x] Remove the duplicate landing CTA override that caused the recent `/solutions/*` light-mode regression
-- [x] Expand shared public-route regression coverage for layout-level UI surfaces
-- [x] Run a full light/dark visual QA sweep across home, about, services, contact, projects, and all solution pages
-- [x] Record any remaining public-route inconsistencies as concrete follow-up tickets in Sprint 17
-- [x] Reduce React Router warning noise during local public-route inspection
-- [x] Restore a usable localhost contact verification path for local demo environments
-- [x] Expand automated coverage for the localhost contact verification path
-- [x] Tighten contact-form UX around the new local verification flow
-- [x] Add production reCAPTCHA deployment guardrails for paired keys and allowed domains
-- [x] Run a mobile-width QA sweep across the public routes
+- [x] Update public project proof so the projects route reads like case studies instead of a searchable list
+- [x] Add one client-facing workspace summary route that matches the new public client-portal positioning
+- [x] Tighten the README, screenshots, and portfolio framing around the hybrid contractor-plus-portal story
+- [x] Add regression coverage for the new client portal route and any client workspace summary path
+- [x] Decide whether residential remains a real target segment or should be removed from the public offer
 
 ## Sprint 19 (Public UI Automation and Release Readiness)
 
@@ -1781,6 +1779,235 @@ Date: 2026-03-08
   - Completed on 2026-03-08.
   - Expanded the admin suite to cover reports failure handling, files/settings route shells, and the projects retry state in addition to the earlier inquiry triage coverage.
   - The focused admin smoke file now guards the main route-level regressions without adding noisy snapshot-style tests.
+
+## Sprint 28 (Admin Workflow Consolidation)
+
+### P27-1 Admin Reports Data Polish
+- Status: [x] Complete
+- Owner: Frontend + Backend
+- Estimate: 1 day
+- Files:
+  - src/components/AdminDashboard.js
+  - src/components/AdminDashboard.test.js
+  - SPRINT_BOARD.md
+- Scope:
+  - Tighten analytics copy, empty states, and KPI support detail so the reports route reads like an operator dashboard instead of a mixed dump of counts.
+- Acceptance Criteria:
+  - Reports open with a clearer operations summary instead of only raw KPI cards.
+  - KPI/supporting copy explains what each metric means operationally.
+  - Regression coverage protects the new reports-summary framing.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added an operations-summary band ahead of the KPI grid so the reports route now calls out current response posture, inquiry pressure, and delivery load.
+  - Tightened KPI/activity copy and replaced the empty recent-activity text with a clearer empty state so the route reads more like an operator dashboard than a data dump.
+  - Added focused regression coverage for the new reports-summary section.
+
+### P27-2 Admin File Manager Integration QA
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 0.75 day
+- Files:
+  - src/components/files/FileManager.jsx
+  - src/components/files/FileManager.test.js
+  - SPRINT_BOARD.md
+- Scope:
+  - Review the file-management route inside the admin shell for route-level consistency, loading states, and auth-sensitive affordances.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added direct file-manager regression coverage for admin activity visibility, admin-route role mismatch handling, and the client-share upload validation path.
+
+### P27-3 Admin Mobile QA Sweep
+- Status: [x] Complete
+- Owner: Frontend + QA
+- Estimate: 0.75 day
+- Files:
+  - src/components/AdminDashboard.js
+  - src/components/dashboard/
+  - src/components/AdminDashboard.test.js
+  - SPRINT_BOARD.md
+- Scope:
+  - Run and document a mobile-width QA pass across the main admin routes, especially sidebar, cards, tables, and modal flows.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added mobile-width regression coverage for the shared admin drawer and mobile search behavior on the projects route, plus mobile reports-route navigation without exposing the project search affordance.
+
+### P27-4 Admin Authenticated Smoke Path
+- Status: [x] Complete
+- Owner: Full-stack
+- Estimate: 0.75 day
+- Files:
+  - scripts/
+  - package.json
+  - README.md
+  - SPRINT_BOARD.md
+- Scope:
+  - Add one authenticated admin smoke command that validates the deployed or local admin shell beyond the public production checks.
+- Acceptance Criteria:
+  - One command checks authenticated admin shell coverage through the frontend origin for local or deployed environments.
+  - The command requires real admin credentials for non-local environments and stays non-destructive outside localhost.
+  - README documents the command and its environment expectations.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added `npm run smoke:admin-authenticated`, which verifies `/login/admin`, `/admin/dashboard/projects`, and `/admin/dashboard/reports` through the frontend origin, then checks authenticated `/api/auth/me`, `/api/projects`, `/api/admin/kpis`, and `/api/admin/inquiries?limit=3` before confirming logout returns `401 Unauthorized`.
+  - The command auto-detects supported local frontend ports and can create a temporary admin account only on localhost when the default admin login is rejected; remote preview and production runs require explicit valid admin credentials and do not create accounts.
+  - Documented the new smoke path in the README alongside the existing deploy/runtime verification commands.
+
+## Sprint 29 (Hybrid Positioning and Client Proof)
+
+### P28-1 Projects Route Case Study Upgrade
+- Status: [x] Complete
+- Owner: Frontend + Product
+- Estimate: 1 day
+- Files:
+  - src/components/Projects.js
+  - src/components/Projects.css
+  - src/PublicRoutes.test.js
+  - README.md
+- Scope:
+  - Reframe the public projects route from a generic searchable portfolio list into proof-first case studies that sell both delivery capability and the portal-backed client experience.
+- Acceptance Criteria:
+  - The projects route presents clearer problem / solution / outcome framing.
+  - At least one case-study block explicitly explains where the portal improved client visibility or follow-up control.
+  - Regression coverage protects the new public proof structure.
+- Notes:
+  - Completed on 2026-03-08.
+  - Reframed the projects route into proof-first case studies with explicit challenge, response, outcome, and portal-backed visibility framing.
+  - Added matching styling and focused route coverage for the new case-study structure.
+
+### P28-2 Client Workspace Summary
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 1 day
+- Files:
+  - src/components/ClientFiles.js
+  - src/App.js
+  - src/components/
+  - src/PublicRoutes.test.js
+- Scope:
+  - Add one concrete client-facing workspace summary route so the marketed client portal promise maps to a more useful in-app experience than files alone.
+- Acceptance Criteria:
+  - Clients can land on a summary view that explains current project status, shared files, and next actions.
+  - The client area feels intentionally productized instead of acting like a direct file-library dump.
+  - Regression coverage protects the route shell.
+- Notes:
+  - Completed on 2026-03-08.
+  - Added a protected `/client/workspace` route plus `/login/client` so client auth now lands on a summary shell before the file library.
+  - The workspace surfaces current project rooms, recent shared files, next-action guidance, and resilient fallback messaging when project metadata is temporarily unavailable.
+  - Added focused auth and workspace regression coverage for the client route shell and summary content.
+
+### P28-3 Hybrid Positioning Documentation Pass
+- Status: [x] Complete
+- Owner: Full-stack
+- Estimate: 0.5 day
+- Files:
+  - README.md
+  - SPRINT_BOARD.md
+  - docs/
+- Scope:
+  - Align the repo documentation, screenshots, and portfolio framing with the current hybrid product direction so the public app, portal, and operator tooling tell the same story.
+- Acceptance Criteria:
+  - README route list, highlights, and portfolio framing match the current public IA.
+  - Sprint board and supporting docs stop referencing removed public pages as if they are still part of the offer.
+  - The repo includes a short explanation of the hybrid positioning for future demos or handoffs.
+- Notes:
+  - Completed on 2026-03-08.
+  - Updated the README so highlights, route inventory, screenshot framing, and portfolio positioning all reflect the current contractor-plus-portal product story.
+  - Updated `docs/PORTFOLIO_DEMO_FLOW.md` so the walkthrough now includes the public proof path, the client workspace summary, and the admin route as one connected demo.
+  - Cleared the stale sprint focus items that had already been implemented and verified during Sprint 29.
+
+### P28-4 Screenshot Evidence Normalization
+- Status: [x] Complete
+- Owner: Frontend + Docs
+- Estimate: 0.5 day
+- Files:
+  - docs/screenshots/
+  - README.md
+  - docs/PORTFOLIO_DEMO_FLOW.md
+- Scope:
+  - Normalize the screenshot set so the repo only keeps stable, intentionally named evidence assets that match the current hybrid product story.
+- Acceptance Criteria:
+  - Generic numbered screenshot files are removed from `docs/screenshots`.
+  - The remaining screenshot files use stable names and show clean page-entry states instead of accidental scrolled captures.
+  - README and demo-flow docs reference only screenshot files that actually exist.
+- Notes:
+  - Completed on 2026-03-08.
+  - Captured and kept a normalized screenshot set for public, client, and admin proof, including the residential landing page, public client portal, authenticated client workspace, admin projects dashboard, admin accounts queue, and admin reporting overview.
+  - Replaced scrolled or inconsistent captures with clean top-of-page versions for the home hero, projects proof page, and about-page hybrid positioning section.
+  - Removed leftover numbered screenshot files and updated the README plus `docs/PORTFOLIO_DEMO_FLOW.md` to point only at the curated stable asset names.
+
+### P28-5 Client Follow-Up Interaction Layer
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 0.75 day
+- Files:
+  - src/components/ClientWorkspace.js
+  - src/Contact.js
+  - src/components/ClientWorkspace.test.js
+  - src/PublicRoutes.test.js
+  - SPRINT_BOARD.md
+- Scope:
+  - Turn the client workspace from a read-only visibility layer into a lightweight interaction layer by adding follow-up requests tied to current review items.
+  - Reuse the public contact intake path so the interaction works in deployed environments without introducing a second unaudited submission flow.
+- Acceptance Criteria:
+  - The client review queue exposes a clear `Request follow-up` action tied to the current file or review item.
+  - The contact route can absorb prefilled project context from the client workspace without overwriting later user edits.
+  - Regression coverage protects both the client-workspace links and the contact prefill behavior.
+- Notes:
+  - Completed on 2026-03-09.
+  - Added `Request follow-up` actions to client review items and the workspace guidance area, routing clients into the existing contact intake with project-type and handoff-context prefills.
+  - Updated the contact route to accept one-time query-string prefills and show a short notice when the request originated from the client workspace.
+  - Verified with `npx vitest run src/components/ClientWorkspace.test.js src/PublicRoutes.test.js`, `npm run build`, and `npm run smoke:public-ui`.
+
+### P28-6 Client Follow-Up Status Visibility
+- Status: [x] Complete
+- Owner: Full-stack
+- Estimate: 1 day
+- Files:
+  - backend/server.js
+  - backend/contactPayload.js
+  - backend/tests/contact-payload.test.js
+  - src/services/api.js
+  - src/components/ClientWorkspace.js
+  - src/components/ClientWorkspace.test.js
+  - src/Contact.js
+  - src/PublicRoutes.test.js
+  - SPRINT_BOARD.md
+- Scope:
+  - Give clients a real status view for the follow-up requests they submit from the workspace instead of leaving the interaction flow as a one-way request path.
+  - Keep the status feed client-safe by exposing only session-linked follow-ups created from the current client workspace flow.
+- Acceptance Criteria:
+  - Client workspace shows a status panel with live `new`, `in progress`, or `resolved` follow-up states for requests created through the client workspace flow.
+  - The backend stores and returns only the client-safe subset of follow-up fields needed for the workspace status view.
+  - Regression coverage protects the workspace status panel and the contact submission metadata that links requests back to the workspace session.
+- Notes:
+  - Completed on 2026-03-09.
+  - Added a client-only `/api/client/follow-ups` endpoint backed by session-linked inquiry ids captured when the contact form is submitted from the client workspace.
+  - The contact payload now carries `source` and `context`, and the client workspace shows a `Follow-Up Status` panel with owner and next-follow-up visibility for tracked requests.
+  - Verified with `npx vitest run src/components/ClientWorkspace.test.js src/PublicRoutes.test.js`, `node --test backend/tests/*.test.js`, `npm run build`, and `npm run smoke:public-ui`.
+
+### P28-7 Client Approval Actions
+- Status: [x] Complete
+- Owner: Frontend + Backend
+- Estimate: 0.75 day
+- Files:
+  - src/components/ClientWorkspace.js
+  - src/components/ClientWorkspace.test.js
+  - src/Contact.js
+  - src/PublicRoutes.test.js
+  - backend/server.js
+  - SPRINT_BOARD.md
+- Scope:
+  - Let clients explicitly approve a review item or request changes from the workspace instead of relying only on generic follow-up requests.
+  - Keep approvals inside the same tracked inquiry/session workflow so deployment risk stays low and status remains visible in the existing client feed.
+- Acceptance Criteria:
+  - Each client review item exposes clear `Approve item` and `Request changes` actions.
+  - Approval decisions show up distinctly in the client status area instead of reading like generic follow-up requests.
+  - Regression coverage protects the approval links, prefill messaging, and status labeling.
+- Notes:
+  - Completed on 2026-03-09.
+  - Added explicit client approval and revision-request actions to the review queue, routed through the same contact-prefill and session-linked status path used for follow-up requests.
+  - Client follow-up status now distinguishes approval decisions from standard follow-up items by tracking the approval context in inquiry notes and surfacing `Approved` / `Changes Requested` states.
+  - Verified with `npx vitest run src/components/ClientWorkspace.test.js src/PublicRoutes.test.js`, `node --test backend/tests/*.test.js`, `npm run build`, and `npm run smoke:public-ui`.
 
 ## Completed Outside Sprint Scope
 - 2026-03-08: Fixed two Express 5 wildcard route incompatibilities in `backend/server.js` so the app can run locally on alternate ports without affecting the deployed environment.

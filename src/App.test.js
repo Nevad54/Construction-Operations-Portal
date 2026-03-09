@@ -74,6 +74,28 @@ describe('auth flows', () => {
     expect(await screen.findByText('User dashboard')).toBeInTheDocument();
   });
 
+  test('ProtectedRoute redirects unauthenticated clients to client login', async () => {
+    api.me.mockRejectedValueOnce(new Error('Unauthorized'));
+
+    render(
+      <MemoryRouter initialEntries={['/client/workspace']} future={memoryRouterFutureFlags}>
+        <Routes>
+          <Route
+            path="/client/workspace"
+            element={(
+              <ProtectedRoute role="client">
+                <div>Client workspace</div>
+              </ProtectedRoute>
+            )}
+          />
+          <Route path="/login/client" element={<div>Client Login Screen</div>} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText('Client Login Screen')).toBeInTheDocument();
+  });
+
   test('RoleLogin signs in and routes admins to the requested dashboard', async () => {
     api.me
       .mockRejectedValueOnce(new Error('Unauthorized'))

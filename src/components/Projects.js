@@ -10,6 +10,9 @@ import { useProjects } from '../context/ProjectContext';
 const FALLBACK_DESCRIPTION = 'Project summary is being prepared. Full delivery details are available on request.';
 const FALLBACK_LOCATION = 'Location shared during project review';
 const FALLBACK_DATE = 'Schedule available on request';
+const DEFAULT_CASE_STUDY_PROBLEM = 'Stakeholders needed a clearer operating picture without relying on fragmented updates.';
+const DEFAULT_CASE_STUDY_SOLUTION = 'The delivery workflow was reorganized around visible ownership, cleaner reporting, and a shared project record.';
+const DEFAULT_CASE_STUDY_OUTCOME = 'Project visibility improved, follow-ups stayed accountable, and client communication became easier to repeat.';
 
 const formatProjectDate = (value) => {
   if (!value) return FALLBACK_DATE;
@@ -54,16 +57,79 @@ const normalizeProject = (project) => {
   const status = normalizeStatus(project.status);
   const rawTitle = String(project.title || '').trim();
   const title = rawTitle || 'Untitled Project';
+  const location = String(project.location || '').trim() || FALLBACK_LOCATION;
+  const description = String(project.description || '').trim() || FALLBACK_DESCRIPTION;
+  const titleLower = title.toLowerCase();
+  const locationLower = location.toLowerCase();
+  const descriptionLower = description.toLowerCase();
+  const projectFingerprint = `${titleLower} ${locationLower} ${descriptionLower}`;
+  const looksIndustrial = /plant|fabrication|industrial|shutdown|process|maintenance/.test(projectFingerprint);
+  const looksCommercial = /office|retail|commercial|fit-out|tenant|campus/.test(projectFingerprint);
+  const looksRenovation = /renovation|retrofit|upgrade|interior|existing/.test(projectFingerprint);
+  const looksResidential = /residential|homeowner|home|villa|condo|kitchen|bath|apartment/.test(projectFingerprint);
+
+  let sector = 'Operations Delivery';
+  if (looksIndustrial) sector = 'Industrial Retrofit';
+  else if (looksResidential) sector = 'Residential Fit-Out';
+  else if (looksCommercial) sector = 'Commercial Fit-Out';
+  else if (looksRenovation) sector = 'Renovation / Upgrade';
+
+  const clientVisibilityNote = looksResidential
+    ? (status.section === 'completed'
+      ? 'The portal-backed handoff gave homeowners one closeout record for punch items, warranty files, and final finish follow-ups.'
+      : 'The portal-backed workflow keeps owner approvals, current files, and room-by-room next actions visible while the home is still active.')
+    : status.section === 'completed'
+      ? 'The portal-backed handoff gave clients and operators one final record for closeout, proof files, and remaining follow-ups.'
+      : 'The portal-backed workflow keeps active files, status context, and next actions visible while work is still moving.';
 
   return {
     ...project,
     title,
     titleInitial: title.charAt(0).toUpperCase(),
-    description: String(project.description || '').trim() || FALLBACK_DESCRIPTION,
-    location: String(project.location || '').trim() || FALLBACK_LOCATION,
+    description,
+    location,
     formattedDate: formatProjectDate(project.date),
     statusMeta: status,
     hasImage: Boolean(project.image),
+    sector,
+    clientVisibilityNote,
+    challenge: looksIndustrial
+      ? 'Production-sensitive work needed cleaner coordination so shutdown windows and follow-ups did not drift.'
+      : looksResidential
+        ? 'Finish-sensitive residential work needed clearer owner decisions so approvals, selections, and room handoffs did not scatter.'
+      : looksCommercial
+        ? 'Multiple stakeholders needed one clearer view of status, approvals, and delivery sequencing.'
+        : looksRenovation
+          ? 'Existing conditions and live-site constraints created handoff risk unless progress stayed visible.'
+          : DEFAULT_CASE_STUDY_PROBLEM,
+    solution: looksIndustrial
+      ? 'Execution was organized around field ownership, file visibility, and a steadier reporting rhythm for plant-facing work.'
+      : looksResidential
+        ? 'The team used a portal-backed update rhythm so homeowner files, finish approvals, and next decisions stayed visible through each phase.'
+      : looksCommercial
+        ? 'The workflow connected client communication, project files, and delivery checkpoints into one operating path.'
+        : looksRenovation
+          ? 'The team used a more explicit project record so phasing, files, and follow-up decisions stayed in view.'
+          : DEFAULT_CASE_STUDY_SOLUTION,
+    outcome: looksIndustrial
+      ? 'Supervisors and clients could see the current job picture faster, which reduced coordination drag around active work.'
+      : looksResidential
+        ? 'Homeowners had a cleaner picture of progress and closeout because updates, files, and approvals stayed in one repeatable flow.'
+      : looksCommercial
+        ? 'Project communication became easier to repeat because the client-facing story and the internal operating view stayed aligned.'
+        : looksRenovation
+          ? 'The delivery team had a cleaner closeout path because changes, files, and next actions were easier to trace.'
+          : DEFAULT_CASE_STUDY_OUTCOME,
+    spotlightMetric: looksIndustrial
+      ? 'Portal-backed field visibility'
+      : looksResidential
+        ? 'Homeowner-facing delivery clarity'
+      : looksCommercial
+        ? 'Client-facing delivery clarity'
+        : looksRenovation
+          ? 'Follow-up ownership through closeout'
+          : 'Structured project visibility',
+    searchableText: `${title} ${location} ${description} ${sector}`.toLowerCase(),
   };
 };
 
@@ -87,11 +153,7 @@ const Projects = () => {
 
   const filteredProjects = normalizedProjects
     .filter(project => {
-      const matchesSearch = (
-        project.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const matchesSearch = project.searchableText.includes(searchTerm.toLowerCase());
       
       if (filterStatus === 'all') return matchesSearch;
       return matchesSearch && (project.statusMeta.section === filterStatus);
@@ -117,21 +179,21 @@ const Projects = () => {
 
   const projectSummary = [
     {
-      label: 'In View',
+      label: 'Case Studies',
       value: totalProjects,
       detail: hasActiveFilters
-        ? totalProjects === 1 ? 'project matching filters' : 'projects matching filters'
-        : totalProjects === 1 ? 'project in portfolio' : 'projects in portfolio',
+        ? totalProjects === 1 ? 'case study matching filters' : 'case studies matching filters'
+        : totalProjects === 1 ? 'case study in proof set' : 'case studies in proof set',
     },
     {
-      label: 'Ongoing',
+      label: 'Live Work',
       value: ongoingProjects.length,
-      detail: 'active delivery work',
+      detail: 'active delivery stories',
     },
     {
-      label: 'Completed',
+      label: 'Closeout Proof',
       value: completedProjects.length,
-      detail: 'finished scopes',
+      detail: 'completed delivery stories',
     },
   ];
 
@@ -146,11 +208,27 @@ const Projects = () => {
       <div className="projects-container">
         <section className="projects-intro" data-aos="fade-up">
           <div className="projects-intro-copy">
-            <p className="projects-story-eyebrow">Project Work</p>
-            <h1>Selected project work</h1>
+            <p className="projects-story-eyebrow">Case Studies</p>
+            <h1>Project proof that sells both delivery capability and the client-facing portal.</h1>
             <p>
-              Recent construction and industrial delivery work with direct search and status filters.
+              These stories are framed around operating problems, execution response, and the visibility clients gained
+              once project files, follow-ups, and status checkpoints stayed in one workflow.
             </p>
+          </div>
+        </section>
+        <section className="projects-proof-band" data-aos="fade-up" data-aos-delay="40" aria-label="Why the case studies matter">
+          <div className="projects-proof-band__copy">
+            <p className="projects-story-eyebrow">Hybrid Positioning</p>
+            <h2>This is not just a contractor gallery.</h2>
+            <p>
+              The route now shows where the portal improved accountability and client visibility, not just where work
+              happened. The goal is to prove the hybrid offer with concrete operating outcomes.
+            </p>
+          </div>
+          <div className="projects-proof-band__pillars">
+            <span>Problem / solution / outcome framing</span>
+            <span>Portal-backed client visibility notes</span>
+            <span>Searchable by sector and delivery context</span>
           </div>
         </section>
         <section className="projects-toolbar" data-aos="fade-up" data-aos-delay="80">
@@ -213,7 +291,7 @@ const Projects = () => {
           <section className="projects-inline-status projects-inline-status--error" data-aos="fade-up">
             <div className="projects-inline-status-copy">
               <p className="projects-story-eyebrow">Project Data Unavailable</p>
-              <h3>Project cards could not be loaded right now</h3>
+              <h3>Case study cards could not be loaded right now</h3>
               <p>{error}</p>
             </div>
             <div className="projects-inline-status-actions">
@@ -229,8 +307,8 @@ const Projects = () => {
           hasProjects ? (
             <section className="projects-inline-status projects-inline-status--empty" data-aos="fade-up" role="status" aria-live="polite">
               <div className="projects-inline-status-copy">
-                <p className="projects-story-eyebrow">No Matching Projects</p>
-                <h3>No project cards match the current search or status filter</h3>
+                <p className="projects-story-eyebrow">No Matching Case Studies</p>
+                <h3>No case studies match the current search or status filter</h3>
                 <p>Clear the filters to return to the full project list.</p>
               </div>
               <div className="projects-inline-status-actions">
@@ -251,7 +329,7 @@ const Projects = () => {
         <div className="projects-sections">
           <div className="projects-section">
             <div className="section-header" data-aos="fade-up" data-aos-delay="200">
-              <h2 className="section-title">Ongoing Projects</h2>
+              <h2 className="section-title">Live Delivery Stories</h2>
               <span className="section-count">{ongoingProjects.length}</span>
             </div>
             <div className="projects-grid">
@@ -276,10 +354,29 @@ const Projects = () => {
                     </div>
                   )}
                   <div className="project-content">
+                    <p className="project-sector">{project.sector}</p>
                     <h3 className="project-title">{project.title}</h3>
                     <p className="project-location">{project.location}</p>
                     <p className="project-date">{project.formattedDate}</p>
                     <p className="project-description">{project.description}</p>
+                    <dl className="project-case-study">
+                      <div>
+                        <dt>Problem</dt>
+                        <dd>{project.challenge}</dd>
+                      </div>
+                      <div>
+                        <dt>Response</dt>
+                        <dd>{project.solution}</dd>
+                      </div>
+                      <div>
+                        <dt>Outcome</dt>
+                        <dd>{project.outcome}</dd>
+                      </div>
+                    </dl>
+                    <div className="project-visibility-note">
+                      <strong>{project.spotlightMetric}</strong>
+                      <p>{project.clientVisibilityNote}</p>
+                    </div>
                     <span className={`status-badge ${project.statusMeta.badgeClass}`}>{project.statusMeta.label}</span>
                   </div>
                 </div>
@@ -287,14 +384,14 @@ const Projects = () => {
             </div>
             {ongoingProjects.length === 0 && (
               <p className="projects-section-empty" data-aos="fade-up">
-                No ongoing projects match the current view.
+                No live delivery stories match the current view.
               </p>
             )}
           </div>
 
           <div className="projects-section">
             <div className="section-header" data-aos="fade-up" data-aos-delay="200">
-              <h2 className="section-title">Completed Projects</h2>
+              <h2 className="section-title">Completed Case Studies</h2>
               <span className="section-count">{completedProjects.length}</span>
             </div>
             <div className="projects-grid">
@@ -319,10 +416,29 @@ const Projects = () => {
                     </div>
                   )}
                   <div className="project-content">
+                    <p className="project-sector">{project.sector}</p>
                     <h3 className="project-title">{project.title}</h3>
                     <p className="project-location">{project.location}</p>
                     <p className="project-date">{project.formattedDate}</p>
                     <p className="project-description">{project.description}</p>
+                    <dl className="project-case-study">
+                      <div>
+                        <dt>Problem</dt>
+                        <dd>{project.challenge}</dd>
+                      </div>
+                      <div>
+                        <dt>Response</dt>
+                        <dd>{project.solution}</dd>
+                      </div>
+                      <div>
+                        <dt>Outcome</dt>
+                        <dd>{project.outcome}</dd>
+                      </div>
+                    </dl>
+                    <div className="project-visibility-note">
+                      <strong>{project.spotlightMetric}</strong>
+                      <p>{project.clientVisibilityNote}</p>
+                    </div>
                     <span className={`status-badge ${project.statusMeta.badgeClass}`}>{project.statusMeta.label}</span>
                   </div>
                 </div>
@@ -330,7 +446,7 @@ const Projects = () => {
             </div>
             {completedProjects.length === 0 && (
               <p className="projects-section-empty" data-aos="fade-up">
-                No completed projects match the current view.
+                No completed case studies match the current view.
               </p>
             )}
           </div>

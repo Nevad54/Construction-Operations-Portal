@@ -19,38 +19,35 @@ function Icon({ d, className = '' }) {
   );
 }
 
-function SidebarItem({ item, collapsed, isActive, onClick }) {
+function SidebarItem({ item, expanded, isActive, onClick }) {
   return (
     <Link
       to={item.path}
       onClick={onClick}
       className={`
-        flex items-center gap-3 px-3 py-2.5 mx-2 rounded-xl transition-all duration-200 ease-out
+        flex min-h-11 items-center rounded-xl border transition-all duration-200 ease-out
+        ${expanded ? 'justify-start gap-3 px-3' : 'justify-center px-0'}
         ${isActive
-          ? 'bg-brand-50 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 font-medium'
-          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+          ? 'border-brand/40 bg-brand-50 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 font-medium'
+          : 'border-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
         }
-        ${collapsed ? 'lg:justify-center lg:px-3 lg:mx-1' : ''}
       `}
       aria-current={isActive ? 'page' : undefined}
-      title={collapsed ? item.label : undefined}
+      title={!expanded ? item.label : undefined}
     >
       <span className={isActive ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500 dark:text-gray-500'}>
         <Icon d={item.icon} />
       </span>
-      {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
-      {isActive && !collapsed && (
-        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
-      )}
+      {expanded && <span className="min-w-0 truncate text-sm font-medium">{item.label}</span>}
     </Link>
   );
 }
 
 export default function DashboardSidebar({
   open,
-  collapsed,
+  expanded,
   onClose,
-  onToggleCollapse,
+  onExpandChange,
   isMobile,
   menuItems = defaultMenuItems,
   homePath = '/admin/dashboard',
@@ -60,33 +57,99 @@ export default function DashboardSidebar({
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
 
+  if (isMobile) {
+    return (
+      <>
+        {open && (
+          <button
+            type="button"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
+            onClick={onClose}
+            aria-label="Close sidebar overlay"
+          />
+        )}
+        <aside
+          className={`
+            fixed top-0 left-0 bottom-0 z-50 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl
+            transform transition-transform duration-300 ease-in-out flex flex-col overflow-hidden
+            w-[85vw] max-w-[20rem] sm:w-64
+            ${open ? 'translate-x-0' : '-translate-x-full'}
+          `}
+          role="navigation"
+          aria-label="Main navigation"
+        >
+          <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800">
+            <BrandLockup
+              to={homePath}
+              className="flex flex-1 min-w-0 items-center gap-3"
+              iconClassName="w-9 h-9 rounded-xl object-cover shadow-lg"
+              bodyClassName="flex min-w-0 flex-col"
+              eyebrow="Operations"
+              eyebrowClassName="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand dark:text-brand-400"
+              titleClassName="font-bold leading-tight text-gray-900 dark:text-white"
+              accentClassName="text-brand dark:text-brand-400"
+              subtitle="Admin portal"
+              subtitleClassName="text-xs text-gray-500 dark:text-gray-400"
+            />
+            <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden" aria-label="Close sidebar">
+              <Icon d="M6 18L18 6M6 6l12 12" className="w-5 h-5" />
+            </button>
+          </div>
+
+          <nav className="flex-1 py-4 px-3 space-y-4 overflow-y-auto">
+            <div className="space-y-1.5">
+              <div className="px-3 text-xs font-semibold uppercase tracking-[0.12em] text-gray-400 dark:text-gray-500">Menu</div>
+              {menuItems.map((item) => (
+                <SidebarItem
+                  key={item.label}
+                  item={item}
+                  expanded
+                  isActive={isActive(item.path)}
+                  onClick={onClose}
+                />
+              ))}
+            </div>
+          </nav>
+
+          <div className="p-3 border-t border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center text-white text-sm font-semibold shadow-lg">A</div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">{profileName}</p>
+                <p className="truncate text-xs text-gray-500 dark:text-gray-400">{profileEmail}</p>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </>
+    );
+  }
+
   return (
-    <>
-      {open && isMobile && (
-        <button
-          type="button"
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
-          onClick={onClose}
-          aria-label="Close sidebar overlay"
-        />
-      )}
-      <aside
-        className={`
-          fixed top-0 left-0 bottom-0 z-50 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl
-          transform transition-all duration-300 ease-in-out flex flex-col
-          ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${collapsed ? 'lg:w-20' : 'w-[85vw] max-w-[20rem] sm:w-64'}
-        `}
-        role="navigation"
-        aria-label="Main navigation"
-      >
-        {/* Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800">
+    <aside
+      className={`
+        fixed top-0 left-0 bottom-0 z-50 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl
+        transition-[width,box-shadow] duration-200 ease-out overflow-hidden
+        ${expanded ? 'w-64' : 'w-20'}
+      `}
+      role="navigation"
+      aria-label="Main navigation"
+      onMouseEnter={() => onExpandChange(true)}
+      onMouseLeave={() => onExpandChange(false)}
+      onFocusCapture={() => onExpandChange(true)}
+      onBlurCapture={(event) => {
+        const nextTarget = event.relatedTarget;
+        if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) return;
+        onExpandChange(false);
+      }}
+    >
+      <div className="h-full flex flex-col">
+        <div className={`h-16 flex items-center border-b border-gray-200 dark:border-gray-800 ${expanded ? 'px-4 justify-between' : 'px-3 justify-center'}`}>
           <BrandLockup
             to={homePath}
-            className={`flex items-center gap-3 transition-opacity duration-200 ${collapsed && !isMobile ? 'lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
+            className={`flex min-w-0 items-center ${expanded ? 'flex-1 gap-3' : 'justify-center'}`}
             iconClassName="w-9 h-9 rounded-xl object-cover shadow-lg"
-            bodyClassName="flex min-w-0 flex-col"
+            bodyClassName={expanded ? 'flex min-w-0 flex-col' : 'hidden'}
             eyebrow="Operations"
             eyebrowClassName="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand dark:text-brand-400"
             titleClassName="font-bold leading-tight text-gray-900 dark:text-white"
@@ -94,49 +157,47 @@ export default function DashboardSidebar({
             subtitle="Admin portal"
             subtitleClassName="text-xs text-gray-500 dark:text-gray-400"
           />
-          {!isMobile && (
-            <button onClick={onToggleCollapse} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-200" aria-label="Toggle sidebar">
-              <Icon d={collapsed ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"} className="w-4 h-4" />
-            </button>
-          )}
-          {isMobile && (
-            <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden" aria-label="Close sidebar">
-              <Icon d="M6 18L18 6M6 6l12 12" className="w-5 h-5" />
-            </button>
-          )}
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
-          {!collapsed && (
-            <div className="px-4 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-              Menu
+        <nav className={`flex-1 overflow-y-auto ${expanded ? 'py-4 px-3 space-y-4' : 'py-4 px-1.5 space-y-2'}`}>
+          {expanded ? (
+            <div className="space-y-1.5">
+              <div className="px-3 text-xs font-semibold uppercase tracking-[0.12em] text-gray-400 dark:text-gray-500">Menu</div>
+              {menuItems.map((item) => (
+                <SidebarItem
+                  key={item.label}
+                  item={item}
+                  expanded
+                  isActive={isActive(item.path)}
+                  onClick={onClose}
+                />
+              ))}
             </div>
+          ) : (
+            menuItems.map((item) => (
+              <SidebarItem
+                key={item.label}
+                item={item}
+                expanded={false}
+                isActive={isActive(item.path)}
+                onClick={onClose}
+              />
+            ))
           )}
-          {menuItems.map((item) => (
-            <SidebarItem
-              key={item.label}
-              item={item}
-              collapsed={collapsed}
-              isActive={isActive(item.path)}
-              onClick={onClose}
-            />
-          ))}
         </nav>
 
-        {/* Footer */}
         <div className="p-3 border-t border-gray-200 dark:border-gray-800">
-          <div className={`flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-all duration-200 ${collapsed ? 'lg:justify-center lg:px-2' : ''}`}>
+          <div className={`flex items-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 ${expanded ? 'gap-3 p-2.5' : 'justify-center px-2 py-2.5'}`}>
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center text-white text-sm font-semibold shadow-lg">A</div>
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{profileName}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{profileEmail}</p>
+            {expanded && (
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">{profileName}</p>
+                <p className="truncate text-xs text-gray-500 dark:text-gray-400">{profileEmail}</p>
               </div>
             )}
           </div>
         </div>
-      </aside>
-    </>
+      </div>
+    </aside>
   );
 }

@@ -646,6 +646,17 @@ export const api = {
         return handleResponse(response);
     },
 
+    getClientFollowUps: async () => {
+        const response = await fetch(`${API_PREFIX}/client/follow-ups`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            },
+            credentials: 'include',
+        });
+        return handleResponse(response);
+    },
+
     // Contact Form
     submitContactForm: async (formData) => {
         const response = await fetch(`${API_PREFIX}/contact`, {

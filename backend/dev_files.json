@@ -27,19 +27,19 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-20T06:24:16.373Z",
-    "updatedAt": "2026-02-25T06:24:16.373Z"
+    "createdAt": "2026-03-03T13:48:11.643Z",
+    "updatedAt": "2026-03-08T13:48:11.643Z"
   },
   {
     "_id": "file-sample-002",
-    "originalName": "project-2-package.xlsx",
-    "storedName": "project-2-package.xlsx",
-    "path": "/samples/project-2-package.xlsx",
+    "originalName": "owner-approval-log.xlsx",
+    "storedName": "owner-approval-log.xlsx",
+    "path": "/samples/owner-approval-log.xlsx",
     "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "size": 70173,
     "ownerId": "user-1",
     "visibility": "client",
-    "folder": "Projects/Ongoing",
+    "folder": "Projects/Ongoing/Approvals",
     "projectId": "prj-sample-002",
     "sharedWithUsers": [],
     "sharedWithRoles": [
@@ -49,17 +49,19 @@
     "linkAccess": "view",
     "tags": [
       "construction",
-      "ongoing"
+      "ongoing",
+      "approval",
+      "owner"
     ],
-    "notes": "Sample operational document for demo use.",
+    "notes": "Owner approval tracker for active design decisions and pending site responses.",
     "cloudProvider": "",
     "cloudPublicId": "",
     "previewProvider": "",
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-19T06:24:16.373Z",
-    "updatedAt": "2026-02-24T06:24:16.373Z"
+    "createdAt": "2026-03-02T13:48:11.643Z",
+    "updatedAt": "2026-03-07T13:48:11.643Z"
   },
   {
     "_id": "file-sample-003",
@@ -89,8 +91,8 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-18T06:24:16.373Z",
-    "updatedAt": "2026-02-23T06:24:16.373Z"
+    "createdAt": "2026-03-01T13:48:11.643Z",
+    "updatedAt": "2026-03-06T13:48:11.643Z"
   },
   {
     "_id": "file-sample-004",
@@ -120,19 +122,19 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-17T06:24:16.373Z",
-    "updatedAt": "2026-02-22T06:24:16.373Z"
+    "createdAt": "2026-02-28T13:48:11.643Z",
+    "updatedAt": "2026-03-05T13:48:11.643Z"
   },
   {
     "_id": "file-sample-005",
-    "originalName": "project-5-package.pdf",
-    "storedName": "project-5-package.pdf",
-    "path": "/samples/project-5-package.pdf",
+    "originalName": "plant-shutdown-coordination-pack.pdf",
+    "storedName": "plant-shutdown-coordination-pack.pdf",
+    "path": "/samples/plant-shutdown-coordination-pack.pdf",
     "mimeType": "application/pdf",
     "size": 85692,
     "ownerId": "user-1",
     "visibility": "client",
-    "folder": "Projects/Ongoing",
+    "folder": "Projects/Ongoing/Coordination",
     "projectId": "prj-sample-005",
     "sharedWithUsers": [],
     "sharedWithRoles": [
@@ -142,17 +144,19 @@
     "linkAccess": "view",
     "tags": [
       "construction",
-      "ongoing"
+      "ongoing",
+      "coordination",
+      "shutdown"
     ],
-    "notes": "Sample operational document for demo use.",
+    "notes": "Coordination pack for shutdown sequencing, access windows, and client-side hold points.",
     "cloudProvider": "",
     "cloudPublicId": "",
     "previewProvider": "",
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-16T06:24:16.373Z",
-    "updatedAt": "2026-02-25T06:24:16.373Z"
+    "createdAt": "2026-02-27T13:48:11.643Z",
+    "updatedAt": "2026-03-08T13:48:11.643Z"
   },
   {
     "_id": "file-sample-006",
@@ -182,8 +186,8 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-15T06:24:16.373Z",
-    "updatedAt": "2026-02-24T06:24:16.373Z"
+    "createdAt": "2026-02-26T13:48:11.643Z",
+    "updatedAt": "2026-03-07T13:48:11.643Z"
   },
   {
     "_id": "file-sample-007",
@@ -213,19 +217,19 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-14T06:24:16.373Z",
-    "updatedAt": "2026-02-23T06:24:16.373Z"
+    "createdAt": "2026-02-25T13:48:11.643Z",
+    "updatedAt": "2026-03-06T13:48:11.643Z"
   },
   {
     "_id": "file-sample-008",
-    "originalName": "project-8-package.xlsx",
-    "storedName": "project-8-package.xlsx",
-    "path": "/samples/project-8-package.xlsx",
+    "originalName": "flood-channel-closeout-checklist.xlsx",
+    "storedName": "flood-channel-closeout-checklist.xlsx",
+    "path": "/samples/flood-channel-closeout-checklist.xlsx",
     "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "size": 101211,
     "ownerId": "user-1",
     "visibility": "client",
-    "folder": "Projects/Completed",
+    "folder": "Projects/Completed/Closeout",
     "projectId": "prj-sample-008",
     "sharedWithUsers": [],
     "sharedWithRoles": [
@@ -235,17 +239,19 @@
     "linkAccess": "view",
     "tags": [
       "construction",
-      "completed"
+      "completed",
+      "closeout",
+      "checklist"
     ],
-    "notes": "Sample operational document for demo use.",
+    "notes": "Closeout checklist covering remaining handoff items and final client review steps.",
     "cloudProvider": "",
     "cloudPublicId": "",
     "previewProvider": "",
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-13T06:24:16.373Z",
-    "updatedAt": "2026-02-22T06:24:16.373Z"
+    "createdAt": "2026-02-24T13:48:11.643Z",
+    "updatedAt": "2026-03-05T13:48:11.643Z"
   },
   {
     "_id": "file-sample-009",
@@ -275,8 +281,8 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-12T06:24:16.373Z",
-    "updatedAt": "2026-02-25T06:24:16.373Z"
+    "createdAt": "2026-02-23T13:48:11.643Z",
+    "updatedAt": "2026-03-08T13:48:11.643Z"
   },
   {
     "_id": "file-sample-010",
@@ -306,19 +312,19 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-11T06:24:16.373Z",
-    "updatedAt": "2026-02-24T06:24:16.373Z"
+    "createdAt": "2026-02-22T13:48:11.643Z",
+    "updatedAt": "2026-03-07T13:48:11.643Z"
   },
   {
     "_id": "file-sample-011",
-    "originalName": "project-11-package.pdf",
-    "storedName": "project-11-package.pdf",
-    "path": "/samples/project-11-package.pdf",
+    "originalName": "school-retrofit-progress-photos.pdf",
+    "storedName": "school-retrofit-progress-photos.pdf",
+    "path": "/samples/school-retrofit-progress-photos.pdf",
     "mimeType": "application/pdf",
     "size": 116730,
     "ownerId": "user-1",
     "visibility": "client",
-    "folder": "Projects/Completed",
+    "folder": "Projects/Completed/Updates",
     "projectId": "prj-sample-011",
     "sharedWithUsers": [],
     "sharedWithRoles": [
@@ -328,47 +334,51 @@
     "linkAccess": "view",
     "tags": [
       "construction",
-      "completed"
+      "completed",
+      "progress",
+      "photo"
     ],
-    "notes": "Sample operational document for demo use.",
+    "notes": "Compiled visual progress update for final review of retrofit scope and outstanding observations.",
     "cloudProvider": "",
     "cloudPublicId": "",
     "previewProvider": "",
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-10T06:24:16.373Z",
-    "updatedAt": "2026-02-23T06:24:16.373Z"
+    "createdAt": "2026-02-21T13:48:11.643Z",
+    "updatedAt": "2026-03-06T13:48:11.643Z"
   },
   {
     "_id": "file-sample-012",
-    "originalName": "project-12-package.xlsx",
-    "storedName": "project-12-package.xlsx",
-    "path": "/samples/project-12-package.xlsx",
-    "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "originalName": "homeowner-closeout-package.pdf",
+    "storedName": "homeowner-closeout-package.pdf",
+    "path": "/samples/homeowner-closeout-package.pdf",
+    "mimeType": "application/pdf",
     "size": 121903,
     "ownerId": "user-1",
-    "visibility": "private",
-    "folder": "Projects/Completed",
+    "visibility": "client",
+    "folder": "Projects/Completed/Residential",
     "projectId": "prj-sample-012",
     "sharedWithUsers": [],
     "sharedWithRoles": [
       "admin",
-      "user"
+      "client"
     ],
-    "linkAccess": "none",
+    "linkAccess": "view",
     "tags": [
       "construction",
-      "completed"
+      "completed",
+      "residential",
+      "closeout"
     ],
-    "notes": "Sample operational document for demo use.",
+    "notes": "Sample homeowner closeout package for demo use.",
     "cloudProvider": "",
     "cloudPublicId": "",
     "previewProvider": "",
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-09T06:24:16.373Z",
-    "updatedAt": "2026-02-22T06:24:16.373Z"
+    "createdAt": "2026-02-20T13:48:11.643Z",
+    "updatedAt": "2026-03-05T13:48:11.643Z"
   }
 ]

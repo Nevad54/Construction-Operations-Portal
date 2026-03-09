@@ -857,6 +857,46 @@ const Admin = () => {
         };
     }, [inquiries, projects, reportFiles, reportUsers]);
 
+    const reportsStatusSummary = useMemo(() => {
+        const totalInquiries = reportsOverview.inquiriesTotal;
+        const activeInquiries = (reportsOverview.inquiriesByStatus.new || 0) + (reportsOverview.inquiriesByStatus.in_progress || 0);
+        const urgentInquiries = (reportsOverview.inquiriesByPriority.urgent || 0) + (reportsOverview.inquiriesByPriority.high || 0);
+
+        return [
+            {
+                label: 'Response posture',
+                value: reportKpis.overdue_followups > 0 ? 'Attention needed' : 'On track',
+                detail: reportKpis.overdue_followups > 0
+                    ? `${reportKpis.overdue_followups} follow-up${reportKpis.overdue_followups === 1 ? '' : 's'} past due`
+                    : 'No overdue follow-ups in the current reporting set',
+            },
+            {
+                label: 'Inquiry pressure',
+                value: totalInquiries ? `${activeInquiries}/${totalInquiries}` : '0/0',
+                detail: totalInquiries
+                    ? `${urgentInquiries} priority item${urgentInquiries === 1 ? '' : 's'} need close review`
+                    : 'No inquiry records loaded yet',
+            },
+            {
+                label: 'Delivery load',
+                value: reportsOverview.projectsTotal ? `${reportsOverview.ongoingTotal} active` : 'No projects',
+                detail: reportsOverview.projectsTotal
+                    ? `${reportsOverview.completedTotal} completed jobs still available for proof`
+                    : 'Project data has not been populated yet',
+            },
+        ];
+    }, [reportKpis.overdue_followups, reportsOverview]);
+
+    const reportsHasSignal = useMemo(() => {
+        return (
+            reportsOverview.projectsTotal > 0 ||
+            reportsOverview.usersTotal > 0 ||
+            reportsOverview.filesTotal > 0 ||
+            reportsOverview.inquiriesTotal > 0 ||
+            reportActivity.length > 0
+        );
+    }, [reportActivity.length, reportsOverview]);
+
     const overdueInquiries = useMemo(() => {
         const now = Date.now();
         return inquiries
@@ -1538,13 +1578,54 @@ const Admin = () => {
 
                         {!reportsError && (
                             <>
+                                <Card data-aos="fade-up" data-aos-delay="60">
+                                    <CardHeader className="flex-col items-start gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                        <div>
+                                            <CardTitle>Operations Summary</CardTitle>
+                                            <p className="mt-1 text-sm text-text-secondary dark:text-gray-400">
+                                                Read this first to decide whether the next operator focus should be response handling, delivery cleanup, or follow-up recovery.
+                                            </p>
+                                        </div>
+                                        <Badge variant={reportKpis.overdue_followups > 0 ? 'warning' : 'success'}>
+                                            {reportKpis.overdue_followups > 0 ? 'Follow-up drift present' : 'Queue timing healthy'}
+                                        </Badge>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {reportsHasSignal ? (
+                                            <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+                                                {reportsStatusSummary.map((item) => (
+                                                    <div
+                                                        key={item.label}
+                                                        className="rounded-xl border border-stroke bg-surface-page/70 px-4 py-3 dark:border-gray-700 dark:bg-gray-950/40"
+                                                    >
+                                                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted dark:text-gray-500">
+                                                            {item.label}
+                                                        </p>
+                                                        <p className="mt-2 text-xl font-semibold text-text-primary dark:text-gray-100">
+                                                            {item.value}
+                                                        </p>
+                                                        <p className="mt-1 text-sm text-text-secondary dark:text-gray-400">
+                                                            {item.detail}
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <EmptyState
+                                                title="Report feed is available but still empty"
+                                                description="Once projects, inquiries, files, or activity logs are present, this summary will call out whether the next operator focus should be delivery, response, or cleanup."
+                                            />
+                                        )}
+                                    </CardContent>
+                                </Card>
+
                                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4" data-aos="fade-up" data-aos-delay="80">
                                     <Card>
                                         <CardHeader><CardTitle size="sm">New Today</CardTitle></CardHeader>
                                         <CardContent className="space-y-1">
                                             <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportKpis.new_today}</p>
                                             <p className="text-sm text-text-secondary dark:text-gray-400">
-                                                New inquiries created since midnight
+                                                Fresh inbound inquiries created since midnight
                                             </p>
                                         </CardContent>
                                     </Card>
@@ -1553,7 +1634,7 @@ const Admin = () => {
                                         <CardContent className="space-y-1">
                                             <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportKpis.overdue_followups}</p>
                                             <p className="text-sm text-text-secondary dark:text-gray-400">
-                                                Active inquiries that need follow-up now
+                                                Active inquiry records already past their next action time
                                             </p>
                                         </CardContent>
                                     </Card>
@@ -1562,7 +1643,7 @@ const Admin = () => {
                                         <CardContent className="space-y-1">
                                             <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportKpis.qualified_rate}%</p>
                                             <p className="text-sm text-text-secondary dark:text-gray-400">
-                                                Inquiries moved beyond new status
+                                                Share of inquiries that moved out of the raw new queue
                                             </p>
                                         </CardContent>
                                     </Card>
@@ -1571,7 +1652,7 @@ const Admin = () => {
                                         <CardContent className="space-y-1">
                                             <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportKpis.proposal_rate}%</p>
                                             <p className="text-sm text-text-secondary dark:text-gray-400">
-                                                Resolved inquiries as a current conversion proxy
+                                                Resolved inquiries used as the current proposal/conversion proxy
                                             </p>
                                         </CardContent>
                                     </Card>
@@ -1606,7 +1687,7 @@ const Admin = () => {
                                         <CardHeader><CardTitle size="sm">Activity Logs</CardTitle></CardHeader>
                                         <CardContent className="space-y-1">
                                             <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportActivity.length}</p>
-                                            <p className="text-sm text-text-secondary dark:text-gray-400">Most recent events (last 40)</p>
+                                            <p className="text-sm text-text-secondary dark:text-gray-400">Most recent admin events pulled into this report window</p>
                                         </CardContent>
                                     </Card>
                                     <Card>
@@ -1686,7 +1767,10 @@ const Admin = () => {
                                     </CardHeader>
                                     <CardContent>
                                         {reportActivity.length === 0 ? (
-                                            <p className="text-text-secondary dark:text-gray-400">No activity recorded yet.</p>
+                                            <EmptyState
+                                                title="No recent admin activity"
+                                                description="Activity logs will appear here after auth events, file changes, or admin updates start flowing through the portal."
+                                            />
                                         ) : (
                                             <div className="space-y-2">
                                                 {reportActivity.slice(0, 12).map((item) => (

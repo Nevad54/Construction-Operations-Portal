@@ -8,10 +8,15 @@ export default function ServiceLandingPage({
   eyebrow,
   title,
   subtitle,
+  heroImage,
+  heroImageAlt = '',
   metrics,
   outcomes,
   workflow,
   proof,
+  clientExperience,
+  clientExperienceTitle = 'How clients stay aligned',
+  clientExperienceIntro = 'A visible communication rhythm that keeps active work, shared documents, and next decisions from drifting.',
   ctaId,
   metaTitle,
   metaDescription,
@@ -43,13 +48,20 @@ export default function ServiceLandingPage({
               </Link>
             </div>
           </div>
-          <div className="landing-metrics" aria-label="Delivery metrics">
-            {metrics.map((metric) => (
-              <div key={metric.label} className="landing-metric-card">
-                <p className="landing-metric-value">{metric.value}</p>
-                <p className="landing-metric-label">{metric.label}</p>
+          <div className="landing-aside">
+            {heroImage ? (
+              <div className="landing-hero-media">
+                <img src={heroImage} alt={heroImageAlt} loading="eager" decoding="async" />
               </div>
-            ))}
+            ) : null}
+            <div className="landing-metrics" aria-label="Delivery metrics">
+              {metrics.map((metric) => (
+                <div key={metric.label} className="landing-metric-card">
+                  <p className="landing-metric-value">{metric.value}</p>
+                  <p className="landing-metric-label">{metric.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -88,6 +100,25 @@ export default function ServiceLandingPage({
           </div>
         </div>
       </section>
+
+      {Array.isArray(clientExperience) && clientExperience.length > 0 && (
+        <section className="landing-section">
+          <div className="container">
+            <div className="landing-section-header">
+              <h2>{clientExperienceTitle}</h2>
+              <p>{clientExperienceIntro}</p>
+            </div>
+            <div className="landing-card-grid">
+              {clientExperience.map((item) => (
+                <article key={item.title} className="landing-info-card">
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="landing-section">
         <div className="container landing-proof-shell">

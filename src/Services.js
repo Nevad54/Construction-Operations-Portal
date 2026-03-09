@@ -58,8 +58,8 @@ const Services = () => {
                 <span>Designed to cover both project delivery and plant support workflows.</span>
               </div>
               <div className="services-page-stat">
-                <strong>Client-facing clarity</strong>
-                <span>Built to support straightforward planning conversations and cleaner site decisions.</span>
+                <strong>Commercial + Residential clarity</strong>
+                <span>Built to support straightforward owner communication, cleaner site decisions, and better handoffs.</span>
               </div>
             </div>
           </div>

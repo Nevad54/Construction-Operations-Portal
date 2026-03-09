@@ -5,7 +5,7 @@ import { api } from '../../services/api';
 const roleHome = {
   admin: '/admin/dashboard',
   user: '/user/dashboard',
-  client: '/client/files',
+  client: '/client/workspace',
 };
 
 const roleLogin = {

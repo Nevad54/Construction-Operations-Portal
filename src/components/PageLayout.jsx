@@ -12,12 +12,10 @@ function getActivePage(path) {
       return 'home';
     case '/about':
       return 'about';
+    case '/client-portal':
+      return 'client-portal';
     case '/services':
       return 'services';
-    case '/vision-mission':
-      return 'vision-mission';
-    case '/core-values':
-      return 'core-values';
     case '/safety':
       return 'safety';
     case '/projects':
