@@ -31,6 +31,35 @@ const isInquiryOverdue = (inquiry, now = Date.now()) => {
 };
 const hasAssignedInquiryOwner = (inquiry) => Boolean(String(inquiry?.owner || inquiry?.assignedTo || '').trim());
 const hasScheduledFollowUp = (inquiry) => getInquiryFollowUpTime(inquiry?.nextFollowUpAt) > 0;
+const getInquiryContextFingerprint = (inquiry) => `${inquiry?.source || ''} ${inquiry?.notes || ''} ${inquiry?.message || ''}`.toLowerCase();
+const getInquiryIntent = (inquiry) => {
+    const fingerprint = getInquiryContextFingerprint(inquiry);
+    if (fingerprint.includes('approval-approved')) {
+        return {
+            label: 'Approval Confirmed',
+            summary: 'Client marked an item approved from the workspace and expects the next handoff step to be confirmed.',
+            badgeVariant: 'success',
+            queueLabel: 'Approvals',
+        };
+    }
+    if (fingerprint.includes('approval-changes')) {
+        return {
+            label: 'Changes Requested',
+            summary: 'Client requested revisions from the workspace and the item should move into active coordination.',
+            badgeVariant: 'warning',
+            queueLabel: 'Change requests',
+        };
+    }
+    if (fingerprint.includes('client-workspace')) {
+        return {
+            label: 'Workspace Follow-Up',
+            summary: 'This follow-up came from the authenticated client workspace rather than the public marketing intake.',
+            badgeVariant: 'info',
+            queueLabel: 'Workspace requests',
+        };
+    }
+    return null;
+};
 const buildNextFollowUpIso = ({ days = 0, hours = 0, targetHour = null } = {}) => {
     const next = new Date();
     if (targetHour !== null) {
@@ -908,6 +937,8 @@ const Admin = () => {
         const activeInquiries = inquiries.filter((item) => !isClosedInquiryStatus(item.status));
         const unassignedInquiries = activeInquiries.filter((item) => !hasAssignedInquiryOwner(item));
         const unscheduledInquiries = activeInquiries.filter((item) => !hasScheduledFollowUp(item));
+        const approvalConfirmed = inquiries.filter((item) => getInquiryIntent(item)?.label === 'Approval Confirmed');
+        const changeRequested = inquiries.filter((item) => getInquiryIntent(item)?.label === 'Changes Requested');
 
         return [
             {
@@ -929,6 +960,16 @@ const Admin = () => {
                 label: 'Overdue',
                 value: String(overdueInquiries.length),
                 detail: 'Past-due follow-ups that should be triaged first',
+            },
+            {
+                label: 'Approvals',
+                value: String(approvalConfirmed.length),
+                detail: 'Client approvals waiting for operator acknowledgement',
+            },
+            {
+                label: 'Change requests',
+                value: String(changeRequested.length),
+                detail: 'Client-requested revisions that need active coordination',
             },
         ];
     }, [inquiries, overdueInquiries.length]);
@@ -1142,6 +1183,22 @@ const Admin = () => {
                     nextFollowUpAt,
                 });
                 success('Inquiry moved into active review');
+            } else if (action === 'acknowledge_approval') {
+                await api.adminUpdateInquiry(inquiry.id, {
+                    ...basePayload,
+                    status: 'resolved',
+                    nextFollowUpAt: '',
+                    notes: `${String(inquiry.notes || '').trim()}${String(inquiry.notes || '').trim() ? '\n' : ''}Admin acknowledged client approval and closed the request.`,
+                });
+                success('Client approval acknowledged');
+            } else if (action === 'log_change_review') {
+                await api.adminUpdateInquiry(inquiry.id, {
+                    ...basePayload,
+                    status: 'in_progress',
+                    nextFollowUpAt: buildNextFollowUpIso({ days: 1, targetHour: 9 }),
+                    notes: `${String(inquiry.notes || '').trim()}${String(inquiry.notes || '').trim() ? '\n' : ''}Admin logged the requested changes for active follow-up.`,
+                });
+                success('Change request moved into active coordination');
             } else if (action === 'schedule_follow_up') {
                 await api.adminUpdateInquiry(inquiry.id, {
                     ...basePayload,
@@ -1395,7 +1452,7 @@ const Admin = () => {
                                 ) : (
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                                            {inquiryQueueSummary.map((item) => (
+                                        {inquiryQueueSummary.map((item) => (
                                                 <div
                                                     key={item.label}
                                                     className="rounded-xl border border-stroke bg-surface-page/70 px-4 py-3 dark:border-gray-700 dark:bg-gray-950/40"
@@ -1413,7 +1470,9 @@ const Admin = () => {
                                             ))}
                                         </div>
 
-                                        {inquiries.map((inquiry) => (
+                                        {inquiries.map((inquiry) => {
+                                            const inquiryIntent = getInquiryIntent(inquiry);
+                                            return (
                                             <div
                                                 key={inquiry.id}
                                                 className={`rounded-lg border p-3 ${
@@ -1454,6 +1513,9 @@ const Admin = () => {
                                                         {isInquiryOverdue(inquiry) ? (
                                                             <Badge size="sm" variant="warning">Overdue</Badge>
                                                         ) : null}
+                                                        {inquiryIntent ? (
+                                                            <Badge size="sm" variant={inquiryIntent.badgeVariant}>{inquiryIntent.label}</Badge>
+                                                        ) : null}
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -1481,6 +1543,11 @@ const Admin = () => {
                                                 <p className="text-sm text-text-secondary dark:text-gray-300 mt-2 whitespace-pre-wrap break-words">
                                                     {inquiry.message || 'No message'}
                                                 </p>
+                                                {inquiryIntent ? (
+                                                    <p className="text-xs text-brand mt-2">
+                                                        {inquiryIntent.summary}
+                                                    </p>
+                                                ) : null}
                                                 {inquiry.notes ? (
                                                     <p className="text-xs text-text-muted dark:text-gray-500 mt-2">
                                                         Notes: {inquiry.notes}
@@ -1502,6 +1569,16 @@ const Admin = () => {
                                                             Schedule Follow-up
                                                         </Button>
                                                     ) : null}
+                                                    {inquiryIntent?.label === 'Approval Confirmed' && hasAssignedInquiryOwner(inquiry) && !isClosedInquiryStatus(inquiry.status) ? (
+                                                        <Button variant="outline" size="sm" onClick={() => handleQuickInquiryAction(inquiry, 'acknowledge_approval')}>
+                                                            Acknowledge Approval
+                                                        </Button>
+                                                    ) : null}
+                                                    {inquiryIntent?.label === 'Changes Requested' && hasAssignedInquiryOwner(inquiry) ? (
+                                                        <Button variant="outline" size="sm" onClick={() => handleQuickInquiryAction(inquiry, 'log_change_review')}>
+                                                            Start Change Review
+                                                        </Button>
+                                                    ) : null}
                                                     {isInquiryOverdue(inquiry) ? (
                                                         <>
                                                             <Button variant="outline" size="sm" onClick={() => handleReminderAction(inquiry, 'snooze_1d')}>
@@ -1520,7 +1597,7 @@ const Admin = () => {
                                                     </Button>
                                                 </div>
                                             </div>
-                                        ))}
+                                        )})}
                                         <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                                             <p className="text-xs text-text-muted dark:text-gray-500">
                                                 Showing {(inquiryPage - 1) * inquiryPageSize + (inquiries.length ? 1 : 0)}-

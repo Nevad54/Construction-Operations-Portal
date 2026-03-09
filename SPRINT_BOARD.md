@@ -2009,6 +2009,27 @@ Date: 2026-03-08
   - Client follow-up status now distinguishes approval decisions from standard follow-up items by tracking the approval context in inquiry notes and surfacing `Approved` / `Changes Requested` states.
   - Verified with `npx vitest run src/components/ClientWorkspace.test.js src/PublicRoutes.test.js`, `node --test backend/tests/*.test.js`, `npm run build`, and `npm run smoke:public-ui`.
 
+### P28-8 Admin Triage for Client Decisions
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 0.5 day
+- Files:
+  - src/components/AdminDashboard.js
+  - src/components/AdminDashboard.test.js
+  - SPRINT_BOARD.md
+- Scope:
+  - Make the admin inquiry queue distinguish client approvals and change requests from generic follow-up traffic so operators can triage those decisions faster.
+  - Add quick actions that match the new client interaction flow instead of forcing operators to infer intent from raw notes.
+- Acceptance Criteria:
+  - Admin inquiry cards clearly label approval confirmations, change requests, and client-workspace follow-up traffic.
+  - The queue summary counts the approval and change-request load separately.
+  - Quick actions exist for acknowledging client approval and starting change review, with regression coverage protecting those paths.
+- Notes:
+  - Completed on 2026-03-09.
+  - Added inquiry-intent detection from the client-workspace context, surfaced explicit admin badges/summary counts, and added `Acknowledge Approval` plus `Start Change Review` quick actions in the inquiry queue.
+  - The admin clients route now reads client decisions as explicit operations work instead of generic contact traffic, while keeping the existing inquiry data model intact.
+  - Verified with `npx vitest run src/components/AdminDashboard.test.js src/components/ClientWorkspace.test.js src/PublicRoutes.test.js`, `npm run smoke:public-ui`, and `npm run build`.
+
 ## Completed Outside Sprint Scope
 - 2026-03-08: Fixed two Express 5 wildcard route incompatibilities in `backend/server.js` so the app can run locally on alternate ports without affecting the deployed environment.
 - 2026-03-08: Replaced public-facing office address, hours, phone numbers, and maps link with fictional portfolio-safe contact details across the marketing site.

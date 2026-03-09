@@ -127,8 +127,34 @@ describe('AdminDashboard route shell', () => {
           nextFollowUpAt: '',
           createdAt: new Date().toISOString(),
         },
+        {
+          id: 'i-2',
+          name: 'Jordan Approver',
+          email: 'jordan@example.com',
+          message: 'Approving "Permit Set A.pdf" for North Plant Retrofit.',
+          source: 'client-workspace',
+          notes: 'Context: approval-approved',
+          status: 'new',
+          priority: 'normal',
+          owner: 'casey',
+          nextFollowUpAt: '',
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'i-3',
+          name: 'Riley Reviewer',
+          email: 'riley@example.com',
+          message: 'Requesting changes on "homeowner-closeout-package.pdf" for Homeowner Condo Fit-Out.',
+          source: 'client-workspace',
+          notes: 'Context: approval-changes',
+          status: 'new',
+          priority: 'high',
+          owner: 'casey',
+          nextFollowUpAt: '',
+          createdAt: new Date().toISOString(),
+        },
       ],
-      total: 1,
+      total: 3,
     });
     mockedApi.adminUpdateInquiry.mockResolvedValue({});
     mockedApi.adminGetKpis.mockResolvedValue({
@@ -178,10 +204,10 @@ describe('AdminDashboard route shell', () => {
   test('clients route supports quick inquiry triage actions from the queue', async () => {
     renderAdminDashboard('/admin/dashboard/clients');
 
-    expect(await screen.findByRole('button', { name: 'Start Review' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Schedule Follow-up' })).toBeInTheDocument();
+    expect((await screen.findAllByRole('button', { name: 'Start Review' })).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Schedule Follow-up' }).length).toBeGreaterThan(0);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Review' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Start Review' })[0]);
 
     await waitFor(() => {
       expect(mockedApi.adminUpdateInquiry).toHaveBeenCalledWith(
@@ -195,11 +221,47 @@ describe('AdminDashboard route shell', () => {
     });
   });
 
+  test('clients route labels client approval traffic distinctly and supports approval-specific quick actions', async () => {
+    renderAdminDashboard('/admin/dashboard/clients');
+
+    expect(await screen.findByText('Approval Confirmed')).toBeInTheDocument();
+    expect(screen.getByText('Changes Requested')).toBeInTheDocument();
+    expect(screen.getByText('Approvals')).toBeInTheDocument();
+    expect(screen.getByText('Change requests')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Acknowledge Approval' }));
+
+    await waitFor(() => {
+      expect(mockedApi.adminUpdateInquiry).toHaveBeenCalledWith(
+        'i-2',
+        expect.objectContaining({
+          status: 'resolved',
+          owner: 'casey',
+          assignedTo: 'casey',
+          nextFollowUpAt: '',
+        })
+      );
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Change Review' }));
+
+    await waitFor(() => {
+      expect(mockedApi.adminUpdateInquiry).toHaveBeenCalledWith(
+        'i-3',
+        expect.objectContaining({
+          status: 'in_progress',
+          owner: 'casey',
+          assignedTo: 'casey',
+        })
+      );
+    });
+  });
+
   test('inquiry modal exposes invalid field state when required triage fields are missing', async () => {
     renderAdminDashboard('/admin/dashboard/clients');
 
-    expect(await screen.findByRole('button', { name: 'Open Triage' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Open Triage' }));
+    expect((await screen.findAllByRole('button', { name: 'Open Triage' })).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Open Triage' })[0]);
 
     const ownerSelect = await screen.findByLabelText('Owner');
     const followUpInput = screen.getByLabelText('Next Follow-up');
