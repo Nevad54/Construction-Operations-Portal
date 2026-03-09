@@ -1,12 +1,18 @@
 /* eslint-disable no-console */
 // Smoke test for Project-based RBAC.
 //
-// Runs against a local backend instance (default http://localhost:3002).
+// Runs against a local backend instance (auto-detects 3102/3002).
 // Usage:
 //   node backend/scripts/smoke-rbac.js
-//   BASE_URL=http://localhost:3002 node backend/scripts/smoke-rbac.js
+//   BASE_URL=http://localhost:3102 node backend/scripts/smoke-rbac.js
 
-const BASE_URL = (process.env.BASE_URL || 'http://localhost:3002').replace(/\/$/, '');
+const candidateBaseUrls = [
+  process.env.BASE_URL,
+  'http://localhost:3102',
+  'http://127.0.0.1:3102',
+  'http://localhost:3002',
+  'http://127.0.0.1:3002',
+].filter(Boolean).map((value) => value.replace(/\/$/, ''));
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -37,7 +43,7 @@ class CookieJar {
 }
 
 const httpJson = async (path, { method = 'GET', body = undefined, jar = null, headers = {} } = {}) => {
-  const url = `${BASE_URL}${path}`;
+  const url = `${jar?.baseUrl || candidateBaseUrls[0]}${path}`;
   const init = {
     method,
     headers: {
@@ -72,7 +78,7 @@ const httpJson = async (path, { method = 'GET', body = undefined, jar = null, he
 };
 
 const httpForm = async (path, { method = 'POST', formData, jar } = {}) => {
-  const url = `${BASE_URL}${path}`;
+  const url = `${jar?.baseUrl || candidateBaseUrls[0]}${path}`;
   const init = { method, body: formData, headers: { Accept: 'application/json' } };
   if (jar) {
     const cookie = jar.headerValue();
@@ -96,8 +102,28 @@ const httpForm = async (path, { method = 'POST', formData, jar } = {}) => {
   return json;
 };
 
+const detectBaseUrl = async () => {
+  for (const baseUrl of candidateBaseUrls) {
+    try {
+      const response = await fetch(`${baseUrl}/api/status`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok) continue;
+      const payload = await response.json();
+      if (payload && Object.prototype.hasOwnProperty.call(payload, 'usingFallback')) {
+        return baseUrl;
+      }
+    } catch (_error) {
+      // ignore and continue
+    }
+  }
+
+  throw new Error('No compatible Construction Operations Portal backend found on the supported local ports.');
+};
+
 const login = async ({ username, password }) => {
   const jar = new CookieJar();
+  jar.baseUrl = candidateBaseUrls[0];
   await httpJson('/api/auth/login', { method: 'POST', body: { username, password }, jar });
   const me = await httpJson('/api/auth/me', { jar });
   return { jar, me: me.user };
@@ -121,7 +147,9 @@ const findUserByUsername = (users, username) => {
 };
 
 const main = async () => {
-  console.log(`RBAC smoke starting: ${BASE_URL}`);
+  const baseUrl = await detectBaseUrl();
+  candidateBaseUrls[0] = baseUrl;
+  console.log(`RBAC smoke starting: ${baseUrl}`);
 
   // Wait a moment if backend is still booting.
   for (let i = 0; i < 10; i++) {
@@ -214,4 +242,3 @@ main().catch((err) => {
   if (err && err.body) console.error('Details:', err.body);
   process.exitCode = 1;
 });
-

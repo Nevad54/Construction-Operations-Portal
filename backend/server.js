@@ -2014,7 +2014,11 @@ app.get('/api/client/follow-ups', requireAuth, requireRoles(['client']), async (
       ? req.session.clientWorkspaceInquiryIds
       : [];
     const items = await getInquiryByIds(sessionIds);
-    return res.json({ items });
+    return res.json({
+      items,
+      count: items.length,
+      generatedAt: new Date().toISOString(),
+    });
   } catch (err) {
     console.error('Error loading client follow-ups:', err);
     return res.status(500).json({ error: 'Failed to load client follow-up status' });
