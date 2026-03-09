@@ -62,6 +62,7 @@
     "smoke:production": "node scripts/smoke-production.js",
     "smoke:deploy-runtime": "node scripts/smoke-deploy-runtime.js",
     "smoke:deploy-contact": "node scripts/smoke-deploy-contact.js",
+    "smoke:deploy-protected-routes": "node scripts/smoke-deploy-protected-routes.js",
     "smoke:admin-authenticated": "node scripts/smoke-admin-authenticated.js",
     "smoke:public-ui": "cross-env NODE_NO_WARNINGS=1 node --no-warnings ./node_modules/vitest/vitest.mjs run src/PublicRoutes.test.js",
     "smoke:admin": "node backend/scripts/smoke-admin-dashboard.js",

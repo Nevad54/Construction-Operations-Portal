@@ -17,6 +17,14 @@ Run the single deployed verification command:
 FRONTEND_URL=https://your-preview-or-production-site BACKEND_URL=https://your-backend-host npm run verify:production
 ```
 
+This now fails if protected deployed routes are missing. The deployed frontend and backend must both return `401 Unauthorized` for anonymous probes to:
+
+- `/api/admin/kpis`
+- `/api/admin/inquiries?limit=1`
+- `/api/client/follow-ups`
+
+If any of those return `404`, the backend deployment is stale or pointed at the wrong service even if the public site still looks healthy.
+
 ## 3. Record Evidence
 
 - paste the command result into [`POST_DEPLOY_EVIDENCE_TEMPLATE.md`](./POST_DEPLOY_EVIDENCE_TEMPLATE.md)

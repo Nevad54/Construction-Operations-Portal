@@ -53,6 +53,7 @@ For deployed preview or production:
 - The Google site-key allowlist includes the deployed frontend hostname being released.
 - The deployed contact page does not show a Google domain error inside the widget.
 - `FRONTEND_URL=https://your-preview-or-production-site npm run smoke:deploy-contact` passes and returns the expected invalid-token rejection path.
+- `FRONTEND_URL=https://your-preview-or-production-site BACKEND_URL=https://your-backend-host npm run smoke:deploy-protected-routes` passes and returns `401 Unauthorized` for protected admin and client routes instead of `404 Not found`.
 
 ## 4. Metadata and Brand Checks
 

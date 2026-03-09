@@ -21,6 +21,7 @@ const runnerCommand = process.execPath;
 const commands = [
   ['run', 'smoke:production'],
   ['run', 'smoke:deploy-contact'],
+  ['run', 'smoke:deploy-protected-routes'],
   ['run', 'report:production-health'],
 ];
 
