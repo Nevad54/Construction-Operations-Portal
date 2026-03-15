@@ -466,12 +466,16 @@ function registerAuthRoutes(app, deps) {
         persistAuthUsers();
       }
 
-      await sendPasswordResetEmail({
-        email: user.email || email,
-        resetUrl,
-        role: user.role,
-        audience,
-      });
+      Promise.resolve()
+        .then(() => sendPasswordResetEmail({
+          email: user.email || email,
+          resetUrl,
+          role: user.role,
+          audience,
+        }))
+        .catch((emailErr) => {
+          console.error('Password reset email delivery failed', emailErr);
+        });
 
       await logActivity(req, {
         action: 'auth.forgot_password',
