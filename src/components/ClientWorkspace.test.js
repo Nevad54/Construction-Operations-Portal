@@ -161,10 +161,41 @@ describe('ClientWorkspace', () => {
     expect(await screen.findByText(/Residential Handoff Spotlight/i)).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { name: 'Homeowner Condo Fit-Out' }).length).toBeGreaterThan(0);
     expect(screen.getByText(/Closeout material is ready for homeowner review/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/homeowner-closeout-package\.pdf/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Homeowner Closeout Package\.pdf/i).length).toBeGreaterThan(0);
     expect(screen.getByText('Closeout review')).toBeInTheDocument();
     expect(screen.getByText('Ready for handoff')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /review residential files/i })).toHaveAttribute('href', '/client/files');
+  });
+
+  test('softens demo-style file names and hides demo-only notes in the client workspace', async () => {
+    api.me.mockResolvedValueOnce({
+      user: { id: 'client-1', username: 'client', role: 'client' },
+    });
+    api.getFiles.mockResolvedValueOnce([
+      {
+        _id: 'file-demo-1',
+        originalName: 'project-7-package.pdf',
+        projectId: 'project-7',
+        visibility: 'client',
+        notes: 'Sample operational document for demo use.',
+        createdAt: '2026-03-07T09:00:00.000Z',
+        updatedAt: '2026-03-08T10:00:00.000Z',
+      },
+    ]);
+    api.getProjects.mockResolvedValueOnce([
+      { _id: 'project-7', title: 'North Plant Retrofit', status: 'ongoing' },
+    ]);
+    api.getClientFollowUps.mockResolvedValueOnce({ items: [] });
+
+    render(
+      <MemoryRouter future={memoryRouterFutureFlags}>
+        <ClientWorkspace />
+      </MemoryRouter>
+    );
+
+    expect((await screen.findAllByText('Shared project package.pdf')).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/project-7-package\.pdf/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Sample operational document for demo use/i)).not.toBeInTheDocument();
   });
 
   test('surfaces approval decisions distinctly in follow-up status when workspace requests are tracked', async () => {

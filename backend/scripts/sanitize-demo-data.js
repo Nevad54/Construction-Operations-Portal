@@ -108,11 +108,29 @@ function buildSampleProjects() {
 function buildSampleFiles(projectIds) {
   const visibilities = ['team', 'client', 'private'];
   const clientFacingTemplates = {
+    0: {
+      originalName: 'site-drainage-package.pdf',
+      folder: 'Projects/Ongoing/Drainage',
+      tags: ['construction', 'ongoing', 'drainage', 'site'],
+      notes: 'Current drainage package for active site works, tie-ins, and review checkpoints.',
+    },
     1: {
       originalName: 'owner-approval-log.xlsx',
       folder: 'Projects/Ongoing/Approvals',
       tags: ['construction', 'ongoing', 'approval', 'owner'],
       notes: 'Owner approval tracker for active design decisions and pending site responses.',
+    },
+    2: {
+      originalName: 'utility-renewal-scope.pdf',
+      folder: 'Projects/Ongoing/Utilities',
+      tags: ['construction', 'ongoing', 'utilities', 'scope'],
+      notes: 'Updated scope package covering live utility renewal work and current field coordination.',
+    },
+    3: {
+      originalName: 'commercial-fitout-checklist.xlsx',
+      folder: 'Projects/Ongoing/Fit-Out',
+      tags: ['construction', 'ongoing', 'fitout', 'checklist'],
+      notes: 'Active fit-out checklist covering current rooms, inspections, and handoff dependencies.',
     },
     4: {
       originalName: 'plant-shutdown-coordination-pack.pdf',
@@ -120,11 +138,35 @@ function buildSampleFiles(projectIds) {
       tags: ['construction', 'ongoing', 'coordination', 'shutdown'],
       notes: 'Coordination pack for shutdown sequencing, access windows, and client-side hold points.',
     },
+    5: {
+      originalName: 'civil-works-progress-register.xlsx',
+      folder: 'Projects/Ongoing/Civil',
+      tags: ['construction', 'ongoing', 'civil', 'progress'],
+      notes: 'Progress register for the active civil package, current blockers, and next review items.',
+    },
+    6: {
+      originalName: 'retrofit-turnover-summary.pdf',
+      folder: 'Projects/Completed/Turnover',
+      tags: ['construction', 'completed', 'retrofit', 'turnover'],
+      notes: 'Turnover summary capturing the completed retrofit scope, final observations, and handoff status.',
+    },
     7: {
       originalName: 'flood-channel-closeout-checklist.xlsx',
       folder: 'Projects/Completed/Closeout',
       tags: ['construction', 'completed', 'closeout', 'checklist'],
       notes: 'Closeout checklist covering remaining handoff items and final client review steps.',
+    },
+    8: {
+      originalName: 'facility-upgrade-closeout.pdf',
+      folder: 'Projects/Completed/Closeout',
+      tags: ['construction', 'completed', 'upgrade', 'closeout'],
+      notes: 'Closeout package for the completed facility upgrade, including final observations and next maintenance steps.',
+    },
+    9: {
+      originalName: 'commissioning-readiness-log.xlsx',
+      folder: 'Projects/Completed/Commissioning',
+      tags: ['construction', 'completed', 'commissioning', 'readiness'],
+      notes: 'Commissioning readiness log capturing final checks, sign-offs, and closeout status.',
     },
     10: {
       originalName: 'school-retrofit-progress-photos.pdf',
@@ -144,7 +186,7 @@ function buildSampleFiles(projectIds) {
         : (idx % 2 === 0 ? 'pdf' : 'xlsx');
     const fileName = isResidentialCloseout
       ? 'homeowner-closeout-package.pdf'
-      : clientTemplate?.originalName || `project-${idx + 1}-package.${ext}`;
+      : clientTemplate?.originalName || `construction-package-${idx + 1}.${ext}`;
     return {
       _id: `file-sample-${String(idx + 1).padStart(3, '0')}`,
       originalName: fileName,
@@ -167,8 +209,8 @@ function buildSampleFiles(projectIds) {
         ? ['construction', 'completed', 'residential', 'closeout']
         : clientTemplate?.tags || ['construction', idx < 6 ? 'ongoing' : 'completed'],
       notes: isResidentialCloseout
-        ? 'Sample homeowner closeout package for demo use.'
-        : clientTemplate?.notes || 'Sample operational document for demo use.',
+        ? 'Homeowner closeout package prepared for final review, sign-off, and turnover.'
+        : clientTemplate?.notes || 'Current project package shared for review and coordination.',
       cloudProvider: '',
       cloudPublicId: '',
       previewProvider: '',

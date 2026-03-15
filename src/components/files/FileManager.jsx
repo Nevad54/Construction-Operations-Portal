@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../../services/api';
+import { getClientFacingFileName, getClientFacingFileNote } from '../../utils/clientFilePresentation';
 import {
   Badge,
   Button,
@@ -255,6 +256,14 @@ const isRecentFile = (file) => {
 };
 
 export default function FileManager({ expectedRole = 'user', title = 'File Manager' }) {
+  const getDisplayFileName = useCallback(
+    (fileName = '') => (expectedRole === 'client' ? getClientFacingFileName(fileName) : String(fileName || '')),
+    [expectedRole]
+  );
+  const getDisplayFileNotes = useCallback(
+    (notes = '') => (expectedRole === 'client' ? getClientFacingFileNote(notes) : String(notes || '')),
+    [expectedRole]
+  );
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authForm, setAuthForm] = useState({
@@ -2187,7 +2196,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                               <path d="M12 17.27l5.18 3.04-1.64-5.81L20 9.24l-5.9-.5L12 3.5 9.9 8.74 4 9.24l4.46 5.26-1.64 5.81L12 17.27z" />
                             </svg>
                           )}
-                          <span>{file.originalName}</span>
+                          <span>{getDisplayFileName(file.originalName)}</span>
                         </p>
                       </td>
                       <td className="py-2 pr-4">{file.ownerId}</td>
@@ -2380,7 +2389,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                           <path d="M12 17.27l5.18 3.04-1.64-5.81L20 9.24l-5.9-.5L12 3.5 9.9 8.74 4 9.24l4.46 5.26-1.64 5.81L12 17.27z" />
                         </svg>
                       )}
-                      <span className="truncate">{file.originalName}</span>
+                      <span className="truncate">{getDisplayFileName(file.originalName)}</span>
                       {String(file.projectId || '').trim() ? (
                         <span
                           className="ml-1 inline-flex items-center text-text-muted dark:text-gray-400"
@@ -2441,7 +2450,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-text-primary dark:text-gray-100 truncate">
-                            {inspectorFile.originalName}
+                            {getDisplayFileName(inspectorFile.originalName)}
                           </p>
                           <p className="text-xs text-text-secondary dark:text-gray-400 truncate">
                             {inspectorFile.folder ? inspectorFile.folder : 'Root'}
@@ -3484,7 +3493,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-text-primary dark:text-gray-100 truncate">
-                    {inspectorFile.originalName}
+                    {getDisplayFileName(inspectorFile.originalName)}
                   </p>
                   <p className="text-xs text-text-secondary dark:text-gray-400 truncate">
                     {inspectorFile.folder ? inspectorFile.folder : 'Root'}
@@ -3838,7 +3847,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 min-w-0">
                   <p className="font-semibold text-sm text-text-primary dark:text-gray-100 truncate">
-                    {previewFile.originalName}
+                    {getDisplayFileName(previewFile.originalName)}
                   </p>
                   {previewFile.cloudProvider ? (
                     <Badge variant="secondary" className="shrink-0">
@@ -4124,7 +4133,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                     <div>
                       <p className="text-xs text-text-secondary dark:text-gray-400">Name</p>
                       <p className="text-sm text-text-primary dark:text-gray-100 break-all leading-snug">
-                        {previewFile.originalName}
+                        {getDisplayFileName(previewFile.originalName)}
                       </p>
                     </div>
                     <div className="grid grid-cols-1 gap-3">
@@ -4171,10 +4180,10 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
                         </div>
                       </div>
                     )}
-                    {previewFile.notes ? (
+                    {getDisplayFileNotes(previewFile.notes) ? (
                       <div>
                         <p className="text-xs text-text-secondary dark:text-gray-400">Notes</p>
-                        <p className="text-sm text-text-primary dark:text-gray-100 whitespace-pre-wrap break-words">{previewFile.notes}</p>
+                        <p className="text-sm text-text-primary dark:text-gray-100 whitespace-pre-wrap break-words">{getDisplayFileNotes(previewFile.notes)}</p>
                       </div>
                     ) : null}
                     <p className="text-[11px] text-text-muted dark:text-gray-500 pt-1">

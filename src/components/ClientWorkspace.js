@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { getClientFacingFileName, getClientFacingFileNote } from '../utils/clientFilePresentation';
 import { Badge, Card, CardContent, CardHeader, CardTitle } from './ui';
 
 const formatDate = (value) => {
@@ -243,10 +244,10 @@ export default function ClientWorkspace() {
       const projectTitle = project?.title || 'Shared project workspace';
       return {
         id: file._id || `${file.originalName}-${file.createdAt}`,
-        fileName: file.originalName || 'Untitled file',
+        fileName: getClientFacingFileName(file.originalName || 'Untitled file'),
         projectTitle,
         updatedAt: file.updatedAt || file.createdAt || '',
-        note: String(file?.notes || '').trim(),
+        note: getClientFacingFileNote(String(file?.notes || '').trim()),
         access: startCase(file.visibility || 'client'),
         followUpHref: buildWorkspaceActionLink({
           fileName: file.originalName || 'Untitled file',
@@ -324,7 +325,7 @@ export default function ClientWorkspace() {
     return {
       title: project?.title || 'Residential handoff',
       status: project?.status || 'Active',
-      fileName: candidate?.originalName || 'Shared residential file',
+      fileName: getClientFacingFileName(candidate?.originalName || 'Shared residential file'),
       updatedAt: candidate?.updatedAt || candidate?.createdAt || '',
       summary: String(candidate?.originalName || '').toLowerCase().includes('closeout')
         ? 'Closeout material is ready for homeowner review, final checks, and turnover.'
@@ -336,7 +337,7 @@ export default function ClientWorkspace() {
     const actions = [];
 
     if (recentFiles.length > 0) {
-      actions.push(`Review the newest shared file: ${recentFiles[0].originalName || 'recent file'}.`);
+      actions.push(`Review the newest shared file: ${getClientFacingFileName(recentFiles[0].originalName || 'recent file')}.`);
     } else {
       actions.push('Watch for your first shared file. It will appear here as soon as the team uploads it.');
     }
@@ -742,7 +743,7 @@ export default function ClientWorkspace() {
                       className="flex flex-col gap-3 rounded-xl border border-stroke bg-white/70 px-4 py-4 dark:border-gray-700 dark:bg-gray-900/60 md:flex-row md:items-center md:justify-between"
                     >
                       <div className="space-y-1">
-                        <p className="font-medium text-text-primary dark:text-gray-100">{file.originalName || 'Untitled file'}</p>
+                        <p className="font-medium text-text-primary dark:text-gray-100">{getClientFacingFileName(file.originalName || 'Untitled file')}</p>
                         <p className="text-sm text-text-secondary dark:text-gray-400">
                           {project?.title || 'Shared file'} | Updated {formatDate(file.updatedAt || file.createdAt)}
                         </p>

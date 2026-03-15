@@ -22,6 +22,7 @@ Date: 2026-03-08
 - Sprint 32 owner operations cleanup is complete: admin settings now surface inactive-user and failed-login counts, user and activity exports follow on-screen filters, admin files and reports expose file hygiene warnings, and the file hygiene panel now supports safe cleanup actions instead of delete-first decisions.
 - The public projects page is now owner-oriented: summary chips show project status and review readiness first, cards expose the next owner-facing use before long-form case-study copy, and incomplete records are called out with a clear `Needs Review` signal.
 - Production verification is currently clean after the latest admin release: `verify:production` passed against Netlify and Render with `7 ok, 0 warnings, 0 failures`.
+- Production auth recovery is now stable on Netlify + Render: staff/client logout works, forgot-password no longer fails behind slow SMTP, the client workspace has a visible sign-out path, and client-facing file labels no longer expose obvious sample/demo wording by default.
 
 ## Sprint 1 (Weeks 1-2) - Foundation
 
@@ -2370,6 +2371,53 @@ Date: 2026-03-08
   - Cleaned out duplicate backend watcher processes and verified a single stable backend process on `3002`.
   - Verified authenticated admin project CRUD live after login: created project `69b6c812195b865aec961935`, updated it successfully, and deleted it successfully.
   - QA note: local browser noise around `/api/auth/me` before login is expected because the public auth shell probes session state before a user signs in.
+
+## Sprint 35 (Production Auth Stabilization and Client Readiness Cleanup)
+
+### P35-1 Production Auth Route and Session Stabilization
+- Status: [x] Complete
+- Owner: Backend + Frontend
+- Estimate: 0.75 day
+- Files:
+  - netlify/functions/api.js
+  - backend/routes/auth.js
+  - backend/server.js
+  - SPRINT_BOARD.md
+- Scope:
+  - Fix production logout behind the Netlify proxy.
+  - Make forgot-password resilient when SMTP is slow or unavailable.
+  - Verify the deployed frontend and backend are aligned on the current auth contract.
+- Acceptance Criteria:
+  - Staff and admin logout clears the session on the deployed site.
+  - Forgot-password returns the generic success response quickly instead of surfacing a proxy-facing `502`.
+  - Live Netlify and Render auth routes match the current email-based auth flow.
+- Notes:
+  - Completed on 2026-03-15.
+  - Fixed the Netlify proxy so `Origin` / `Referer` metadata reaches the backend and the `/api/auth/logout` origin guard no longer rejects legitimate browser logout requests.
+  - Changed forgot-password to save the reset token and return success immediately, while sending email asynchronously with explicit SMTP timeouts.
+  - Verified live on `https://mastertech4.netlify.app` and `https://mastertech-app-32jm.onrender.com`: staff/admin logout works, `/api/auth/setup-status` and `/api/auth/forgot-password` are available, and the deployed auth pages now render against the current backend.
+
+### P35-2 Client Workspace Sign-Out and Demo Artifact Softening
+- Status: [x] Complete
+- Owner: Frontend + QA
+- Estimate: 0.5 day
+- Files:
+  - src/components/ClientWorkspace.js
+  - src/components/files/FileManager.jsx
+  - src/components/ClientWorkspace.test.js
+  - src/utils/clientFilePresentation.js
+- Scope:
+  - Give clients a visible sign-out control in the workspace.
+  - Reduce obvious sample/demo wording in client-visible file labels and notes without breaking access to the real files.
+- Acceptance Criteria:
+  - The client workspace exposes a clear `Sign out` action.
+  - Client-facing file names and notes no longer surface generic demo phrases like `project-7-package.pdf` or `Sample operational document for demo use.` by default.
+  - Regression coverage protects the client workspace against those demo-style labels returning.
+- Notes:
+  - Completed on 2026-03-15.
+  - Added a visible `Sign out` action to the client workspace and verified that it clears the session and returns the user to `/signin`.
+  - Added shared client-file presentation helpers so the client workspace and client file library display softer, human-readable names for generic sample packages and hide demo-only note text.
+  - Verified with `npm test -- src/components/ClientWorkspace.test.js` and a live production client sign-in / sign-out check.
 
 ## Completed Outside Sprint Scope
 - 2026-03-08: Fixed two Express 5 wildcard route incompatibilities in `backend/server.js` so the app can run locally on alternate ports without affecting the deployed environment.
