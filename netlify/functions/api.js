@@ -220,12 +220,9 @@ const proxyToBackend = async (event, backendBase) => {
   delete headers.Host;
   delete headers['content-length'];
   delete headers['Content-Length'];
-  // Avoid backend CORS middleware rejecting requests due to a missing/misconfigured CORS_ORIGINS.
-  // This is server-to-server traffic; browser CORS doesn't apply here.
-  delete headers.origin;
-  delete headers.Origin;
-  delete headers.referer;
-  delete headers.Referer;
+  // Preserve browser origin metadata for cookie-backed unsafe requests.
+  // The backend uses Origin/Referer to reject cross-site state-changing calls,
+  // so stripping them here breaks legitimate logout and similar actions.
 
   const opts = { method, headers };
   if (!['GET', 'HEAD'].includes(method) && event.body != null) {
