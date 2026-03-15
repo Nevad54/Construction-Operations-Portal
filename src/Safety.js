@@ -28,29 +28,29 @@ const Safety = memo(() => {
               <p className="commitment-kicker">Commitment</p>
               <h1>Commitment to Safety</h1>
               <p className="commitment-intro">
-                Safety is presented here as an operating requirement, not just a compliance statement. The emphasis is on disciplined execution, qualified oversight, and responsible work practices.
+                Safety is an operating requirement, not just a compliance statement.
               </p>
             </div>
             <div className="commitment-hero-side">
               <div className="commitment-stat">
                 <strong>People first</strong>
-                <span>Employees, subcontractors, partners, and the public are all inside the safety perimeter.</span>
+                <span>Employees, partners, and the public are all inside the safety perimeter.</span>
               </div>
               <div className="commitment-stat">
                 <strong>Execution discipline</strong>
-                <span>Safe delivery improves consistency, reporting quality, and operational efficiency.</span>
+                <span>Safe delivery improves consistency and operational efficiency.</span>
               </div>
             </div>
           </div>
           <div className="safety-content commitment-card" data-aos="fade-up" data-aos-delay="100">
             <p data-aos="fade-up" data-aos-delay="200">
-              Our management holds the highest regard for the health and safety of employees, subcontractors, partners, and the public. We are equally committed to environmental protection and do not compromise on this principle.
+              We prioritize the health and safety of employees, subcontractors, partners, and the public.
             </p>
             <p data-aos="fade-up" data-aos-delay="300">
-              We exercise due diligence and take all necessary precautions to prevent unsafe practices that could endanger people, property, or the environment. To uphold this commitment, we continuously strengthen our Safety, Health, and Environmental (SHE) standards.
+              We work to prevent unsafe practices that could endanger people, property, or the environment.
             </p>
             <p data-aos="fade-up" data-aos-delay="400">
-              MTI will also ensure the employment of qualified safety personnel with the necessary authority and responsibility to implement and uphold these objectives. Furthermore, the company recognizes that an effective health and safety program significantly enhances operational efficiency.
+              Qualified safety personnel are given the authority to uphold these standards on site.
             </p>
           </div>
           <div className="safety-pillars" data-aos="fade-up" data-aos-delay="150">

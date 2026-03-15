@@ -32,7 +32,7 @@ const Services = () => {
               <p className="services-page-kicker">Delivery support</p>
               <h1>Our Services</h1>
               <p className="services-intro">
-                We support construction and industrial teams that need disciplined planning, dependable field execution, and clearer delivery accountability.
+                Construction and industrial support built around planning, coordination, and dependable execution.
               </p>
               <div className="hero-actions">
                 <Link
@@ -46,20 +46,6 @@ const Services = () => {
                 <Link to="/projects" className="btn btn-secondary" aria-label="View projects">
                   View Projects
                 </Link>
-              </div>
-            </div>
-            <div className="services-page-side">
-              <div className="services-page-stat">
-                <strong>6 Core Services</strong>
-                <span>Built around planning, coordination, and field execution.</span>
-              </div>
-              <div className="services-page-stat">
-                <strong>Construction + Industrial</strong>
-                <span>Designed to cover both project delivery and plant support workflows.</span>
-              </div>
-              <div className="services-page-stat">
-                <strong>Commercial + Residential clarity</strong>
-                <span>Built to support straightforward owner communication, cleaner site decisions, and better handoffs.</span>
               </div>
             </div>
           </div>
@@ -77,21 +63,6 @@ const Services = () => {
                 </ul>
               </article>
             ))}
-          </div>
-
-          <div className="services-page-strip" aria-label="How services are delivered">
-            <div>
-              <strong>Plan</strong>
-              <span>Scope, phasing, and site-readiness alignment before work accelerates.</span>
-            </div>
-            <div>
-              <strong>Coordinate</strong>
-              <span>Visible handoffs across field teams, stakeholders, and dependencies.</span>
-            </div>
-            <div>
-              <strong>Execute</strong>
-              <span>Delivery rhythm focused on safety, accountability, and clear reporting.</span>
-            </div>
           </div>
         </div>
       </section>

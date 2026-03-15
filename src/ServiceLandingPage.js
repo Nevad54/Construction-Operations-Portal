@@ -70,7 +70,7 @@ export default function ServiceLandingPage({
         <div className="container">
           <div className="landing-section-header">
             <h2>What this offer solves</h2>
-            <p>Built for teams that need delivery certainty, field coordination, and cleaner execution handoffs.</p>
+            <p>Built for teams that need delivery certainty and cleaner handoffs.</p>
           </div>
           <div className="landing-card-grid">
             {outcomes.map((item) => (
@@ -87,7 +87,7 @@ export default function ServiceLandingPage({
         <div className="container">
           <div className="landing-section-header">
             <h2>How we execute</h2>
-            <p>A practical workflow that keeps pre-work, field execution, and client communication aligned.</p>
+            <p>A practical workflow from pre-work through handoff.</p>
           </div>
           <div className="landing-workflow">
             {workflow.map((step, index) => (
@@ -132,7 +132,7 @@ export default function ServiceLandingPage({
           </div>
           <div className="landing-cta-card">
             <h2>Need a delivery plan that holds up on site?</h2>
-            <p>Share your constraints, timeline, and scope. We will respond with the next action and a recommended delivery path.</p>
+            <p>Share your constraints, timeline, and scope. We will respond with the next step.</p>
             <Link
               to="/contact"
               className="btn"

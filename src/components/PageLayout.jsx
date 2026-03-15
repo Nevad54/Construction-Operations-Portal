@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from '../Sidebar';
 import Header from '../Header';
 import Footer from '../Footer';
+import PublicSetupNotice from './PublicSetupNotice';
 import { usePageMeta } from '../utils/pageMeta';
 
 // derive a simple page key from pathname for nav highlighting
@@ -97,6 +98,7 @@ export default function PageLayout({ children, meta }) {
         setIsNavLinksActive={setIsNavLinksActive}
         activePage={activePage}
       />
+      <PublicSetupNotice />
       <main id="main">{children}</main>
       <Footer />
       <button

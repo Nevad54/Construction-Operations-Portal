@@ -10,9 +10,7 @@ import { useProjects } from '../context/ProjectContext';
 const FALLBACK_DESCRIPTION = 'Project summary is being prepared. Full delivery details are available on request.';
 const FALLBACK_LOCATION = 'Location shared during project review';
 const FALLBACK_DATE = 'Schedule available on request';
-const DEFAULT_CASE_STUDY_PROBLEM = 'Stakeholders needed a clearer operating picture without relying on fragmented updates.';
-const DEFAULT_CASE_STUDY_SOLUTION = 'The delivery workflow was reorganized around visible ownership, cleaner reporting, and a shared project record.';
-const DEFAULT_CASE_STUDY_OUTCOME = 'Project visibility improved, follow-ups stayed accountable, and client communication became easier to repeat.';
+const DEFAULT_PROOF_LINE = 'A clearer project record people can trust quickly.';
 
 const formatProjectDate = (value) => {
   if (!value) return FALLBACK_DATE;
@@ -82,6 +80,35 @@ const normalizeProject = (project) => {
       ? 'The portal-backed handoff gave clients and operators one final record for closeout, proof files, and remaining follow-ups.'
       : 'The portal-backed workflow keeps active files, status context, and next actions visible while work is still moving.';
 
+  const missingCoreFields = [
+    !rawTitle,
+    !String(project.location || '').trim(),
+    !String(project.description || '').trim(),
+    !project.date,
+  ].filter(Boolean).length;
+
+  const needsReview = missingCoreFields > 0;
+  const ownerNextStep = needsReview
+    ? 'Fill the missing details before using this as proof.'
+    : status.section === 'completed'
+      ? 'Use this when you need a finished handoff example.'
+      : 'Use this when you need a live delivery example.';
+
+  const proofLine = looksIndustrial
+    ? 'Clear handoffs for plant-facing work.'
+    : looksResidential
+      ? 'Cleaner homeowner updates and closeout.'
+      : looksCommercial
+        ? 'Progress visibility without extra chasing.'
+        : looksRenovation
+          ? 'A clearer record for live upgrade work.'
+          : DEFAULT_PROOF_LINE;
+
+  const quickFacts = [
+    status.section === 'completed' ? 'Finished-work proof' : 'Active-work proof',
+    needsReview ? 'Needs cleanup' : 'Ready to present',
+  ];
+
   return {
     ...project,
     title,
@@ -93,43 +120,12 @@ const normalizeProject = (project) => {
     hasImage: Boolean(project.image),
     sector,
     clientVisibilityNote,
-    challenge: looksIndustrial
-      ? 'Production-sensitive work needed cleaner coordination so shutdown windows and follow-ups did not drift.'
-      : looksResidential
-        ? 'Finish-sensitive residential work needed clearer owner decisions so approvals, selections, and room handoffs did not scatter.'
-      : looksCommercial
-        ? 'Multiple stakeholders needed one clearer view of status, approvals, and delivery sequencing.'
-        : looksRenovation
-          ? 'Existing conditions and live-site constraints created handoff risk unless progress stayed visible.'
-          : DEFAULT_CASE_STUDY_PROBLEM,
-    solution: looksIndustrial
-      ? 'Execution was organized around field ownership, file visibility, and a steadier reporting rhythm for plant-facing work.'
-      : looksResidential
-        ? 'The team used a portal-backed update rhythm so homeowner files, finish approvals, and next decisions stayed visible through each phase.'
-      : looksCommercial
-        ? 'The workflow connected client communication, project files, and delivery checkpoints into one operating path.'
-        : looksRenovation
-          ? 'The team used a more explicit project record so phasing, files, and follow-up decisions stayed in view.'
-          : DEFAULT_CASE_STUDY_SOLUTION,
-    outcome: looksIndustrial
-      ? 'Supervisors and clients could see the current job picture faster, which reduced coordination drag around active work.'
-      : looksResidential
-        ? 'Homeowners had a cleaner picture of progress and closeout because updates, files, and approvals stayed in one repeatable flow.'
-      : looksCommercial
-        ? 'Project communication became easier to repeat because the client-facing story and the internal operating view stayed aligned.'
-        : looksRenovation
-          ? 'The delivery team had a cleaner closeout path because changes, files, and next actions were easier to trace.'
-          : DEFAULT_CASE_STUDY_OUTCOME,
-    spotlightMetric: looksIndustrial
-      ? 'Portal-backed field visibility'
-      : looksResidential
-        ? 'Homeowner-facing delivery clarity'
-      : looksCommercial
-        ? 'Client-facing delivery clarity'
-        : looksRenovation
-          ? 'Follow-up ownership through closeout'
-          : 'Structured project visibility',
+    proofLine,
+    quickFacts,
     searchableText: `${title} ${location} ${description} ${sector}`.toLowerCase(),
+    needsReview,
+    ownerNextStep,
+    missingCoreFields,
   };
 };
 
@@ -166,6 +162,7 @@ const Projects = () => {
 
   const ongoingProjects = filteredProjects.filter((project) => project.statusMeta.section === 'ongoing');
   const completedProjects = filteredProjects.filter((project) => project.statusMeta.section === 'completed');
+  const needsReviewProjects = filteredProjects.filter((project) => project.needsReview);
   const totalProjects = filteredProjects.length;
   const hasProjects = projects.length > 0;
   const hasActiveFilters = searchTerm.trim().length > 0 || filterStatus !== 'all';
@@ -179,21 +176,28 @@ const Projects = () => {
 
   const projectSummary = [
     {
-      label: 'Case Studies',
+      label: 'Projects in View',
       value: totalProjects,
       detail: hasActiveFilters
-        ? totalProjects === 1 ? 'case study matching filters' : 'case studies matching filters'
-        : totalProjects === 1 ? 'case study in proof set' : 'case studies in proof set',
+        ? totalProjects === 1 ? 'project matching the current filters' : 'projects matching the current filters'
+        : totalProjects === 1 ? 'project ready for review' : 'projects ready for review',
     },
     {
-      label: 'Live Work',
+      label: 'Ongoing',
       value: ongoingProjects.length,
-      detail: 'active delivery stories',
+      detail: ongoingProjects.length ? 'active delivery records' : 'no active delivery records',
     },
     {
-      label: 'Closeout Proof',
+      label: 'Completed',
       value: completedProjects.length,
-      detail: 'completed delivery stories',
+      detail: completedProjects.length ? 'closeout-ready records' : 'no completed records in view',
+    },
+    {
+      label: 'Needs Review',
+      value: needsReviewProjects.length,
+      detail: needsReviewProjects.length
+        ? 'records missing one or more core details'
+        : 'no project cards are missing core details',
     },
   ];
 
@@ -208,30 +212,12 @@ const Projects = () => {
       <div className="projects-container">
         <section className="projects-intro" data-aos="fade-up">
           <div className="projects-intro-copy">
-            <p className="projects-story-eyebrow">Case Studies</p>
-            <h1>Project proof that sells both delivery capability and the client-facing portal.</h1>
-            <p>
-              These stories are framed around operating problems, execution response, and the visibility clients gained
-              once project files, follow-ups, and status checkpoints stayed in one workflow.
-            </p>
+            <p className="projects-story-eyebrow">Project Proof</p>
+            <h1>Selected work visitors can scan fast.</h1>
+            <p>Type, place, status, and a quick use case.</p>
           </div>
         </section>
-        <section className="projects-proof-band" data-aos="fade-up" data-aos-delay="40" aria-label="Why the case studies matter">
-          <div className="projects-proof-band__copy">
-            <p className="projects-story-eyebrow">Hybrid Positioning</p>
-            <h2>This is not just a contractor gallery.</h2>
-            <p>
-              The route now shows where the portal improved accountability and client visibility, not just where work
-              happened. The goal is to prove the hybrid offer with concrete operating outcomes.
-            </p>
-          </div>
-          <div className="projects-proof-band__pillars">
-            <span>Problem / solution / outcome framing</span>
-            <span>Portal-backed client visibility notes</span>
-            <span>Searchable by sector and delivery context</span>
-          </div>
-        </section>
-        <section className="projects-toolbar" data-aos="fade-up" data-aos-delay="80">
+        <section className="projects-toolbar" data-aos="fade-up" data-aos-delay="40">
           <div className="projects-summary" aria-label="Project summary">
             {projectSummary.map((item) => (
               <div key={item.label} className="projects-summary-chip">
@@ -307,20 +293,20 @@ const Projects = () => {
           hasProjects ? (
             <section className="projects-inline-status projects-inline-status--empty" data-aos="fade-up" role="status" aria-live="polite">
               <div className="projects-inline-status-copy">
-                <p className="projects-story-eyebrow">No Matching Case Studies</p>
-                <h3>No case studies match the current search or status filter</h3>
-                <p>Clear the filters to return to the full project list.</p>
+                <p className="projects-story-eyebrow">No Matching Projects</p>
+                <h3>No projects match the current search or status filter</h3>
+                <p>Clear the filters to get back to the full project review list.</p>
               </div>
               <div className="projects-inline-status-actions">
                 <button className="retry-button retry-button--neutral" onClick={clearFilters}>
                   Clear Filters
                 </button>
-                <p>Search, status, and sort will reset to the default portfolio view.</p>
+                <p>Search, status, and sort will reset to the default projects view.</p>
               </div>
             </section>
           ) : (
             <p className="projects-empty-message" data-aos="fade-up">
-              No projects to show yet. Connect the database or add projects from the admin panel.
+              No projects to show yet. Add the first real project from the admin side before using this page as proof.
             </p>
           )
         )}
@@ -329,7 +315,7 @@ const Projects = () => {
         <div className="projects-sections">
           <div className="projects-section">
             <div className="section-header" data-aos="fade-up" data-aos-delay="200">
-              <h2 className="section-title">Live Delivery Stories</h2>
+              <h2 className="section-title">Ongoing Projects</h2>
               <span className="section-count">{ongoingProjects.length}</span>
             </div>
             <div className="projects-grid">
@@ -354,44 +340,43 @@ const Projects = () => {
                     </div>
                   )}
                   <div className="project-content">
-                    <p className="project-sector">{project.sector}</p>
-                    <h3 className="project-title">{project.title}</h3>
-                    <p className="project-location">{project.location}</p>
-                    <p className="project-date">{project.formattedDate}</p>
-                    <p className="project-description">{project.description}</p>
-                    <dl className="project-case-study">
-                      <div>
-                        <dt>Problem</dt>
-                        <dd>{project.challenge}</dd>
-                      </div>
-                      <div>
-                        <dt>Response</dt>
-                        <dd>{project.solution}</dd>
-                      </div>
-                      <div>
-                        <dt>Outcome</dt>
-                        <dd>{project.outcome}</dd>
-                      </div>
-                    </dl>
-                    <div className="project-visibility-note">
-                      <strong>{project.spotlightMetric}</strong>
-                      <p>{project.clientVisibilityNote}</p>
+                    <div className="project-card-meta">
+                      <p className="project-sector">{project.sector}</p>
+                      <span className={`status-badge ${project.statusMeta.badgeClass}`}>{project.statusMeta.label}</span>
                     </div>
-                    <span className={`status-badge ${project.statusMeta.badgeClass}`}>{project.statusMeta.label}</span>
+                    <h3 className="project-title">{project.title}</h3>
+                    <div className="project-facts" aria-label={`${project.title} project facts`}>
+                      <p className="project-location">{project.location}</p>
+                      <p className="project-date">{project.formattedDate}</p>
+                    </div>
+                    <p className="project-description">{project.description}</p>
+                    <ul className="project-quick-facts" aria-label={`${project.title} proof highlights`}>
+                      {project.quickFacts.map((fact) => (
+                        <li key={fact}>{fact}</li>
+                      ))}
+                    </ul>
+                    <div className="project-proof-line">
+                      <strong>Why it helps</strong>
+                      <p>{project.proofLine}</p>
+                    </div>
+                    <div className={`project-next-step ${project.needsReview ? 'project-next-step--warning' : ''}`}>
+                      <strong>{project.needsReview ? 'Needs review' : 'Best use'}</strong>
+                      <p>{project.ownerNextStep}</p>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
             {ongoingProjects.length === 0 && (
               <p className="projects-section-empty" data-aos="fade-up">
-                No live delivery stories match the current view.
+                No ongoing projects match the current view. Clear filters or switch the status filter to review completed work.
               </p>
             )}
           </div>
 
           <div className="projects-section">
             <div className="section-header" data-aos="fade-up" data-aos-delay="200">
-              <h2 className="section-title">Completed Case Studies</h2>
+              <h2 className="section-title">Completed Projects</h2>
               <span className="section-count">{completedProjects.length}</span>
             </div>
             <div className="projects-grid">
@@ -416,37 +401,36 @@ const Projects = () => {
                     </div>
                   )}
                   <div className="project-content">
-                    <p className="project-sector">{project.sector}</p>
-                    <h3 className="project-title">{project.title}</h3>
-                    <p className="project-location">{project.location}</p>
-                    <p className="project-date">{project.formattedDate}</p>
-                    <p className="project-description">{project.description}</p>
-                    <dl className="project-case-study">
-                      <div>
-                        <dt>Problem</dt>
-                        <dd>{project.challenge}</dd>
-                      </div>
-                      <div>
-                        <dt>Response</dt>
-                        <dd>{project.solution}</dd>
-                      </div>
-                      <div>
-                        <dt>Outcome</dt>
-                        <dd>{project.outcome}</dd>
-                      </div>
-                    </dl>
-                    <div className="project-visibility-note">
-                      <strong>{project.spotlightMetric}</strong>
-                      <p>{project.clientVisibilityNote}</p>
+                    <div className="project-card-meta">
+                      <p className="project-sector">{project.sector}</p>
+                      <span className={`status-badge ${project.statusMeta.badgeClass}`}>{project.statusMeta.label}</span>
                     </div>
-                    <span className={`status-badge ${project.statusMeta.badgeClass}`}>{project.statusMeta.label}</span>
+                    <h3 className="project-title">{project.title}</h3>
+                    <div className="project-facts" aria-label={`${project.title} project facts`}>
+                      <p className="project-location">{project.location}</p>
+                      <p className="project-date">{project.formattedDate}</p>
+                    </div>
+                    <p className="project-description">{project.description}</p>
+                    <ul className="project-quick-facts" aria-label={`${project.title} proof highlights`}>
+                      {project.quickFacts.map((fact) => (
+                        <li key={fact}>{fact}</li>
+                      ))}
+                    </ul>
+                    <div className="project-proof-line">
+                      <strong>Why it helps</strong>
+                      <p>{project.proofLine}</p>
+                    </div>
+                    <div className={`project-next-step ${project.needsReview ? 'project-next-step--warning' : ''}`}>
+                      <strong>{project.needsReview ? 'Needs review' : 'Best use'}</strong>
+                      <p>{project.ownerNextStep}</p>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
             {completedProjects.length === 0 && (
               <p className="projects-section-empty" data-aos="fade-up">
-                No completed case studies match the current view.
+                No completed projects match the current view. Clear filters or switch back to ongoing work.
               </p>
             )}
           </div>

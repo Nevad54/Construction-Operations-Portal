@@ -48,7 +48,7 @@ export default function CommercialLandingPage() {
     <ServiceLandingPage
       eyebrow="Commercial Execution"
       title="Commercial construction support for teams that need coordination without chaos."
-      subtitle="Office, retail, facility, and mixed-use work for teams that care about communication, speed, and delivery control."
+      subtitle="Office, retail, facility, and mixed-use work with clearer communication and delivery control."
       metaTitle="Commercial Delivery | Construction Operations Portal"
       metaDescription="Commercial construction support for office, retail, facility, and mixed-use work that needs clear coordination, stakeholder updates, and delivery control."
       metrics={metrics}

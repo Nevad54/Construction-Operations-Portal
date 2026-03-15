@@ -63,7 +63,7 @@ export default function ResidentialLandingPage() {
     <ServiceLandingPage
       eyebrow="Residential Delivery"
       title="Premium residential execution for renovations and fit-outs that need finish quality, owner clarity, and disciplined turnover."
-      subtitle="Built for occupied-home renovations, custom interior upgrades, and premium residential scopes where homeowner communication matters as much as field execution."
+      subtitle="Built for occupied-home renovations and premium residential scopes where homeowner communication matters."
       heroImage={`${process.env.PUBLIC_URL || ''}/Uploads/residential-hero.jpg`}
       heroImageAlt="Bright premium residential interior with a renovated living room and minimalist finishes"
       metaTitle="Residential Delivery | Construction Operations Portal"
@@ -73,7 +73,7 @@ export default function ResidentialLandingPage() {
       workflow={workflow}
       clientExperience={clientExperience}
       clientExperienceTitle="How residential clients stay aligned"
-      clientExperienceIntro="Residential work breaks down when owner decisions, finish changes, and handoff files scatter across too many channels. The portal keeps that communication in one visible place."
+      clientExperienceIntro="The portal keeps owner decisions, finish changes, and handoff files in one visible place."
       proof={proof}
       ctaId="residential_primary"
     />

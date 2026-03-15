@@ -48,7 +48,7 @@ export default function IndustrialLandingPage() {
     <ServiceLandingPage
       eyebrow="Industrial Delivery"
       title="Industrial project execution for plants that cannot afford coordination drift."
-      subtitle="Plant upgrades, fabrication support, maintenance-driven scopes, and field work planned to fit around live operations."
+      subtitle="Plant upgrades and field work planned to fit around live operations."
       metaTitle="Industrial Delivery | Construction Operations Portal"
       metaDescription="Industrial project execution for plant upgrades, fabrication support, and maintenance-driven scopes that need tighter coordination around live operations."
       metrics={metrics}

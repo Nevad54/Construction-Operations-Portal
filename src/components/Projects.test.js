@@ -48,7 +48,7 @@ describe('Projects route states', () => {
 
     renderProjects();
 
-    expect(screen.getByRole('heading', { name: /Project proof that sells both delivery capability/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Selected work visitors can scan fast/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Case study cards could not be loaded right now/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Retry/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Search projects/i)).toBeInTheDocument();
@@ -80,11 +80,12 @@ describe('Projects route states', () => {
     renderProjects();
 
     const summary = screen.getByLabelText(/Project summary/i);
-    expect(within(summary).getByText('Case Studies')).toBeInTheDocument();
-    expect(within(summary).getByText(/case studies in proof set/i)).toBeInTheDocument();
+    expect(within(summary).getByText('Projects in View')).toBeInTheDocument();
+    expect(within(summary).getByText(/projects ready for review/i)).toBeInTheDocument();
+    expect(within(summary).getByText('Needs Review')).toBeInTheDocument();
     expect(screen.getByText(/No projects to show yet/i)).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Live Delivery Stories' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Completed Case Studies' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Ongoing Projects' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Completed Projects' })).not.toBeInTheDocument();
   });
 
   test('shows a clear filtered no-results state and allows resetting the view', async () => {
@@ -109,13 +110,13 @@ describe('Projects route states', () => {
 
     await userEvent.type(screen.getByPlaceholderText(/Search by project, location, or scope/i), 'residential');
 
-    expect(screen.getByRole('heading', { name: /No case studies match the current search or status filter/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /No projects match the current search or status filter/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Clear Filters/i })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Live Delivery Stories' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Ongoing Projects' })).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /Clear Filters/i }));
 
-    expect(screen.getByRole('heading', { name: 'Live Delivery Stories' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Ongoing Projects' })).toBeInTheDocument();
     expect(screen.getByText(/Plant Retrofit/i)).toBeInTheDocument();
   });
 
@@ -139,9 +140,9 @@ describe('Projects route states', () => {
 
     renderProjects();
 
-    expect(screen.getByRole('heading', { name: 'Live Delivery Stories' })).toBeInTheDocument();
-    expect(screen.getByText(/No live delivery stories match the current view/i)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Completed Case Studies' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Ongoing Projects' })).toBeInTheDocument();
+    expect(screen.getByText(/No ongoing projects match the current view/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Completed Projects' })).toBeInTheDocument();
     expect(screen.getByText(/Campus Fit-Out/i)).toBeInTheDocument();
   });
 
@@ -192,7 +193,7 @@ describe('Projects route states', () => {
 
     renderProjects();
 
-    const ongoingSection = screen.getByRole('heading', { name: 'Live Delivery Stories' }).closest('.projects-section');
+    const ongoingSection = screen.getByRole('heading', { name: 'Ongoing Projects' }).closest('.projects-section');
     expect(within(ongoingSection).getByText(/Warehouse Upgrade/i)).toBeInTheDocument();
     expect(within(ongoingSection).getByText(/^In Progress$/i)).toBeInTheDocument();
   });
@@ -217,12 +218,11 @@ describe('Projects route states', () => {
 
     renderProjects();
 
-    expect(screen.getByRole('heading', { name: /This is not just a contractor gallery/i })).toBeInTheDocument();
-    expect(screen.getByText(/^Industrial Retrofit$/i)).toBeInTheDocument();
-    expect(screen.getByText(/^Problem$/i)).toBeInTheDocument();
-    expect(screen.getByText(/^Response$/i)).toBeInTheDocument();
-    expect(screen.getByText(/^Outcome$/i)).toBeInTheDocument();
-    expect(screen.getByText(/portal-backed workflow keeps active files/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/^Industrial Retrofit$/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/^Why it helps$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Best use$/i)).toBeInTheDocument();
+    expect(screen.getByText(/Clear handoffs for plant-facing work/i)).toBeInTheDocument();
+    expect(screen.getByText(/Active-work proof/i)).toBeInTheDocument();
   });
 
   test('renders a residential case study with homeowner-facing delivery proof', () => {
@@ -245,11 +245,36 @@ describe('Projects route states', () => {
 
     renderProjects();
 
-    expect(screen.getByText(/^Residential Fit-Out$/i)).toBeInTheDocument();
-    expect(screen.getByText(/finish-sensitive residential work needed clearer owner decisions/i)).toBeInTheDocument();
-    expect(screen.getByText(/portal-backed update rhythm so homeowner files, finish approvals, and next decisions stayed visible/i)).toBeInTheDocument();
-    expect(screen.getByText(/Homeowners had a cleaner picture of progress and closeout/i)).toBeInTheDocument();
-    expect(screen.getByText(/Homeowner-facing delivery clarity/i)).toBeInTheDocument();
-    expect(screen.getByText(/The portal-backed handoff gave homeowners one closeout record/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/^Residential Fit-Out$/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Cleaner homeowner updates and closeout/i)).toBeInTheDocument();
+    expect(screen.getByText(/Finished-work proof/i)).toBeInTheDocument();
+    expect(screen.getByText(/Use this when you need a finished handoff example/i)).toBeInTheDocument();
+  });
+
+  test('calls out projects that need owner review before reuse', () => {
+    useProjects.mockReturnValue({
+      projects: [
+        {
+          _id: '1',
+          title: '',
+          location: 'Laguna',
+          description: 'Shutdown coordination package',
+          status: 'ongoing',
+          date: null,
+        },
+      ],
+      error: null,
+      loading: false,
+      refreshProjects: vi.fn().mockResolvedValue([]),
+      assetBaseUrl: '',
+    });
+
+    renderProjects();
+
+    const summary = screen.getByLabelText(/Project summary/i);
+    expect(within(summary).getByText('Needs Review')).toBeInTheDocument();
+    expect(within(summary).getByText(/records missing one or more core details/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/^Needs review$/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Fill the missing details before using this as proof/i)).toBeInTheDocument();
   });
 });

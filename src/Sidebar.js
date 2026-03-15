@@ -67,6 +67,21 @@ const Sidebar = ({ isSidebarActive, setIsSidebarActive, setIsNavLinksActive, act
             <i className="fas fa-envelope"></i> Contact
           </Link>
         </li>
+        <li>
+          <Link to="/signin" onClick={closeSidebar}>
+            <i className="fas fa-right-to-bracket"></i> Sign in
+          </Link>
+        </li>
+        <li>
+          <Link to="/signup" onClick={closeSidebar}>
+            <i className="fas fa-user-plus"></i> Create account
+          </Link>
+        </li>
+        <li>
+          <Link to="/staff/signin" onClick={closeSidebar}>
+            <i className="fas fa-helmet-safety"></i> Staff sign-in
+          </Link>
+        </li>
       </ul>
     </div>
     </>

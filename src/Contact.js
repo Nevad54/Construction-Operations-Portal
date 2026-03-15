@@ -345,8 +345,7 @@ const Contact = () => {
               <p className="contact-kicker">Project Intake</p>
               <h1>Request a Site Assessment</h1>
               <p className="contact-intro">
-                Leave your basic contact details and a short note about the work. We can sort the deeper project
-                details in the follow-up instead of making the first step feel heavy.
+                Share the basics and a short note about the work. We can sort out the deeper details in the follow-up.
               </p>
               <div className="contact-mini-points" aria-label="Response expectations">
                 <span>Quick first contact</span>
@@ -357,11 +356,11 @@ const Contact = () => {
             <div className="contact-hero-aside">
               <div className="contact-aside-card">
                 <strong>Best for</strong>
-                <p>Industrial, commercial, renovation, and site-support work that needs disciplined coordination.</p>
+                <p>Industrial, commercial, renovation, and site-support work.</p>
               </div>
               <div className="contact-aside-card">
                 <strong>Response target</strong>
-                <p>Next-business-day follow-up after the intake review.</p>
+                <p>Next-business-day follow-up.</p>
               </div>
             </div>
           </div>
@@ -370,7 +369,7 @@ const Contact = () => {
             <div className="contact-form contact-form--modern" data-aos="fade-right" data-aos-delay="80">
               <div className="contact-panel-header">
                 <h2>Quick Inquiry</h2>
-                <p>Start with the essentials. If the work is a fit, we will gather scope, site, and timing in the follow-up.</p>
+                <p>Start with the essentials. We will gather scope, site, and timing in the follow-up.</p>
               </div>
 
               {prefillNotice && (
@@ -574,10 +573,6 @@ const Contact = () => {
                   <div className="trust-item">
                     <strong>Qualification First</strong>
                     <span>We review scope, site, and timing before recommending the next conversation.</span>
-                  </div>
-                  <div className="trust-item">
-                    <strong>Clear Ownership</strong>
-                    <span>The intake goes into the same operations workflow used for follow-up and delivery visibility.</span>
                   </div>
                   <div className="trust-item">
                     <strong>Site-Ready Briefing</strong>

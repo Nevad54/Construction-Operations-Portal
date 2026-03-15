@@ -17,6 +17,10 @@ Date: 2026-03-08
 - Sprint 17 stabilization is complete: duplicate landing CTA overrides are cleaned up, shared public-route regression coverage is broader, the public visual QA sweep is recorded, and local runtime console noise is reduced.
 - Sprint 18 is complete: localhost contact intake now uses a deliberate development verification path instead of a broken reCAPTCHA widget.
 - Sprint 27 admin hardening is complete: the admin shell, inquiry triage flow, accessibility semantics, and focused admin smoke coverage are now in place.
+- Sprint 30 owner clarity work is complete: fake notification chrome is gone, employee/client dashboards use clearer action-first language, admin project access is assigned by project name instead of raw ids, and localhost-only demo-login hints no longer leak into broader auth copy.
+- Sprint 31 production access hardening is complete: first-admin bootstrap now has a protected setup path, public routes surface setup-required state, admin settings confirm when bootstrap is closed, and reports include first-admin bootstrap events.
+- Sprint 32 owner operations cleanup is complete: admin settings now surface inactive-user and failed-login counts, user and activity exports follow on-screen filters, admin files and reports expose file hygiene warnings, and the file hygiene panel now supports safe cleanup actions instead of delete-first decisions.
+- The public projects page is now owner-oriented: summary chips show project status and review readiness first, cards expose the next owner-facing use before long-form case-study copy, and incomplete records are called out with a clear `Needs Review` signal.
 - Production verification is currently clean after the latest admin release: `verify:production` passed against Netlify and Render with `7 ok, 0 warnings, 0 failures`.
 
 ## Sprint 1 (Weeks 1-2) - Foundation
@@ -2029,6 +2033,343 @@ Date: 2026-03-08
   - Added inquiry-intent detection from the client-workspace context, surfaced explicit admin badges/summary counts, and added `Acknowledge Approval` plus `Start Change Review` quick actions in the inquiry queue.
   - The admin clients route now reads client decisions as explicit operations work instead of generic contact traffic, while keeping the existing inquiry data model intact.
   - Verified with `npx vitest run src/components/AdminDashboard.test.js src/components/ClientWorkspace.test.js src/PublicRoutes.test.js`, `npm run smoke:public-ui`, and `npm run build`.
+
+## Sprint 30 (Owner Clarity and Workflow Simplification)
+
+### P29-1 Dashboard Language and Action Clarity Pass
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 0.5 day
+- Files:
+  - src/components/ClientWorkspace.js
+  - src/components/UserDashboard.js
+  - src/components/dashboard/DashboardSidebar.js
+  - src/components/dashboard/DashboardTopNav.js
+  - src/components/ClientWorkspace.test.js
+  - src/components/UserDashboard.test.js
+- Scope:
+  - Remove misleading dashboard chrome and simplify the owner-facing language on the employee and client routes.
+  - Make the next action on each route easier to understand without reading internal operations jargon.
+- Acceptance Criteria:
+  - Shared dashboard chrome does not advertise features that are not implemented.
+  - Client and employee dashboards lead with clear next actions instead of placeholder or handoff-heavy copy.
+  - Regression coverage protects the simplified route labels and employee dashboard action links.
+- Notes:
+  - Completed on 2026-03-09.
+  - Removed the fake notifications affordance from the dashboard top nav and renamed admin sidebar labels to clearer route names.
+  - Simplified client workspace section titles and helper copy so the page reads like a practical summary instead of an internal operations explainer.
+  - Rebuilt the employee overview route around two explicit actions: open files and open settings.
+  - Verified with `npm test -- src/components/ClientWorkspace.test.js`, `npm test -- src/components/UserDashboard.test.js`, and `npm test -- src/components/Projects.test.js`.
+
+### P29-2 Admin Project Access Assignment Cleanup
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 0.25 day
+- Files:
+  - src/components/AdminDashboard.js
+  - src/components/AdminDashboard.test.js
+- Scope:
+  - Replace raw project-id entry in the admin user editor with named project selection.
+  - Reduce the chance of mistaken user access assignments during owner/admin operations.
+- Acceptance Criteria:
+  - Admins assign project access by readable project name, not comma-separated ids.
+  - Regression coverage protects the edit flow and payload shape sent to the API.
+- Notes:
+  - Completed on 2026-03-09.
+  - Replaced the old `Assigned Project IDs` input with a `Project Access` checklist that shows project names and locations.
+  - Kept the existing API contract by normalizing the selected project ids before save.
+  - Verified with `npm test -- src/components/AdminDashboard.test.js`.
+
+### P29-3 Auth Screen Copy and Demo-Hint Guardrail
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 0.25 day
+- Files:
+  - src/components/auth/RoleLogin.jsx
+  - src/App.test.js
+- Scope:
+  - Keep localhost demo convenience while avoiding auth copy that reads like live users should rely on demo credentials.
+  - Clarify role-based login purpose for admin, employee, and client entry points.
+- Acceptance Criteria:
+  - Login subtitles explain the real purpose of each role route.
+  - Demo credential hints are only shown in localhost-style environments.
+  - Regression coverage protects the local-login behavior.
+- Notes:
+  - Completed on 2026-03-09.
+  - Kept prefilled local-demo credentials on localhost only and added an explicit localhost-only hint so the behavior reads as test convenience, not product policy.
+  - Tightened the role-login subtitles to describe the actual route purpose more clearly.
+  - Verified with `npm test -- src/App.test.js`.
+
+## Sprint 31 (Production Access Hardening and Owner Setup Controls)
+
+### P30-1 First Admin Bootstrap Path
+- Status: [x] Complete
+- Owner: Backend + Frontend
+- Estimate: 0.75 day
+- Files:
+  - backend/routes/auth.js
+  - backend/server.js
+  - src/components/auth/AdminBootstrap.jsx
+  - src/components/auth/RoleLogin.jsx
+  - src/App.js
+  - src/services/api.js
+  - src/App.test.js
+  - README.md
+  - docs/PUBLIC_RELEASE_CHECKLIST.md
+- Scope:
+  - Add a controlled first-admin bootstrap flow for production environments that start with zero admin accounts.
+  - Make the setup path discoverable from the staff sign-in flow without exposing it as a normal public account path.
+- Acceptance Criteria:
+  - Bootstrap only works when admin setup is required and the deploy-time token is correct.
+  - The first created admin is signed into the admin dashboard immediately after setup.
+  - Deployment docs explain the setup token and the first-run sequence clearly.
+- Notes:
+  - Completed on 2026-03-09.
+  - Added `POST /api/auth/bootstrap-admin` plus `/setup/admin`, and linked the flow from the staff sign-in warning state.
+  - `FIRST_ADMIN_SETUP_TOKEN` is now documented as part of production setup and release handoff.
+  - Verified with `npm test -- src/App.test.js` and `npm run test:backend`.
+
+### P30-2 Public Setup Warnings and Legacy Login Retirement
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 0.5 day
+- Files:
+  - src/components/PublicSetupNotice.jsx
+  - src/components/PageLayout.jsx
+  - src/App.js
+  - src/styles.css
+  - src/PublicRoutes.test.js
+- Scope:
+  - Expose first-admin setup risk on the public shell so operators do not have to discover it through the staff route alone.
+  - Retire the old role-specific `/login/*` paths in favor of the new account-first sign-in routes.
+- Acceptance Criteria:
+  - Public pages show a setup-required banner when the environment still needs a first admin.
+  - Legacy login routes no longer behave like independent auth surfaces.
+- Notes:
+  - Completed on 2026-03-09.
+  - Added a shared public setup notice with direct links to `First admin setup` and `Staff sign-in`.
+  - Changed `/login/admin` and `/login/user` to redirect to `/staff/signin`, and `/login/client` to redirect to `/signin`.
+  - Verified with `npm test -- src/PublicRoutes.test.js` and `npm test -- src/App.test.js`.
+
+### P30-3 Admin Setup Completion Visibility and Bootstrap Audit Reporting
+- Status: [x] Complete
+- Owner: Backend + Frontend
+- Estimate: 0.5 day
+- Files:
+  - backend/server.js
+  - src/components/AdminDashboard.js
+  - src/components/AdminDashboard.test.js
+- Scope:
+  - Show the owner when bootstrap is complete and whether the bootstrap token is still configured.
+  - Surface first-admin bootstrap events in the admin reporting view.
+- Acceptance Criteria:
+  - Admin system status clearly distinguishes setup-required from setup-complete environments.
+  - Reports count and label first-admin bootstrap activity in the auth-events summary.
+  - Production warns when `FIRST_ADMIN_SETUP_TOKEN` remains configured after setup is complete.
+- Notes:
+  - Completed on 2026-03-09.
+  - Added `setupComplete` and `setupTokenConfigured` to admin system status and raised a warning when the bootstrap token remains configured after setup.
+  - The settings route now includes a dedicated `Setup State` summary, and the reports route labels `auth.bootstrap_admin` as a first-admin bootstrap event.
+  - Verified with `npm test -- src/components/AdminDashboard.test.js` and `node -c backend/server.js`.
+
+### P30-4 Manual Owner QA Pass
+- Status: [x] Complete
+- Owner: QA + Full-stack
+- Estimate: 0.5 day
+- Files:
+  - SPRINT_BOARD.md
+- Scope:
+  - Run the current owner-facing flow manually against the local app and verify that the account-entry, admin setup, password reset, settings, reporting, and export paths behave as intended.
+- Acceptance Criteria:
+  - Public auth entry points are visible and understandable.
+  - Admin settings and reports expose the setup state, export controls, and current warnings clearly.
+  - Any blockers or environment-specific issues are recorded immediately instead of being treated as product regressions.
+- Notes:
+  - Completed on 2026-03-09.
+  - Manually verified `/`, `/signin`, `/signup`, `/staff/signin`, `/forgot-password`, `/setup/admin`, `/admin/dashboard/settings`, and `/admin/dashboard/reports` against the local app on `3101/3102`.
+  - Confirmed the public header and sidebar show `Sign in`, `Create account`, and `Staff sign-in`; staff sign-in works after restarting the stale local backend process; `/setup/admin` correctly shows that bootstrap is unavailable once an admin already exists.
+  - Confirmed the settings route shows `Admin Setup: Complete`, `Setup State`, environment warnings, and a working `Export All Admin Data` action that updates the last-export timestamp.
+  - Confirmed the reports route shows the auth-events summary and the current empty-state behavior when no recent activity is loaded.
+  - QA caveat: the first auth attempt failed against an older long-running backend process on `3102`; after restarting the backend from the current source, the live flow behaved correctly. Treat that as a local environment drift issue, not a product bug.
+
+## Sprint 32 (Owner Operations Cleanup and File Hygiene Controls)
+
+### P31-1 Inactive User Visibility and Filtered Exports
+- Status: [x] Complete
+- Owner: Backend + Frontend
+- Estimate: 0.75 day
+- Files:
+  - backend/server.js
+  - src/components/AdminDashboard.js
+  - src/components/AdminDashboard.test.js
+- Scope:
+  - Add inactive-user and recent failed-login visibility to admin system status.
+  - Let the people/accounts view filter by active vs inactive users.
+  - Make CSV exports follow the same user/activity filters shown in the admin UI.
+- Acceptance Criteria:
+  - Settings show inactive-user count and recent failed-login count.
+  - The people/accounts view supports `All`, `Active only`, and `Inactive only`.
+  - User export and activity export honor the current filter state.
+- Notes:
+  - Completed on 2026-03-09.
+  - Added inactive-user and recent failed-login counts to admin system status plus quick links to the filtered admin views.
+  - Added active/inactive filtering to the accounts view and passed the same filter values through user and activity export flows.
+  - Verified with `npm test -- src/components/AdminDashboard.test.js`, `npm run test:backend`, and `node -c backend/server.js`.
+
+### P31-2 File Hygiene Warnings and Safe Cleanup Actions
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 0.75 day
+- Files:
+  - src/components/AdminDashboard.js
+  - src/components/AdminDashboard.test.js
+- Scope:
+  - Surface stale files, weak client-visibility assignments, and demo/test clutter in admin files and reports.
+  - Add owner-safe cleanup actions instead of pushing the owner toward delete-first behavior.
+- Acceptance Criteria:
+  - The files route shows file hygiene summaries before the file manager.
+  - The reports route shows a file hygiene watch section next to the operational summary.
+  - The owner can mark stale files reviewed, hide weak client-visible files, and archive demo/test records.
+- Notes:
+  - Completed on 2026-03-09.
+  - Added `File Hygiene` to the admin files route and `File Hygiene Watch` to reports.
+  - Added `Mark Reviewed`, `Hide From Clients`, and `Archive Record` actions using the existing file metadata update path rather than introducing a new file lifecycle model.
+  - Verified with `npm test -- src/components/AdminDashboard.test.js` and `node -c src/components/AdminDashboard.js`.
+
+### P31-3 Manual Owner QA for Settings, People, Reports, and Files
+- Status: [x] Complete
+- Owner: QA + Full-stack
+- Estimate: 0.5 day
+- Files:
+  - SPRINT_BOARD.md
+- Scope:
+  - Run a live admin QA pass across the owner operations routes after the new status, export, and file hygiene work lands.
+- Acceptance Criteria:
+  - Settings, people, reports, and files render the new owner-facing controls clearly on the running local app.
+  - Any remaining rough edges are recorded as QA follow-ups instead of being silently ignored.
+- Notes:
+  - Completed on 2026-03-09.
+  - Manually verified `/admin/dashboard/settings`, `/admin/dashboard/clients?userStatus=inactive`, `/admin/dashboard/reports?activityCategory=auth`, and `/admin/dashboard/files` against the local app on `3101/3102`.
+  - Confirmed the settings route shows `Inactive Users`, `Failed Sign-Ins (7d)`, `Review Failed Sign-Ins`, `Review Inactive Users`, and the latest export timestamp.
+  - Confirmed the people/accounts deep link respects the inactive-user query state and currently shows a correct empty state because the live local data set has zero inactive users.
+  - Confirmed the reports route respects the auth-category query state and currently shows an empty-state message because the live local activity window has no recent auth events loaded.
+  - Confirmed the files route shows `File Hygiene` ahead of `Admin File Management` and currently reports a clean state on the local data set.
+  - QA caveat: browser console output on the settings route still reports password-form autocomplete guidance, so one auth/account form path is still missing a browser-expected autocomplete hint.
+  - QA follow-up: the projects route still contains obvious `RBAC Smoke` and `test` records in live local data, which reinforces the need for a future demo-data cleanup pass outside the file hygiene work.
+
+## Sprint 33 (Projects Page Owner Clarity)
+
+### P32-1 Projects Page Operating View Refresh
+- Status: [x] Complete
+- Owner: Frontend
+- Estimate: 0.75 day
+- Files:
+  - src/components/Projects.js
+  - src/components/Projects.css
+  - src/components/Projects.test.js
+- Scope:
+  - Reframe the projects page so an owner can quickly tell what is active, what is completed, and which records still need cleanup.
+  - Put status, project facts, and the next owner-facing use ahead of the longer case-study narrative.
+- Acceptance Criteria:
+  - The top summary shows project status and review-readiness clearly.
+  - Project cards surface status, core facts, and a clear next-use or cleanup message before extended narrative copy.
+  - Tests protect the new owner-facing wording and the `Needs Review` signal.
+- Notes:
+  - Completed on 2026-03-15.
+  - Reworked the top-page framing and summary chips so the route reads like an operating view instead of a generic case-study gallery.
+  - Added a fourth summary chip for `Needs Review` and card-level `Best next use` / `Needs review` guidance so incomplete records are easier to spot before reuse.
+  - Kept the existing case-study normalization and client-visibility proof, but pushed it below the status and fact hierarchy so the cards are easier to scan.
+  - Verified with `npm test -- src/components/Projects.test.js` and `node -c src/components/Projects.js`.
+
+### P32-2 Projects Page Live QA Follow-Up
+- Status: [x] Complete
+- Owner: QA + Frontend
+- Estimate: 0.25 day
+- Files:
+  - SPRINT_BOARD.md
+- Scope:
+  - Run a live browser QA pass on the projects page after the local frontend is running again.
+  - Check desktop and mobile spacing, summary hierarchy, and the visual weight of the `Needs Review` treatment.
+- Acceptance Criteria:
+  - `/projects` renders correctly on the live local app.
+  - Any spacing or hierarchy issues are recorded and addressed immediately if they are confusing.
+- Notes:
+  - Completed on 2026-03-15.
+  - Restarted the local frontend on `3001` and the demo backend on `3102`, then verified the projects page against live Mongo-backed data.
+  - Desktop QA confirmed the new hierarchy is working: summary chips surface `Projects in View`, `Ongoing`, `Completed`, and `Needs Review` first, and the cards now expose `Best next use` ahead of the longer case-study narrative.
+  - Mobile QA confirmed the summary, controls, and card headers stack cleanly at narrow width without hiding the status or the next-step guidance.
+  - QA note: the first reload after bringing Vite up produced a transient `ERR_NETWORK_CHANGED` dynamic-import failure for `Projects.js` / `PageLayout.jsx`, but a clean reload succeeded and the route rendered normally after the dev server stabilized.
+
+### P33-1 Public Messaging Alignment
+- Status: [x] Complete
+- Owner: Frontend + QA
+- Estimate: 0.5 day
+- Files:
+  - src/Home.js
+  - src/ClientPortal.js
+  - src/PublicRoutes.test.js
+  - SPRINT_BOARD.md
+- Scope:
+  - Align the home route and client portal language with the newer owner-facing projects page.
+  - Make the account-path split and owner-value story clearer on public routes without turning the pages into generic marketing copy.
+- Acceptance Criteria:
+  - The home route emphasizes one operating view, owner visibility, and operational proof.
+  - The client portal route clearly explains the split between client access and staff access.
+  - Regression coverage protects the updated public wording.
+  - Live QA confirms the revised copy reads clearly on `/` and `/client-portal`.
+- Notes:
+  - Completed on 2026-03-15.
+  - Updated the home-page hero, proof section, and portal teaser so the public story matches the owner-ready projects page instead of reading like a generic showcase.
+  - Updated the client portal route to explain the client-vs-staff account path directly and to make the operator/admin value clearer without adding new auth surface area.
+  - Verified with `npm test -- src/PublicRoutes.test.js` and `npm test -- src/App.test.js`.
+  - Live QA on `http://localhost:3001/` and `http://localhost:3001/client-portal` confirmed the new copy reads clearly in the rendered UI, the sign-in/create-account/staff-sign-in entry points remain easy to find, and the role split is understandable without extra explanation.
+
+## Sprint 34 (Security Stop-the-Line Hardening)
+
+### P34-1 Project Mutation Lockdown and Upload Exposure Reduction
+- Status: [x] Complete
+- Owner: Backend
+- Estimate: 0.75 day
+- Files:
+  - backend/server.js
+  - backend/package.json
+  - backend/package-lock.json
+- Scope:
+  - Close the critical unauthenticated project write hole before deployment.
+  - Stop exposing the entire uploads directory publicly and only serve project images that are intentionally attached to public project records.
+  - Add baseline security headers and safer upload validation for project images and general file uploads.
+- Acceptance Criteria:
+  - Anonymous users cannot create, update, bulk-delete, or delete projects.
+  - `/uploads/*` no longer acts as an open file bucket for arbitrary backend uploads.
+  - Project image uploads enforce image-only types and size limits.
+  - General file uploads reject dangerous executable and script file types.
+- Notes:
+  - Completed on 2026-03-15.
+  - Added `requireAuth` + `requireRoles(['admin'])` to project create, update, bulk-delete, and delete routes.
+  - Replaced open `/uploads` static serving with a guarded public project-image route that only serves images referenced by project records.
+  - Added `helmet`, image-only upload filtering for project images, and executable/script blocking plus a 25 MB cap for general file uploads.
+  - Verified with `npm run test --prefix backend`, `node -c backend/server.js`, and a live anonymous `POST /api/projects` check returning `401` on the fresh backend.
+
+### P34-2 Local Runtime Alignment and Authenticated Admin Security Smoke
+- Status: [x] Complete
+- Owner: Backend + Frontend + QA
+- Estimate: 0.5 day
+- Files:
+  - .env.development
+  - SPRINT_BOARD.md
+- Scope:
+  - Point the local frontend at the secured backend instance and verify the hardened routes work in a real authenticated admin flow.
+  - Remove local process drift so security verification runs against one stable backend instance instead of stale watcher processes.
+- Acceptance Criteria:
+  - Local frontend targets the secure backend on the correct port.
+  - Admin-authenticated project create, update, and delete still work after the route lockdown.
+  - Local security smoke notes capture any environment-specific instability instead of treating it as a code regression.
+- Notes:
+  - Completed on 2026-03-15.
+  - Updated `.env.development` to use `http://127.0.0.1:3002` so the browser no longer points at the stale `3102` backend.
+  - Cleaned out duplicate backend watcher processes and verified a single stable backend process on `3002`.
+  - Verified authenticated admin project CRUD live after login: created project `69b6c812195b865aec961935`, updated it successfully, and deleted it successfully.
+  - QA note: local browser noise around `/api/auth/me` before login is expected because the public auth shell probes session state before a user signs in.
 
 ## Completed Outside Sprint Scope
 - 2026-03-08: Fixed two Express 5 wildcard route incompatibilities in `backend/server.js` so the app can run locally on alternate ports without affecting the deployed environment.

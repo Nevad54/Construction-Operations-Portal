@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { vi } from 'vitest';
 import { ThemeProvider } from './context/ThemeContext';
 import { trackEvent } from './utils/analytics';
+import { api } from './services/api';
 import Home from './Home';
 import Services from './Services';
 import ClientPortal from './ClientPortal';
@@ -18,6 +19,12 @@ import { pageMetaDefaults } from './utils/pageMeta';
 
 vi.mock('./utils/analytics', () => ({
   trackEvent: vi.fn(),
+}));
+
+vi.mock('./services/api', () => ({
+  api: {
+    getSetupStatus: vi.fn(),
+  },
 }));
 
 vi.mock('react-google-recaptcha', async () => {
@@ -78,6 +85,7 @@ beforeAll(() => {
 beforeEach(() => {
   installMatchMediaMock();
   localStorage.clear();
+  api.getSetupStatus.mockResolvedValue({ ok: true, requiresAdminSetup: false });
   document.documentElement.classList.remove('dark');
   document.title = pageMetaDefaults.title;
   document.head.innerHTML = `
@@ -106,6 +114,9 @@ const renderPublicRoute = (initialPath, element) => render(
         <Route path="/about" element={<About />} />
         <Route path="/client-portal" element={<ClientPortal />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/signin" element={<div>Public Sign-In Screen</div>} />
+        <Route path="/signup" element={<div>Sign-Up Screen</div>} />
+        <Route path="/staff/signin" element={<div>Staff Sign-In Screen</div>} />
         <Route path="/projects" element={<div>Projects Route</div>} />
         <Route path="/solutions/industrial" element={<IndustrialLandingPage />} />
         <Route path="/solutions/commercial" element={<CommercialLandingPage />} />
@@ -184,7 +195,7 @@ describe('public route rendering', () => {
     });
 
     expect(screen.getByRole('heading', {
-      name: /Construction and industrial delivery with clear planning/i,
+      name: /Construction and industrial delivery with one clearer operating view/i,
     })).toBeInTheDocument();
     expect(within(screen.getByRole('main')).getByRole('link', { name: /Request a site assessment/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', {
@@ -193,9 +204,8 @@ describe('public route rendering', () => {
     expect(screen.getByRole('heading', {
       name: /Core service lines built to keep scopes moving from planning through handoff/i,
     })).toBeInTheDocument();
-    expect(screen.getByText(/Recent Outcomes/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', {
-      name: /Built for field coordination across active sites/i,
+      name: /Field coordination from one operating base/i,
     })).toBeInTheDocument();
   });
 
@@ -251,6 +261,8 @@ describe('public route rendering', () => {
     const portalLink = within(headerBanner).getByRole('link', { name: /Client Portal/i });
     expect(portalLink).toHaveAttribute('aria-current', 'page');
     expect(portalLink.closest('li')).toHaveClass('active');
+    expect(within(headerBanner).getByRole('link', { name: /^Sign in$/i })).toHaveAttribute('href', '/signin');
+    expect(within(headerBanner).getByRole('link', { name: /^Create account$/i })).toHaveAttribute('href', '/signup');
 
     expect(screen.getAllByRole('button', { name: /Switch to light mode/i }).length).toBeGreaterThan(0);
   });
@@ -264,7 +276,23 @@ describe('public route rendering', () => {
     expect(screen.getByRole('heading', {
       name: /What the portal already supports/i,
     })).toBeInTheDocument();
+    expect(screen.getByText(/Clients use the public account path\. Staff use staff sign-in\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Admins control access, password recovery, and setup safeguards/i)).toBeInTheDocument();
     expect(within(screen.getByRole('main')).getByRole('link', { name: /Request a site assessment/i })).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByRole('link', { name: /^Sign in$/i })).toHaveAttribute('href', '/signin');
+    expect(within(screen.getByRole('main')).getByRole('link', { name: /^Create account$/i })).toHaveAttribute('href', '/signup');
+    expect(within(screen.getByRole('main')).getByRole('link', { name: /^Staff sign-in$/i })).toHaveAttribute('href', '/staff/signin');
+  });
+
+  test('public routes surface the first-admin setup warning when the environment is not initialized', async () => {
+    api.getSetupStatus.mockResolvedValueOnce({ ok: true, requiresAdminSetup: true });
+
+    renderPublicRoute('/', <Home />);
+
+    const setupNotice = await screen.findByRole('region', { name: 'Environment setup notice' });
+    expect(within(setupNotice).getByText(/still needs its first admin account/i)).toBeInTheDocument();
+    expect(within(setupNotice).getByRole('link', { name: /First admin setup/i })).toHaveAttribute('href', '/setup/admin');
+    expect(within(setupNotice).getByRole('link', { name: /Staff sign-in/i })).toHaveAttribute('href', '/staff/signin');
   });
 
   test('services route renders in dark mode with the primary CTA and service copy', async () => {
@@ -304,7 +332,7 @@ describe('public route rendering', () => {
     expect(screen.getByRole('heading', { name: /What this offer solves/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /How we execute/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', {
-      name: /Built for field coordination across active sites/i,
+      name: /Field coordination from one operating base/i,
     })).toBeInTheDocument();
   });
 
@@ -318,9 +346,7 @@ describe('public route rendering', () => {
     expect(screen.getByRole('heading', {
       name: /Need a delivery plan that holds up on site/i,
     })).toBeInTheDocument();
-    expect(screen.getByRole('heading', {
-      name: /Operations Standards/i,
-    })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Field coordination from one operating base/i })).toBeInTheDocument();
   });
 
   test('residential landing route sells owner visibility and portal-backed turnover, not just generic fit-out copy', async () => {
@@ -331,7 +357,7 @@ describe('public route rendering', () => {
     })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /How residential clients stay aligned/i })).toBeInTheDocument();
     expect(screen.getByText(/Selection and approval visibility/i)).toBeInTheDocument();
-    expect(screen.getByText(/portal keeps that communication in one visible place/i)).toBeInTheDocument();
+    expect(screen.getByText(/The portal keeps owner decisions, finish changes, and handoff files in one visible place/i)).toBeInTheDocument();
     expect(screen.getByAltText(/Bright premium residential interior with a renovated living room and minimalist finishes/i)).toBeInTheDocument();
     expect(within(screen.getByRole('main')).getAllByRole('link', { name: /Request a site assessment/i }).length).toBeGreaterThan(0);
   });
@@ -344,8 +370,8 @@ describe('public route rendering', () => {
     expect(screen.getByText(/^Required$/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Enable Local Verification/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Complete Verification to Submit/i })).toBeDisabled();
-    expect(screen.getByText(/Next-business-day follow-up after the intake review/i)).toBeInTheDocument();
-    expect(screen.getByText(/Built for field coordination across active sites/i)).toBeInTheDocument();
+    expect(screen.getByText(/Next-business-day follow-up\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Field coordination from one operating base/i)).toBeInTheDocument();
     expect(screen.queryByText(/portfolio-safe demo territory/i)).not.toBeInTheDocument();
   });
 
@@ -492,7 +518,7 @@ describe('public route rendering', () => {
       expect(document.documentElement.classList.contains('dark')).toBe(true);
     });
 
-    expect(screen.getByText(/Quick first contact/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Quick first contact$/i)).toBeInTheDocument();
     expect(screen.getByText(/What happens next/i)).toBeInTheDocument();
     expect(screen.getByText(/Office and Coverage/i)).toBeInTheDocument();
     expect(screen.getByText(/core service area/i)).toBeInTheDocument();
@@ -502,8 +528,8 @@ describe('public route rendering', () => {
     renderPublicRoute('/services', <Services />);
 
     expect(screen.getByRole('heading', { name: /Request Site Assessment/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Operations Standards/i })).toBeInTheDocument();
-    expect(screen.getByText(/Safety Records/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Field coordination from one operating base/i })).toBeInTheDocument();
+    expect(screen.getByText(/Quick first contact, clear next step\./i)).toBeInTheDocument();
   });
 
   test('public marketing routes avoid internal demo framing in core copy', async () => {
@@ -526,11 +552,11 @@ describe('public route rendering', () => {
     expect(residentialCard).toHaveAttribute('href', '/solutions/residential');
   });
 
-  test('home route includes residential proof alongside the other sector case stories', async () => {
+  test('home route keeps the residential expertise card in the main sector grid', async () => {
     renderPublicRoute('/', <Home />);
 
-    expect(screen.getByText(/Residential Fit-Out/i)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Homeowner update rhythm for finish-sensitive work/i })).toBeInTheDocument();
-    expect(screen.getByText(/Made weekly progress updates easier for homeowners to follow/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Residential Projects/i })).toBeInTheDocument();
+    expect(screen.getByText(/Premium Homes/i)).toBeInTheDocument();
+    expect(screen.getByText(/cleaner owner updates and finish coordination/i)).toBeInTheDocument();
   });
 });

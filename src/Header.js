@@ -90,6 +90,14 @@ const Header = ({ isSidebarActive, setIsSidebarActive, isNavLinksActive, setIsNa
               </ul>
             </nav>
             <div className="header-utility-group">
+              <div className="header-auth-links" aria-label="Account access">
+                <Link to="/signin" className="header-auth-link">
+                  Sign in
+                </Link>
+                <Link to="/signup" className="header-auth-link header-auth-link-primary">
+                  Create account
+                </Link>
+              </div>
               <button
                 type="button"
                 onClick={toggleTheme}

@@ -48,7 +48,7 @@ export default function RenovationLandingPage() {
     <ServiceLandingPage
       eyebrow="Renovation Delivery"
       title="Renovation support for projects that need tighter planning before the first wall opens up."
-      subtitle="Retrofit, interior improvement, and renovation work where existing conditions and stakeholder coordination drive delivery risk."
+      subtitle="Retrofit and interior improvement work where existing conditions drive delivery risk."
       metaTitle="Renovation Delivery | Construction Operations Portal"
       metaDescription="Renovation support for retrofit and interior improvement work that needs clear phasing, existing-conditions planning, and accountable closeout."
       metrics={metrics}
