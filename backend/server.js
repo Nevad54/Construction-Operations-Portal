@@ -1,8 +1,10 @@
 const dotenv = require('dotenv');
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const mongoose = require('mongoose');
 const multer = require('multer');
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const session = require('express-session');
@@ -34,6 +36,8 @@ const Inquiry = require('./models/Inquiry');
 const { registerAuthRoutes } = require('./routes/auth');
 const { registerInquiryRoutes } = require('./routes/inquiries');
 const { normalizeContactPayload, validateContactPayload, buildContactEmailContent } = require('./contactPayload');
+const { buildAdminSystemStatusAlerts } = require('./utils/adminSystemStatus');
+const { PASSWORD_POLICY, PASSWORD_POLICY_MESSAGE, isPasswordStrong } = require('./utils/passwordPolicy');
 
 // In-memory fallback storage for development when MongoDB is unavailable
 const fallbackFile = path.join(__dirname, 'dev_projects.json');
@@ -154,6 +158,8 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 dotenv.config(); // fallback to backend/.env if exists
 
 const isProduction = process.env.NODE_ENV === 'production';
+const demoSeedEnabled = !isProduction;
+const firstAdminSetupToken = String(process.env.FIRST_ADMIN_SETUP_TOKEN || '').trim();
 const DEFAULT_SESSION_SECRET = '70f1e04a35336b79732f2f034b101d4d';
 
 const getCredentialValue = (envValue, fallbackValue) => {
@@ -172,10 +178,19 @@ const validateProductionConfig = () => {
   if (!String(process.env.CORS_ORIGINS || '').trim()) {
     errors.push('CORS_ORIGINS is required in production.');
   }
+  if (!String(process.env.FRONTEND_URL || '').trim()) {
+    errors.push('FRONTEND_URL is required in production.');
+  }
   if (!String(process.env.SESSION_SECRET || '').trim()) {
     errors.push('SESSION_SECRET is required in production.');
   } else if (String(process.env.SESSION_SECRET).trim() === DEFAULT_SESSION_SECRET) {
     errors.push('SESSION_SECRET must not use the built-in development fallback in production.');
+  }
+  if (!String(process.env.EMAIL_USER || '').trim()) {
+    errors.push('EMAIL_USER is required in production.');
+  }
+  if (!String(process.env.EMAIL_PASS || '').trim()) {
+    errors.push('EMAIL_PASS is required in production.');
   }
 
   if (errors.length > 0) {
@@ -226,13 +241,72 @@ const corsOptions = {
 };
 
 const app = express();
+app.disable('x-powered-by');
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 
 // Multer Setup for File Uploads (Projects)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, './uploads/'),
     filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
 });
-const upload = multer({ storage });
+const allowedProjectImageMimeTypes = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+]);
+const projectImageUpload = multer({
+  storage,
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (allowedProjectImageMimeTypes.has(String(file.mimetype || '').toLowerCase())) {
+      return cb(null, true);
+    }
+    return cb(new Error('Only JPG, PNG, WEBP, and GIF project images are allowed.'));
+  },
+});
+const handleProjectImageUpload = (req, res, next) => {
+  projectImageUpload.single('image')(req, res, (err) => {
+    if (!err) return next();
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'Project image must be 8MB or smaller.' });
+    }
+    return res.status(400).json({ error: err.message || 'Invalid project image upload.' });
+  });
+};
+const blockedUploadExtensions = new Set([
+  '.ade', '.adp', '.app', '.bat', '.chm', '.cmd', '.com', '.cpl', '.dll', '.exe', '.hta',
+  '.ins', '.isp', '.jar', '.js', '.jse', '.lib', '.lnk', '.mde', '.msc', '.msi', '.msp',
+  '.mst', '.pif', '.ps1', '.psm1', '.scr', '.sct', '.sh', '.sys', '.vb', '.vbe', '.vbs',
+  '.ws', '.wsc', '.wsf', '.wsh', '.php', '.phar', '.cgi', '.pl'
+]);
+const blockedUploadMimeTypes = new Set([
+  'application/x-msdownload',
+  'application/x-msdos-program',
+  'application/x-dosexec',
+  'application/x-sh',
+  'application/x-bat',
+  'application/x-powershell',
+  'application/java-archive',
+  'text/x-php',
+  'application/x-httpd-php',
+  'application/javascript',
+  'text/javascript',
+]);
+const isDangerousUpload = (file) => {
+  const extension = path.extname(String(file?.originalname || '')).toLowerCase();
+  const mimeType = String(file?.mimetype || '').toLowerCase();
+  if (blockedUploadExtensions.has(extension)) return true;
+  if (blockedUploadMimeTypes.has(mimeType)) return true;
+  return false;
+};
+let safeFileUpload;
+let handleSafeFileUpload;
 
 const cloudStorageEnabled = Boolean(
   cloudinary &&
@@ -250,9 +324,25 @@ if (cloudStorageEnabled) {
   });
 }
 
-const fileUpload = cloudStorageEnabled
-  ? multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } })
-  : upload;
+safeFileUpload = multer({
+  storage: cloudStorageEnabled ? multer.memoryStorage() : storage,
+  limits: { fileSize: 25 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (isDangerousUpload(file)) {
+      return cb(new Error('This file type is not allowed.'));
+    }
+    return cb(null, true);
+  },
+});
+handleSafeFileUpload = (req, res, next) => {
+  safeFileUpload.single('file')(req, res, (err) => {
+    if (!err) return next();
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'Files must be 25MB or smaller.' });
+    }
+    return res.status(400).json({ error: err.message || 'Invalid file upload.' });
+  });
+};
 
 // Add CORS headers directly to the response
 app.use((req, res, next) => {
@@ -289,6 +379,35 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+const getRequestOrigin = (req) => {
+  const originHeader = String(req.headers.origin || '').trim();
+  if (originHeader) return originHeader;
+  const refererHeader = String(req.headers.referer || '').trim();
+  if (!refererHeader) return '';
+  try {
+    const refererUrl = new URL(refererHeader);
+    return refererUrl.origin;
+  } catch (_err) {
+    return '';
+  }
+};
+app.use('/api', (req, res, next) => {
+  if (!unsafeMethods.has(req.method)) return next();
+
+  const hasSessionCookie = Boolean(String(req.headers.cookie || '').trim());
+  if (!hasSessionCookie) return next();
+
+  const requestOrigin = getRequestOrigin(req);
+  if (!requestOrigin) {
+    return res.status(403).json({ error: 'Blocked request origin' });
+  }
+  if (!allowedOrigins.includes(requestOrigin)) {
+    return res.status(403).json({ error: 'Blocked request origin' });
+  }
+  return next();
+});
+
 // Optional: serve the built React app if it exists (useful for local single-server runs).
 // On Render we're deploying backend-only, so ../build and ../pages may not exist.
 const reactBuildPath = path.join(__dirname, '../build');
@@ -303,8 +422,44 @@ if (fs.existsSync(publicAssetsPath)) {
   app.use('/assets', express.static(publicAssetsPath));
 }
 
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const isProjectImagePathPublic = async (publicPath) => {
+  const normalizedPath = String(publicPath || '').trim();
+  if (!normalizedPath.startsWith('/uploads/')) return false;
+
+  if (useFallback || mongoose.connection.readyState !== 1) {
+    return fallbackProjects.some((project) => String(project.image || '') === normalizedPath);
+  }
+
+  const match = await Project.exists({ image: normalizedPath });
+  return Boolean(match);
+};
+
+// Only expose uploads that are attached to public project cards.
+app.get('/uploads/:filename', async (req, res) => {
+  try {
+    const rawFilename = String(req.params.filename || '').trim();
+    const safeFilename = path.basename(rawFilename);
+    if (!safeFilename || safeFilename !== rawFilename) {
+      return res.status(404).end();
+    }
+
+    const publicPath = `/uploads/${safeFilename}`;
+    const allowed = await isProjectImagePathPublic(publicPath);
+    if (!allowed) {
+      return res.status(404).end();
+    }
+
+    const diskPath = path.join(__dirname, 'uploads', safeFilename);
+    if (!fs.existsSync(diskPath)) {
+      return res.status(404).end();
+    }
+
+    return res.sendFile(diskPath);
+  } catch (err) {
+    console.error('Error serving public project image:', err);
+    return res.status(500).json({ error: 'Failed to load project image' });
+  }
+});
 
 // Serve image assets for legacy client paths (/Uploads/*).
 const publicUploadsPath = path.join(__dirname, '../public/Uploads');
@@ -401,6 +556,7 @@ setTimeout(() => {
 const sessionCookieSecure =
   isProduction &&
   String(process.env.SESSION_COOKIE_SECURE || '').toLowerCase() !== 'false';
+const sessionCookieName = process.env.SESSION_COOKIE_NAME || 'construction.sid';
 
 app.use(session({
   ...(MongoStore && process.env.MONGO_URI
@@ -412,13 +568,19 @@ app.use(session({
         }),
       }
     : {}),
+  name: sessionCookieName,
+  proxy: sessionCookieSecure,
   secret: process.env.SESSION_SECRET || DEFAULT_SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  rolling: true,
+  unset: 'destroy',
   cookie: {
     // Avoid breaking local development if NODE_ENV is mis-set; allow overriding in env.
     secure: sessionCookieSecure,
     sameSite: sessionCookieSecure ? 'none' : 'lax',
+    httpOnly: true,
+    path: '/',
     maxAge: 60 * 60 * 1000, // 1 hour
   },
 }));
@@ -583,24 +745,91 @@ mongoose.connection.on('disconnected', () => {
 });
 
 const isDbReady = () => !useFallback && mongoose.connection.readyState === 1;
+const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+const isValidEmail = (value) => /\S+@\S+\.\S+/.test(String(value || '').trim());
+const deriveDefaultEmail = (role, username) => {
+  const local = String(username || role || 'user')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-');
+  return `${local || role || 'user'}@construction.local`;
+};
+const getUserLabel = (user = {}) => String(user.email || user.username || '').trim();
+const createPasswordResetToken = () => crypto.randomBytes(32).toString('hex');
+const hashPasswordResetToken = (token) => crypto.createHash('sha256').update(String(token || '')).digest('hex');
+const appOrigin = String(process.env.FRONTEND_URL || process.env.APP_URL || allowedOrigins[0] || 'http://localhost:3000').trim().replace(/\/$/, '');
+const buildPasswordResetUrl = (token, audience = 'client') => {
+  const params = new URLSearchParams({ token });
+  const normalizedAudience = String(audience || '').trim().toLowerCase();
+  if (normalizedAudience === 'staff') {
+    params.set('audience', 'staff');
+  }
+  return `${appOrigin}/reset-password?${params.toString()}`;
+};
+const sendPasswordResetEmail = async ({ email, resetUrl, role, audience }) => {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log(`Password reset email skipped. Reset URL for ${email}: ${resetUrl}`);
+    return false;
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const accountLabel = audience === 'staff'
+    ? 'staff account'
+    : role === 'client'
+      ? 'client account'
+      : 'workspace account';
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Reset your Construction Operations Portal password',
+    text: `A password reset was requested for your ${accountLabel}.\n\nReset your password here:\n${resetUrl}\n\nThis link expires in 60 minutes. If you did not request this, you can ignore this email.`,
+    html: `<p>A password reset was requested for your ${accountLabel}.</p><p><a href="${resetUrl}">Reset your password</a></p><p>This link expires in 60 minutes. If you did not request this, you can ignore this email.</p>`,
+  });
+  return true;
+};
 
 const ensureDefaultUsers = async () => {
-  if (!isDbReady()) return;
+  if (!isDbReady() || !demoSeedEnabled) return;
   try {
     const seeds = [
-      { username: ADMIN_USER, password: ADMIN_PASS, role: 'admin' },
-      { username: EMP_USER, password: EMP_PASS, role: 'user' },
-      { username: CLIENT_USER, password: CLIENT_PASS, role: 'client' },
+      { username: ADMIN_USER, email: deriveDefaultEmail('admin', ADMIN_USER), password: ADMIN_PASS, role: 'admin' },
+      { username: EMP_USER, email: deriveDefaultEmail('user', EMP_USER), password: EMP_PASS, role: 'user' },
+      { username: CLIENT_USER, email: deriveDefaultEmail('client', CLIENT_USER), password: CLIENT_PASS, role: 'client' },
     ];
 
     for (const seed of seeds) {
       const usernameLower = String(seed.username || '').trim().toLowerCase();
-      if (!usernameLower) continue;
-      const exists = await User.findOne({ usernameLower }).lean();
-      if (exists) continue;
+      const emailLower = normalizeEmail(seed.email);
+      if (!usernameLower && !emailLower) continue;
+      const exists = await User.findOne({
+        $or: [
+          ...(emailLower ? [{ emailLower }] : []),
+          ...(usernameLower ? [{ usernameLower }] : []),
+        ],
+      });
+      if (exists) {
+        let changed = false;
+        if (!exists.email && seed.email) {
+          exists.email = seed.email;
+          changed = true;
+        }
+        if (changed) await exists.save();
+        continue;
+      }
       const passwordHash = await hashPassword(seed.password);
       await User.create({
-        username: seed.username,
+        username: seed.username || seed.email,
+        email: seed.email,
         role: seed.role,
         passwordHash,
       });
@@ -616,11 +845,13 @@ mongoose.connection.on('connected', () => {
 });
 
 const authUsersPath = path.join(__dirname, 'dev_auth_users.json');
-const defaultAuthUsers = [
-  { id: 'admin-1', username: ADMIN_USER, password: ADMIN_PASS, role: 'admin' },
-  { id: 'user-1', username: EMP_USER, password: EMP_PASS, role: 'user' },
-  { id: 'client-1', username: CLIENT_USER, password: CLIENT_PASS, role: 'client' },
-];
+const defaultAuthUsers = demoSeedEnabled
+  ? [
+      { id: 'admin-1', username: ADMIN_USER, email: deriveDefaultEmail('admin', ADMIN_USER), password: ADMIN_PASS, role: 'admin' },
+      { id: 'user-1', username: EMP_USER, email: deriveDefaultEmail('user', EMP_USER), password: EMP_PASS, role: 'user' },
+      { id: 'client-1', username: CLIENT_USER, email: deriveDefaultEmail('client', CLIENT_USER), password: CLIENT_PASS, role: 'client' },
+    ]
+  : [];
 let AUTH_USERS = [...defaultAuthUsers];
 
 try {
@@ -645,16 +876,33 @@ const persistAuthUsers = () => {
 
 defaultAuthUsers.forEach((seedUser) => {
   const exists = AUTH_USERS.some(
-    (u) => String(u.username || '').toLowerCase() === String(seedUser.username || '').toLowerCase()
+    (u) =>
+      String(u.username || '').toLowerCase() === String(seedUser.username || '').toLowerCase() ||
+      normalizeEmail(u.email) === normalizeEmail(seedUser.email)
   );
   if (!exists) AUTH_USERS.push(seedUser);
 });
+AUTH_USERS = AUTH_USERS.map((user) => ({
+  ...user,
+  email: String(user.email || deriveDefaultEmail(user.role, user.username)).trim().toLowerCase(),
+  isActive: user.isActive !== false,
+  deactivatedAt: user.deactivatedAt || null,
+}));
 persistAuthUsers();
+
+const getAdminAccountCount = async () => {
+  if (isDbReady()) {
+    return User.countDocuments({ role: 'admin', isActive: true });
+  }
+  return AUTH_USERS.filter((user) => user.role === 'admin' && user.isActive !== false).length;
+};
 
 const sanitizeUser = (user) => ({
   id: String(user.id || user._id || ''),
-  username: user.username,
+  username: user.username || user.email || '',
+  email: user.email || '',
   role: user.role,
+  isActive: user.isActive !== false,
   projectIds: Array.isArray(user.projectIds) ? user.projectIds.map((v) => String(v)) : [],
 });
 const getSessionUser = (req) => req.session && req.session.authUser ? req.session.authUser : null;
@@ -850,17 +1098,18 @@ const calculateAdminKpis = ({ inquiries = [] }) => {
 
 const logActivity = async (req, payload) => {
   const actor = req.authUser || getSessionUser(req);
-  if (!actor) return;
 
   const entry = {
-    actorId: actor.id,
-    actorRole: actor.role,
+    actorId: actor?.id || payload.actorId || 'anonymous',
+    actorRole: actor?.role || payload.actorRole || 'anonymous',
     action: payload.action,
     targetType: payload.targetType,
     targetId: payload.targetId || '',
     details: payload.details || '',
     metadata: payload.metadata || {},
   };
+
+  if (!actor && !payload.allowAnonymous && !payload.actorId) return;
 
   if (useFallback || mongoose.connection.readyState !== 1) {
     fallbackActivityLogs.unshift({
@@ -881,6 +1130,90 @@ const logActivity = async (req, payload) => {
   }
 };
 
+const getLastExportActivity = async () => {
+  const exportActionMap = {
+    'admin.export_users': 'users',
+    'admin.export_inquiries': 'inquiries',
+    'admin.export_activity': 'activity',
+    'admin.export_all': 'all',
+  };
+  const lastExports = {
+    users: null,
+    inquiries: null,
+    activity: null,
+    all: null,
+  };
+
+  if (useFallback || mongoose.connection.readyState !== 1) {
+    fallbackActivityLogs
+      .filter((item) => Object.prototype.hasOwnProperty.call(exportActionMap, String(item.action || '')))
+      .forEach((item) => {
+        const key = exportActionMap[String(item.action || '')];
+        if (!lastExports[key]) {
+          lastExports[key] = item.createdAt || null;
+        }
+      });
+    return lastExports;
+  }
+
+  const items = await ActivityLog.find({
+    action: { $in: Object.keys(exportActionMap) },
+  }).sort({ createdAt: -1 }).lean();
+
+  items.forEach((item) => {
+    const key = exportActionMap[String(item.action || '')];
+    if (key && !lastExports[key]) {
+      lastExports[key] = item.createdAt || null;
+    }
+  });
+
+  return lastExports;
+};
+
+const getActivityCategory = (action) => {
+  const normalized = String(action || '').trim();
+  if (normalized.startsWith('auth.')) return 'auth';
+  if (normalized.startsWith('admin.export_')) return 'exports';
+  if (normalized.startsWith('admin.user_')) return 'users';
+  if (normalized.startsWith('admin.inquiry_')) return 'inquiries';
+  return 'other';
+};
+
+const filterUsersByActiveState = (users, activeFilter = 'all') => {
+  const normalized = String(activeFilter || 'all').trim().toLowerCase();
+  if (normalized === 'active') {
+    return users.filter((user) => user.isActive !== false);
+  }
+  if (normalized === 'inactive') {
+    return users.filter((user) => user.isActive === false);
+  }
+  return users;
+};
+
+const getInactiveUserCount = async () => {
+  if (isDbReady()) {
+    return User.countDocuments({ isActive: false });
+  }
+  return AUTH_USERS.filter((user) => user.isActive === false).length;
+};
+
+const getRecentFailedLoginCount = async () => {
+  const since = new Date(Date.now() - (7 * 24 * 60 * 60 * 1000));
+
+  if (useFallback || mongoose.connection.readyState !== 1) {
+    return fallbackActivityLogs.filter((item) => {
+      if (String(item.action || '') !== 'auth.login_failed') return false;
+      const createdAt = new Date(item.createdAt || 0);
+      return !Number.isNaN(createdAt.getTime()) && createdAt >= since;
+    }).length;
+  }
+
+  return ActivityLog.countDocuments({
+    action: 'auth.login_failed',
+    createdAt: { $gte: since },
+  });
+};
+
 // API Routes
 registerAuthRoutes(app, {
   User,
@@ -894,6 +1227,62 @@ registerAuthRoutes(app, {
   logActivity,
   isDbReady,
   getSessionUser,
+  createPasswordResetToken,
+  hashPasswordResetToken,
+  sendPasswordResetEmail,
+  buildPasswordResetUrl,
+  isProduction,
+  getClientIp: (req) => requestIp.getClientIp(req) || req.ip || '',
+  getAdminAccountCount,
+  demoSeedEnabled,
+  firstAdminSetupToken,
+});
+
+app.get('/api/admin/system-status', requireAuth, requireRoles(['admin']), async (_req, res) => {
+  try {
+    const dbConnected = mongoose.connection && mongoose.connection.readyState === 1;
+    const adminCount = await getAdminAccountCount();
+    const inactiveUserCount = await getInactiveUserCount();
+    const recentFailedLogins = await getRecentFailedLoginCount();
+    const frontendUrlConfigured = Boolean(String(process.env.FRONTEND_URL || '').trim());
+    const emailConfigured = Boolean(String(process.env.EMAIL_USER || '').trim() && String(process.env.EMAIL_PASS || '').trim());
+    const usingFallback = useFallback || !dbConnected;
+    const lastExports = await getLastExportActivity();
+    const setupTokenConfigured = Boolean(firstAdminSetupToken);
+    const setupComplete = adminCount > 0;
+    const alerts = buildAdminSystemStatusAlerts({
+      usingFallback,
+      emailConfigured,
+      frontendUrlConfigured,
+      isProduction,
+      adminCount,
+      demoSeedEnabled,
+      setupTokenConfigured,
+    });
+
+    return res.json({
+      dbConnected,
+      usingFallback,
+      emailConfigured,
+      frontendUrlConfigured,
+      cloudStorageEnabled,
+      cloudConvertEnabled,
+      isProduction,
+      demoSeedEnabled,
+      adminCount,
+      inactiveUserCount,
+      recentFailedLogins,
+      requiresAdminSetup: isProduction && adminCount === 0,
+      setupComplete,
+      setupTokenConfigured,
+      passwordPolicy: PASSWORD_POLICY,
+      lastExports,
+      alerts,
+    });
+  } catch (err) {
+    console.error('Load admin system status failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
 });
 
 app.get('/api/admin/users', requireAuth, requireRoles(['admin']), async (req, res) => {
@@ -902,16 +1291,20 @@ app.get('/api/admin/users', requireAuth, requireRoles(['admin']), async (req, re
       const users = await User.find().sort({ createdAt: -1 }).lean();
       return res.json(users.map((u) => ({
         id: String(u._id),
-        username: u.username,
+        username: u.username || u.email || '',
+        email: u.email || '',
         role: u.role,
+        isActive: u.isActive !== false,
         projectIds: Array.isArray(u.projectIds) ? u.projectIds.map((v) => String(v)) : [],
         createdAt: u.createdAt,
       })));
     }
     return res.json(AUTH_USERS.map((u) => ({
       id: u.id,
-      username: u.username,
+      username: u.username || u.email || '',
+      email: u.email || '',
       role: u.role,
+      isActive: u.isActive !== false,
       projectIds: Array.isArray(u.projectIds) ? u.projectIds.map((v) => String(v)) : [],
     })));
   } catch (err) {
@@ -949,8 +1342,10 @@ app.get('/api/admin/export/users', requireAuth, requireRoles(['admin']), async (
     } else {
       users = AUTH_USERS.map((u) => ({
         id: u.id,
-        username: u.username,
+        username: u.username || u.email || '',
+        email: u.email || '',
         role: u.role,
+        isActive: u.isActive !== false,
         projectIds: Array.isArray(u.projectIds) ? u.projectIds.map((v) => String(v)) : [],
       }));
     }
@@ -959,7 +1354,15 @@ app.get('/api/admin/export/users', requireAuth, requireRoles(['admin']), async (
       const roleReq = String(req.query.role).toLowerCase();
       users = users.filter((u) => String(u.role).toLowerCase() === roleReq);
     }
+    users = filterUsersByActiveState(users, req.query.active || 'all');
     const csvData = rowsToCsv(users);
+    await logActivity(req, {
+      action: 'admin.export_users',
+      targetType: 'export',
+      targetId: 'users',
+      details: 'Admin exported users CSV',
+      metadata: { format: 'csv', roleFilter: req.query.role || 'all', activeFilter: req.query.active || 'all' },
+    });
     res.setHeader('Content-Type', 'text/csv');
     res.attachment('users.csv');
     return res.send(csvData);
@@ -985,6 +1388,13 @@ app.get('/api/admin/export/inquiries', requireAuth, requireRoles(['admin']), asy
       }
     }
     const csvData = rowsToCsv(list);
+    await logActivity(req, {
+      action: 'admin.export_inquiries',
+      targetType: 'export',
+      targetId: 'inquiries',
+      details: 'Admin exported inquiries CSV',
+      metadata: { format: 'csv', statusFilter: req.query.status || 'all' },
+    });
     res.setHeader('Content-Type', 'text/csv');
     res.attachment('inquiries.csv');
     return res.send(csvData);
@@ -1007,12 +1417,92 @@ app.get('/api/admin/export/activity', requireAuth, requireRoles(['admin']), asyn
       const limit = parseInt(req.query.limit || '0', 10);
       if (limit > 0) logs = logs.slice(0, limit);
     }
+    if (req.query.category && req.query.category !== 'all') {
+      const category = String(req.query.category || 'all').trim().toLowerCase();
+      logs = logs.filter((item) => getActivityCategory(item.action) === category);
+    }
     const csvData = rowsToCsv(logs);
+    await logActivity(req, {
+      action: 'admin.export_activity',
+      targetType: 'export',
+      targetId: 'activity',
+      details: 'Admin exported activity CSV',
+      metadata: { format: 'csv', limit: req.query.limit || '0', category: req.query.category || 'all' },
+    });
     res.setHeader('Content-Type', 'text/csv');
     res.attachment('activity_logs.csv');
     return res.send(csvData);
   } catch (err) {
     console.error('Export activity CSV failed', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/admin/export/all', requireAuth, requireRoles(['admin']), async (req, res) => {
+  try {
+    let users = [];
+    let inquiriesList = [];
+    let projectsList = [];
+    let activity = [];
+
+    if (isDbReady()) {
+      users = await User.find().sort({ createdAt: -1 }).lean();
+      inquiriesList = await Inquiry.find().sort({ createdAt: -1 }).lean();
+      projectsList = await Project.find().sort({ createdAt: -1 }).lean();
+      activity = await ActivityLog.find().sort({ createdAt: -1 }).limit(500).lean();
+    } else {
+      users = AUTH_USERS.map((u) => ({
+        id: u.id,
+        username: u.username || u.email || '',
+        email: u.email || '',
+        role: u.role,
+        isActive: u.isActive !== false,
+        projectIds: Array.isArray(u.projectIds) ? u.projectIds.map((v) => String(v)) : [],
+        deactivatedAt: u.deactivatedAt || null,
+      }));
+      inquiriesList = [...fallbackInquiries];
+      projectsList = [...fallbackProjects];
+      activity = [...fallbackActivityLogs].slice(0, 500);
+    }
+
+    const bundle = {
+      exportedAt: new Date().toISOString(),
+      exportedBy: {
+        id: req.authUser.id,
+        email: req.authUser.email || '',
+        role: req.authUser.role,
+      },
+      systemStatus: {
+        dbConnected: mongoose.connection && mongoose.connection.readyState === 1,
+        usingFallback: useFallback || mongoose.connection.readyState !== 1,
+        cloudStorageEnabled,
+        cloudConvertEnabled,
+      },
+      users,
+      inquiries: inquiriesList,
+      projects: projectsList,
+      activity,
+    };
+
+    await logActivity(req, {
+      action: 'admin.export_all',
+      targetType: 'export',
+      targetId: 'all',
+      details: 'Admin exported full admin data bundle',
+      metadata: {
+        format: 'json',
+        users: users.length,
+        inquiries: inquiriesList.length,
+        projects: projectsList.length,
+        activity: activity.length,
+      },
+    });
+
+    res.setHeader('Content-Type', 'application/json');
+    res.attachment(`admin-data-export-${new Date().toISOString().slice(0, 10)}.json`);
+    return res.send(JSON.stringify(bundle, null, 2));
+  } catch (err) {
+    console.error('Export all admin data failed', err);
     return res.status(500).json({ error: 'Server error' });
   }
 });
@@ -1023,12 +1513,24 @@ app.put('/api/admin/users/:id', requireAuth, requireRoles(['admin']), async (req
   if (!id) return res.status(400).json({ error: 'User id required' });
 
   const updates = {};
+  if (req.body.email !== undefined) {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'A valid email is required' });
+    }
+    updates.email = email;
+    updates.username = email;
+  }
   if (req.body.role !== undefined) {
     const roleInput = String(req.body.role || '').trim().toLowerCase();
     if (!['admin', 'user', 'client'].includes(roleInput)) {
       return res.status(400).json({ error: 'Invalid role' });
     }
     updates.role = roleInput;
+  }
+  if (req.body.isActive !== undefined) {
+    updates.isActive = Boolean(req.body.isActive);
+    updates.deactivatedAt = updates.isActive ? null : new Date();
   }
 
   if (req.body.projectIds !== undefined) {
@@ -1044,11 +1546,18 @@ app.put('/api/admin/users/:id', requireAuth, requireRoles(['admin']), async (req
     if (isDbReady()) {
       const existing = await User.findById(id);
       if (!existing) return res.status(404).json({ error: 'User not found' });
+      if (updates.email) {
+        const emailExists = await User.findOne({ emailLower: normalizeEmail(updates.email), _id: { $ne: id } }).lean();
+        if (emailExists) return res.status(409).json({ error: 'Email already exists' });
+      }
 
-      if (updates.role && existing.role === 'admin' && updates.role !== 'admin') {
-        const remainingAdmins = await User.countDocuments({ role: 'admin', _id: { $ne: id } });
+      if (
+        (updates.role && existing.role === 'admin' && updates.role !== 'admin') ||
+        (existing.role === 'admin' && updates.isActive === false)
+      ) {
+        const remainingAdmins = await User.countDocuments({ role: 'admin', isActive: true, _id: { $ne: id } });
         if (remainingAdmins === 0) {
-          return res.status(400).json({ error: 'Cannot remove admin role from the last admin account' });
+          return res.status(400).json({ error: 'Cannot deactivate or demote the last active admin account' });
         }
       }
 
@@ -1056,10 +1565,14 @@ app.put('/api/admin/users/:id', requireAuth, requireRoles(['admin']), async (req
       await existing.save();
 
       await logActivity(req, {
-        action: 'admin.user_update',
+        action: updates.isActive === false ? 'admin.user_deactivate' : updates.isActive === true ? 'admin.user_reactivate' : 'admin.user_update',
         targetType: 'user',
         targetId: String(existing._id),
-        details: `Admin updated user ${existing.username}`,
+        details: updates.isActive === false
+          ? `Admin deactivated user ${existing.username} (${existing.role})`
+          : updates.isActive === true
+            ? `Admin reactivated user ${existing.username} (${existing.role})`
+            : `Admin updated user ${existing.username}`,
         metadata: Object.keys(updates).reduce((acc, k) => ({ ...acc, [k]: updates[k] }), {}),
       });
 
@@ -1069,21 +1582,32 @@ app.put('/api/admin/users/:id', requireAuth, requireRoles(['admin']), async (req
     const idx = AUTH_USERS.findIndex((u) => String(u.id) === id);
     if (idx === -1) return res.status(404).json({ error: 'User not found' });
     const existing = AUTH_USERS[idx];
+    if (updates.email) {
+      const emailExists = AUTH_USERS.some((u) => String(u.id) !== id && normalizeEmail(u.email) === normalizeEmail(updates.email));
+      if (emailExists) return res.status(409).json({ error: 'Email already exists' });
+    }
 
-    if (updates.role && existing.role === 'admin' && updates.role !== 'admin') {
-      const remainingAdmins = AUTH_USERS.filter((u) => u.role === 'admin' && String(u.id) !== id).length;
+    if (
+      (updates.role && existing.role === 'admin' && updates.role !== 'admin') ||
+      (existing.role === 'admin' && updates.isActive === false)
+    ) {
+      const remainingAdmins = AUTH_USERS.filter((u) => u.role === 'admin' && u.isActive !== false && String(u.id) !== id).length;
       if (remainingAdmins === 0) {
-        return res.status(400).json({ error: 'Cannot remove admin role from the last admin account' });
+        return res.status(400).json({ error: 'Cannot deactivate or demote the last active admin account' });
       }
     }
 
     AUTH_USERS[idx] = { ...existing, ...updates };
     persistAuthUsers();
     await logActivity(req, {
-      action: 'admin.user_update',
+      action: updates.isActive === false ? 'admin.user_deactivate' : updates.isActive === true ? 'admin.user_reactivate' : 'admin.user_update',
       targetType: 'user',
       targetId: id,
-      details: `Admin updated user ${existing.username}`,
+      details: updates.isActive === false
+        ? `Admin deactivated user ${existing.username} (${existing.role})`
+        : updates.isActive === true
+          ? `Admin reactivated user ${existing.username} (${existing.role})`
+          : `Admin updated user ${existing.username}`,
       metadata: Object.keys(updates).reduce((acc, k) => ({ ...acc, [k]: updates[k] }), {}),
     });
     return res.json({ user: sanitizeUser(AUTH_USERS[idx]) });
@@ -1094,49 +1618,45 @@ app.put('/api/admin/users/:id', requireAuth, requireRoles(['admin']), async (req
 });
 
 app.post('/api/admin/users', requireAuth, requireRoles(['admin']), async (req, res) => {
-  const username = String(req.body.username || '').trim();
+  const email = String(req.body.email || '').trim().toLowerCase();
   const password = String(req.body.password || '');
   const roleInput = String(req.body.role || 'user').trim().toLowerCase();
   const role = ['admin', 'user', 'client'].includes(roleInput) ? roleInput : 'user';
 
-  if (!username || username.length < 3 || username.length > 32) {
-    return res.status(400).json({ error: 'Username must be 3 to 32 characters' });
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: 'A valid email is required' });
   }
-  if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
-    return res.status(400).json({ error: 'Username can only contain letters, numbers, dot, underscore, and dash' });
-  }
-  // Keep legacy compatibility with existing demo passwords (e.g. 1111).
-  if (!password || password.length < 4) {
-    return res.status(400).json({ error: 'Password must be at least 4 characters' });
+  if (!isPasswordStrong(password)) {
+    return res.status(400).json({ error: PASSWORD_POLICY_MESSAGE });
   }
 
   try {
     if (isDbReady()) {
-      const exists = await User.findOne({ usernameLower: username.toLowerCase() }).lean();
-      if (exists) return res.status(409).json({ error: 'Username already exists' });
+      const exists = await User.findOne({ emailLower: normalizeEmail(email) }).lean();
+      if (exists) return res.status(409).json({ error: 'Email already exists' });
       const passwordHash = await hashPassword(password);
-      const created = await User.create({ username, role, passwordHash });
+      const created = await User.create({ username: email, email, role, passwordHash, isActive: true });
       await logActivity(req, {
         action: 'admin.user_create',
         targetType: 'user',
         targetId: String(created._id),
-        details: `Admin created user ${created.username} (${created.role})`,
+        details: `Admin created user ${getUserLabel(created)} (${created.role})`,
       });
-      return res.status(201).json({ user: { id: String(created._id), username: created.username, role: created.role, createdAt: created.createdAt } });
+      return res.status(201).json({ user: { id: String(created._id), username: created.username, email: created.email || '', role: created.role, createdAt: created.createdAt } });
     }
 
-    const exists = AUTH_USERS.some((u) => String(u.username || '').toLowerCase() === username.toLowerCase());
-    if (exists) return res.status(409).json({ error: 'Username already exists' });
-    const created = { id: `${role}-${Date.now()}`, username, role, passwordHash: await hashPassword(password), projectIds: [] };
+    const exists = AUTH_USERS.some((u) => normalizeEmail(u.email) === normalizeEmail(email));
+    if (exists) return res.status(409).json({ error: 'Email already exists' });
+    const created = { id: `${role}-${Date.now()}`, username: email, email, role, isActive: true, passwordHash: await hashPassword(password), projectIds: [] };
     AUTH_USERS.push(created);
     persistAuthUsers();
     await logActivity(req, {
       action: 'admin.user_create',
       targetType: 'user',
       targetId: created.id,
-      details: `Admin created user ${created.username} (${created.role})`,
+      details: `Admin created user ${getUserLabel(created)} (${created.role})`,
     });
-    return res.status(201).json({ user: { id: created.id, username: created.username, role: created.role } });
+    return res.status(201).json({ user: { id: created.id, username: created.username, email: created.email || '', role: created.role } });
   } catch (err) {
     console.error('Create user failed', err);
     return res.status(500).json({ error: 'Server error' });
@@ -1147,8 +1667,7 @@ app.post('/api/admin/users/:id/reset-password', requireAuth, requireRoles(['admi
   const id = String(req.params.id || '').trim();
   const newPassword = String(req.body.newPassword || '');
   if (!id) return res.status(400).json({ error: 'User id required' });
-  // Keep legacy compatibility with existing demo passwords (e.g. 1111).
-  if (!newPassword || newPassword.length < 4) return res.status(400).json({ error: 'New password must be at least 4 characters' });
+  if (!isPasswordStrong(newPassword)) return res.status(400).json({ error: PASSWORD_POLICY_MESSAGE });
 
   try {
     if (isDbReady()) {
@@ -1186,44 +1705,56 @@ app.post('/api/admin/users/:id/reset-password', requireAuth, requireRoles(['admi
 app.delete('/api/admin/users/:id', requireAuth, requireRoles(['admin']), async (req, res) => {
   const id = String(req.params.id || '').trim();
   if (!id) return res.status(400).json({ error: 'User id required' });
-  if (String(req.authUser.id) === id) return res.status(400).json({ error: 'You cannot delete your own account' });
+  if (String(req.authUser.id) === id) return res.status(400).json({ error: 'You cannot deactivate your own account' });
 
   try {
     if (isDbReady()) {
-      const user = await User.findById(id).lean();
+      const user = await User.findById(id);
       if (!user) return res.status(404).json({ error: 'User not found' });
-      const remainingAdmins = await User.countDocuments({ role: 'admin', _id: { $ne: id } });
-      if (user.role === 'admin' && remainingAdmins === 0) {
-        return res.status(400).json({ error: 'Cannot delete the last admin account' });
+      if (user.isActive === false) {
+        return res.json({ ok: true, user: sanitizeUser(user), alreadyInactive: true });
       }
-      await User.deleteOne({ _id: id });
+      const remainingAdmins = await User.countDocuments({ role: 'admin', isActive: true, _id: { $ne: id } });
+      if (user.role === 'admin' && remainingAdmins === 0) {
+        return res.status(400).json({ error: 'Cannot deactivate the last active admin account' });
+      }
+      user.isActive = false;
+      user.deactivatedAt = new Date();
+      await user.save();
       await logActivity(req, {
-        action: 'admin.user_delete',
+        action: 'admin.user_deactivate',
         targetType: 'user',
         targetId: id,
-        details: `Admin deleted user ${user.username} (${user.role})`,
+        details: `Admin deactivated user ${user.username} (${user.role})`,
       });
-      return res.json({ ok: true });
+      return res.json({ ok: true, user: sanitizeUser(user) });
     }
 
     const idx = AUTH_USERS.findIndex((u) => String(u.id) === id);
     if (idx === -1) return res.status(404).json({ error: 'User not found' });
     const user = AUTH_USERS[idx];
-    const remainingAdmins = AUTH_USERS.filter((u) => u.role === 'admin' && String(u.id) !== id).length;
-    if (user.role === 'admin' && remainingAdmins === 0) {
-      return res.status(400).json({ error: 'Cannot delete the last admin account' });
+    if (user.isActive === false) {
+      return res.json({ ok: true, user: sanitizeUser(user), alreadyInactive: true });
     }
-    AUTH_USERS.splice(idx, 1);
+    const remainingAdmins = AUTH_USERS.filter((u) => u.role === 'admin' && u.isActive !== false && String(u.id) !== id).length;
+    if (user.role === 'admin' && remainingAdmins === 0) {
+      return res.status(400).json({ error: 'Cannot deactivate the last active admin account' });
+    }
+    AUTH_USERS[idx] = {
+      ...user,
+      isActive: false,
+      deactivatedAt: new Date().toISOString(),
+    };
     persistAuthUsers();
     await logActivity(req, {
-      action: 'admin.user_delete',
+      action: 'admin.user_deactivate',
       targetType: 'user',
       targetId: id,
-      details: `Admin deleted user ${user.username} (${user.role})`,
+      details: `Admin deactivated user ${user.username} (${user.role})`,
     });
-    return res.json({ ok: true });
+    return res.json({ ok: true, user: sanitizeUser(AUTH_USERS[idx]) });
   } catch (err) {
-    console.error('Delete user failed', err);
+    console.error('Deactivate user failed', err);
     return res.status(500).json({ error: 'Server error' });
   }
 });
@@ -1276,7 +1807,7 @@ app.options('/api/projects', cors(corsOptions)); // Add OPTIONS handler for proj
 app.options('/api/projects/bulk-delete', cors(corsOptions)); // Add OPTIONS handler for bulk delete
 app.options('/api/projects/:id', cors(corsOptions)); // Add OPTIONS handler for project update/delete
 
-app.post('/api/projects', upload.single('image'), async (req, res) => {
+app.post('/api/projects', requireAuth, requireRoles(['admin']), handleProjectImageUpload, async (req, res) => {
   try {
     console.log('Received project creation request:', req.body);
     console.log('Received file:', req.file);
@@ -1331,7 +1862,7 @@ app.post('/api/projects', upload.single('image'), async (req, res) => {
   }
 });
 
-app.put('/api/projects/:id', upload.single('image'), async (req, res) => {
+app.put('/api/projects/:id', requireAuth, requireRoles(['admin']), handleProjectImageUpload, async (req, res) => {
     try {
         console.log('PUT Received body:', req.body);
         console.log('PUT Received file:', req.file);
@@ -1381,11 +1912,7 @@ app.put('/api/projects/:id', upload.single('image'), async (req, res) => {
     }
 });
 
-app.post('/api/projects/bulk-delete', basicAuth({
-    users: { [ADMIN_USER]: ADMIN_PASS },
-    challenge: true,
-    unauthorizedResponse: 'Unauthorized Access'
-}), async (req, res) => {
+app.post('/api/projects/bulk-delete', requireAuth, requireRoles(['admin']), async (req, res) => {
     console.log('Reached /api/projects/bulk-delete endpoint');
     const { ids } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ message: 'No project IDs provided' });
@@ -1409,7 +1936,7 @@ app.post('/api/projects/bulk-delete', basicAuth({
     }
 });
 
-app.delete('/api/projects/:id', async (req, res) => {
+app.delete('/api/projects/:id', requireAuth, requireRoles(['admin']), async (req, res) => {
     try {
         if (useFallback || mongoose.connection.readyState !== 1) {
           const idx = fallbackProjects.findIndex(p => p._id === req.params.id);
@@ -2237,7 +2764,7 @@ app.post('/api/files/:id/preview', cors(corsOptions), requireAuth, requireRoles(
   }
 });
 
-app.post('/api/files', cors(corsOptions), requireAuth, requireRoles(['admin', 'user']), fileUpload.single('file'), async (req, res) => {
+app.post('/api/files', cors(corsOptions), requireAuth, requireRoles(['admin', 'user']), handleSafeFileUpload, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'File upload is required' });

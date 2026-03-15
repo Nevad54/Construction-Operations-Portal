@@ -29,7 +29,7 @@ export default function AccountSettings({ mode = 'user' }) {
 
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
-  const [createForm, setCreateForm] = useState({ username: '', password: '', role: 'user' });
+  const [createForm, setCreateForm] = useState({ email: '', password: '', role: 'user' });
 
   const [resetModal, setResetModal] = useState({ open: false, user: null });
   const [resetLoading, setResetLoading] = useState(false);
@@ -135,14 +135,14 @@ export default function AccountSettings({ mode = 'user' }) {
   const onCreateUser = async (e) => {
     e.preventDefault();
     setCreateError('');
-    if (!createForm.username || !createForm.password) {
-      setCreateError('Username and password are required.');
+    if (!createForm.email || !createForm.password) {
+      setCreateError('Email and password are required.');
       return;
     }
     try {
       setCreateLoading(true);
       await api.adminCreateUser(createForm);
-      setCreateForm({ username: '', password: '', role: 'user' });
+      setCreateForm({ email: '', password: '', role: 'user' });
       await loadUsers();
     } catch (err) {
       setCreateError(err?.message || 'Failed to create user');
@@ -184,8 +184,8 @@ export default function AccountSettings({ mode = 'user' }) {
   const onResetPassword = async () => {
     if (!resetModal.user) return;
     setResetError('');
-    if (!resetPassword || resetPassword.length < 4) {
-      setResetError('New password must be at least 4 characters.');
+    if (!resetPassword) {
+      setResetError('New password is required.');
       return;
     }
     try {
@@ -202,12 +202,21 @@ export default function AccountSettings({ mode = 'user' }) {
 
   const onDeleteUser = async (user) => {
     if (!user) return;
-    if (!window.confirm(`Delete "${user.username}" (${user.role})?`)) return;
+    const isActive = user.isActive !== false;
+    if (!window.confirm(
+      isActive
+        ? `Deactivate "${user.email || user.username}" (${user.role})? They will keep their history but lose access.`
+        : `Reactivate "${user.email || user.username}" (${user.role})?`
+    )) return;
     try {
-      await api.adminDeleteUser(user.id);
+      if (isActive) {
+        await api.adminDeleteUser(user.id);
+      } else {
+        await api.adminSetUserActive(user.id, true);
+      }
       await loadUsers();
     } catch (err) {
-      setUsersError(err?.message || 'Failed to delete user');
+      setUsersError(err?.message || `Failed to ${isActive ? 'deactivate' : 'reactivate'} user`);
     }
   };
 
@@ -246,7 +255,7 @@ export default function AccountSettings({ mode = 'user' }) {
               <div className="min-w-0">
                 <p className="text-sm text-text-secondary dark:text-gray-400">Signed in as</p>
                 <p className="text-base font-semibold text-text-primary dark:text-gray-100 truncate">
-                  {me.username} {meBadge}
+                  {me.email || me.username} {meBadge}
                 </p>
               </div>
             </div>
@@ -255,25 +264,42 @@ export default function AccountSettings({ mode = 'user' }) {
           )}
 
           <form onSubmit={onChangePassword} className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <input
+              type="email"
+              name="accountEmail"
+              value={me?.email || me?.username || ''}
+              autoComplete="username"
+              readOnly
+              tabIndex={-1}
+              className="sr-only"
+              aria-hidden="true"
+            />
             <Input
               label="Current Password"
+              name="currentPassword"
               type="password"
               value={pwForm.currentPassword}
               onChange={(e) => setPwForm((p) => ({ ...p, currentPassword: e.target.value }))}
+              autoComplete="current-password"
               required
             />
             <Input
               label="New Password"
+              name="newPassword"
               type="password"
               value={pwForm.newPassword}
               onChange={(e) => setPwForm((p) => ({ ...p, newPassword: e.target.value }))}
+              autoComplete="new-password"
+              helperText="Use at least 8 characters with at least one letter and one number."
               required
             />
             <Input
               label="Confirm New Password"
+              name="confirmNewPassword"
               type="password"
               value={pwForm.confirm}
               onChange={(e) => setPwForm((p) => ({ ...p, confirm: e.target.value }))}
+              autoComplete="new-password"
               required
             />
             <div className="md:col-span-3">
@@ -295,16 +321,22 @@ export default function AccountSettings({ mode = 'user' }) {
           <CardContent className="space-y-4">
             <form onSubmit={onCreateUser} className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <Input
-                label="Username"
-                value={createForm.username}
-                onChange={(e) => setCreateForm((p) => ({ ...p, username: e.target.value }))}
+                label="Email"
+                name="createUserEmail"
+                type="email"
+                value={createForm.email}
+                onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))}
+                autoComplete="email"
                 required
               />
               <Input
                 label="Password"
+                name="createUserPassword"
                 type="password"
                 value={createForm.password}
                 onChange={(e) => setCreateForm((p) => ({ ...p, password: e.target.value }))}
+                autoComplete="new-password"
+                helperText="Use at least 8 characters with at least one letter and one number."
                 required
               />
               <Select
@@ -327,7 +359,7 @@ export default function AccountSettings({ mode = 'user' }) {
               ) : users.length ? (
                 <>
                   <div className="hidden md:grid grid-cols-12 bg-surface-muted dark:bg-gray-800 px-4 py-2 text-xs font-semibold text-text-secondary dark:text-gray-300">
-                    <div className="col-span-4">Username</div>
+                    <div className="col-span-4">Email</div>
                     <div className="col-span-2">Role</div>
                     <div className="col-span-3">Projects</div>
                     <div className="col-span-3 text-right">Actions</div>
@@ -336,9 +368,9 @@ export default function AccountSettings({ mode = 'user' }) {
                     {users.map((u) => (
                       <div key={`desktop-${u.id}`} className="grid grid-cols-12 px-4 py-3 text-sm border-t border-stroke dark:border-gray-700 items-center">
                         <div className="col-span-4 min-w-0">
-                          <p className="font-medium text-text-primary dark:text-gray-100 truncate">{u.username}</p>
+                          <p className="font-medium text-text-primary dark:text-gray-100 truncate">{u.email || u.username}</p>
                         </div>
-                        <div className="col-span-2 capitalize text-text-secondary dark:text-gray-300">{u.role}</div>
+                        <div className="col-span-2 capitalize text-text-secondary dark:text-gray-300">{u.isActive === false ? `inactive ${u.role}` : u.role}</div>
                         <div className="col-span-3 text-text-secondary dark:text-gray-300">
                           {Array.isArray(u.projectIds) && u.projectIds.length ? `${u.projectIds.length} assigned` : 'None'}
                         </div>
@@ -349,8 +381,8 @@ export default function AccountSettings({ mode = 'user' }) {
                           <Button variant="outline" size="sm" onClick={() => openReset(u)}>
                             Reset Password
                           </Button>
-                          <Button variant="danger" size="sm" onClick={() => onDeleteUser(u)}>
-                            Delete
+                          <Button variant={u.isActive === false ? 'outline' : 'danger'} size="sm" onClick={() => onDeleteUser(u)}>
+                            {u.isActive === false ? 'Reactivate' : 'Deactivate'}
                           </Button>
                         </div>
                       </div>
@@ -361,8 +393,8 @@ export default function AccountSettings({ mode = 'user' }) {
                       <div key={`mobile-${u.id}`} className="px-4 py-3 space-y-3">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="font-medium text-text-primary dark:text-gray-100 truncate">{u.username}</p>
-                            <p className="text-xs text-text-secondary dark:text-gray-400 capitalize">{u.role}</p>
+                            <p className="font-medium text-text-primary dark:text-gray-100 truncate">{u.email || u.username}</p>
+                            <p className="text-xs text-text-secondary dark:text-gray-400 capitalize">{u.isActive === false ? `inactive ${u.role}` : u.role}</p>
                           </div>
                           <span className="text-xs text-text-secondary dark:text-gray-400">
                             {Array.isArray(u.projectIds) && u.projectIds.length ? `${u.projectIds.length} assigned` : 'No projects'}
@@ -375,8 +407,8 @@ export default function AccountSettings({ mode = 'user' }) {
                           <Button variant="outline" size="sm" onClick={() => openReset(u)}>
                             Reset Password
                           </Button>
-                          <Button variant="danger" size="sm" onClick={() => onDeleteUser(u)}>
-                            Delete
+                          <Button variant={u.isActive === false ? 'outline' : 'danger'} size="sm" onClick={() => onDeleteUser(u)}>
+                            {u.isActive === false ? 'Reactivate' : 'Deactivate'}
                           </Button>
                         </div>
                       </div>
@@ -402,13 +434,26 @@ export default function AccountSettings({ mode = 'user' }) {
         >
           <div className="space-y-3">
             <p className="text-sm text-text-secondary dark:text-gray-400">
-              Reset password for <span className="font-semibold text-text-primary dark:text-gray-100">{resetModal.user?.username}</span>
+              Reset password for <span className="font-semibold text-text-primary dark:text-gray-100">{resetModal.user?.email || resetModal.user?.username}</span>
             </p>
+            <input
+              type="email"
+              name="resetUserEmail"
+              value={resetModal.user?.email || resetModal.user?.username || ''}
+              autoComplete="username"
+              readOnly
+              tabIndex={-1}
+              className="sr-only"
+              aria-hidden="true"
+            />
             <Input
               label="New Password"
+              name="resetUserPassword"
               type="password"
               value={resetPassword}
               onChange={(e) => setResetPassword(e.target.value)}
+              autoComplete="new-password"
+              helperText="Use at least 8 characters with at least one letter and one number."
               required
             />
             {resetError && <p className="text-feedback-error text-sm">{resetError}</p>}
@@ -433,7 +478,7 @@ export default function AccountSettings({ mode = 'user' }) {
         >
           <div className="space-y-3">
             <p className="text-sm text-text-secondary dark:text-gray-400">
-              Project access for <span className="font-semibold text-text-primary dark:text-gray-100">{projectsModal.user?.username}</span>
+              Project access for <span className="font-semibold text-text-primary dark:text-gray-100">{projectsModal.user?.email || projectsModal.user?.username}</span>
             </p>
 
             <Input

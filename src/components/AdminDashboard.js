@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useProjects } from '../context/ProjectContext';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -70,10 +70,88 @@ const buildNextFollowUpIso = ({ days = 0, hours = 0, targetHour = null } = {}) =
     }
     return next.toISOString();
 };
+const formatActivityActionLabel = (action) => {
+    const normalized = String(action || '').trim();
+    const labels = {
+        'auth.login': 'Sign-in completed',
+        'auth.login_failed': 'Sign-in failed',
+        'auth.logout': 'Sign-out completed',
+        'auth.register': 'Account created',
+        'auth.bootstrap_admin': 'First admin bootstrap completed',
+        'auth.forgot_password': 'Password reset requested',
+        'auth.reset_password': 'Password reset completed',
+        'auth.change_password': 'Password changed',
+        'admin.user_create': 'User created',
+        'admin.user_update': 'User updated',
+        'admin.user_deactivate': 'User deactivated',
+        'admin.user_reactivate': 'User reactivated',
+        'admin.user_reset_password': 'Admin password reset',
+    };
+    return labels[normalized] || normalized || 'Activity';
+};
+const formatTimestampLabel = (value) => {
+    if (!value) return 'Not exported yet';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'Not exported yet';
+    return parsed.toLocaleString();
+};
+const getActivityFilterKey = (action) => {
+    const normalized = String(action || '').trim();
+    if (normalized.startsWith('auth.')) return 'auth';
+    if (normalized.startsWith('admin.export_')) return 'exports';
+    if (normalized.startsWith('admin.user_')) return 'users';
+    if (normalized.startsWith('admin.inquiry_')) return 'inquiries';
+    return 'other';
+};
+const getQueryFilterValue = (rawValue, allowedValues, fallbackValue = 'all') => {
+    const normalized = String(rawValue || '').trim().toLowerCase();
+    return allowedValues.includes(normalized) ? normalized : fallbackValue;
+};
+const FILE_STALE_DAYS = 45;
+const FILE_DEMO_PATTERNS = [' demo ', ' test ', ' sample ', ' dummy ', ' placeholder ', ' qa '];
+const FILE_HYGIENE_REVIEW_MARKER = '[owner-reviewed]';
+const getFileUpdatedTime = (file) => {
+    const parsed = new Date(file?.updatedAt || file?.createdAt || 0).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
+};
+const isStaleFile = (file, now = Date.now()) => {
+    const updatedTime = getFileUpdatedTime(file);
+    if (!updatedTime) return false;
+    return now - updatedTime > FILE_STALE_DAYS * 24 * 60 * 60 * 1000;
+};
+const isClientFileWithoutAssignment = (file, projectIdSet) => {
+    if (String(file?.visibility || '') !== 'client') return false;
+    const projectId = String(file?.projectId || '').trim();
+    if (!projectId) return true;
+    return !projectIdSet.has(projectId);
+};
+const looksLikeDemoFile = (file) => {
+    const notes = String(file?.notes || '').toLowerCase();
+    if (notes.includes(FILE_HYGIENE_REVIEW_MARKER)) return false;
+    const fingerprint = ` ${[
+        file?.originalName,
+        file?.folder,
+        Array.isArray(file?.tags) ? file.tags.join(' ') : file?.tags,
+    ].filter(Boolean).join(' ').toLowerCase()} `;
+    return FILE_DEMO_PATTERNS.some((pattern) => fingerprint.includes(pattern));
+};
+const getFileLabel = (file) => String(file?.originalName || file?.name || 'Untitled file');
+const appendReviewNote = (notes, detail) => {
+    const base = String(notes || '').trim();
+    const stamp = `${FILE_HYGIENE_REVIEW_MARKER} ${detail}`.trim();
+    return base ? `${base}\n${stamp}` : stamp;
+};
+const mergeTags = (existingTags, ...nextTags) => {
+    const current = Array.isArray(existingTags)
+        ? existingTags.map((tag) => String(tag || '').trim()).filter(Boolean)
+        : String(existingTags || '').split(',').map((tag) => tag.trim()).filter(Boolean);
+    return Array.from(new Set([...current, ...nextTags.map((tag) => String(tag || '').trim()).filter(Boolean)]));
+};
 
 const Admin = () => {
     const { projects, addProject, updateProject, deleteProject, refreshProjects, loading, error: projectsError } = useProjects();
     const location = useLocation();
+    const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [saving, setSaving] = useState(false);
     const [selectedProjects, setSelectedProjects] = useState({ ongoing: [], completed: [] });
@@ -99,7 +177,7 @@ const Admin = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [editImagePreview, setEditImagePreview] = useState(null);
     const [isFallback, setIsFallback] = useState(false);
-    const isProjectsPage = location.pathname === '/admin/dashboard' || location.pathname === '/admin/dashboard/projects';
+    const isProjectsPage = location.pathname === '/admin/dashboard/projects';
     const isFilesPage = location.pathname === '/admin/dashboard/files';
     const isClientsPage = location.pathname === '/admin/dashboard/clients';
     const isReportsPage = location.pathname === '/admin/dashboard/reports';
@@ -169,14 +247,15 @@ const Admin = () => {
     const [usersLoading, setUsersLoading] = useState(false);
     const [usersError, setUsersError] = useState('');
     const [userRoleFilter, setUserRoleFilter] = useState('all');
+    const [userStatusFilter, setUserStatusFilter] = useState('all');
     const [userModal, setUserModal] = useState({ open: false, mode: 'create', user: null });
     const [userSaving, setUserSaving] = useState(false);
     const [userFormError, setUserFormError] = useState('');
     const [userForm, setUserForm] = useState({
-        username: '',
+        email: '',
         password: '',
         role: 'user',
-        projectIds: '',
+        projectIds: [],
     });
 
     const [reportsLoading, setReportsLoading] = useState(false);
@@ -189,7 +268,12 @@ const Admin = () => {
     });
     const [reportUsers, setReportUsers] = useState([]);
     const [reportFiles, setReportFiles] = useState([]);
+    const [fileHealthFiles, setFileHealthFiles] = useState([]);
+    const [fileHealthLoading, setFileHealthLoading] = useState(false);
+    const [fileHealthError, setFileHealthError] = useState('');
+    const [fileHealthActionId, setFileHealthActionId] = useState('');
     const [reportActivity, setReportActivity] = useState([]);
+    const [reportActivityFilter, setReportActivityFilter] = useState('all');
     const [inquiries, setInquiries] = useState([]);
     const [inquiriesLoading, setInquiriesLoading] = useState(false);
     const [inquiriesError, setInquiriesError] = useState('');
@@ -202,6 +286,11 @@ const Admin = () => {
     const [inquiryForm, setInquiryForm] = useState({ status: 'new', priority: 'normal', owner: '', nextFollowUpAt: '', notes: '' });
     const [inquiryFormErrors, setInquiryFormErrors] = useState({});
     const [inquirySaving, setInquirySaving] = useState(false);
+    const [systemStatus, setSystemStatus] = useState(null);
+    const [systemStatusLoading, setSystemStatusLoading] = useState(false);
+    const [systemStatusError, setSystemStatusError] = useState('');
+    const [exportingAllData, setExportingAllData] = useState(false);
+    const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
     // Initialize AOS
     useEffect(() => {
@@ -533,8 +622,11 @@ const Admin = () => {
         [filteredProjects]
     );
 
-    const parseProjectIds = useCallback((raw) => {
-        return String(raw || '')
+    const normalizeProjectIds = useCallback((value) => {
+        if (Array.isArray(value)) {
+            return value.map((v) => String(v || '').trim()).filter(Boolean);
+        }
+        return String(value || '')
             .split(/[,\n]/)
             .map((v) => v.trim())
             .filter(Boolean);
@@ -578,6 +670,34 @@ const Admin = () => {
             setReportsError(err.message || 'Failed to load reports');
         } finally {
             setReportsLoading(false);
+        }
+    }, []);
+
+    const loadSystemStatus = useCallback(async () => {
+        try {
+            setSystemStatusLoading(true);
+            setSystemStatusError('');
+            const status = await api.adminSystemStatus();
+            setSystemStatus(status || null);
+        } catch (err) {
+            setSystemStatus(null);
+            setSystemStatusError(err.message || 'Failed to load system status');
+        } finally {
+            setSystemStatusLoading(false);
+        }
+    }, []);
+
+    const loadFileHealth = useCallback(async () => {
+        try {
+            setFileHealthLoading(true);
+            setFileHealthError('');
+            const files = await api.getFiles();
+            setFileHealthFiles(Array.isArray(files) ? files : []);
+        } catch (err) {
+            setFileHealthFiles([]);
+            setFileHealthError(err.message || 'Failed to load file hygiene data');
+        } finally {
+            setFileHealthLoading(false);
         }
     }, []);
 
@@ -628,34 +748,56 @@ const Admin = () => {
         }
     }, [isReportsPage, loadReports]);
 
+    useEffect(() => {
+        if (isSettingsPage) {
+            loadSystemStatus();
+        }
+    }, [isSettingsPage, loadSystemStatus]);
+
+    useEffect(() => {
+        if (isFilesPage) {
+            loadFileHealth();
+        }
+    }, [isFilesPage, loadFileHealth]);
+
+    useEffect(() => {
+        if (isClientsPage) {
+            setUserRoleFilter(getQueryFilterValue(searchParams.get('role'), ['all', 'admin', 'user', 'client']));
+            setUserStatusFilter(getQueryFilterValue(searchParams.get('userStatus'), ['all', 'active', 'inactive']));
+        }
+        if (isReportsPage) {
+            setReportActivityFilter(getQueryFilterValue(searchParams.get('activityCategory'), ['all', 'auth', 'exports', 'users', 'inquiries', 'other']));
+        }
+    }, [isClientsPage, isReportsPage, searchParams]);
+
     const openUserModal = useCallback((mode, user = null) => {
         setUserFormError('');
         setUserModal({ open: true, mode, user });
         if (mode === 'create') {
             setUserForm({
-                username: '',
+                email: '',
                 password: '',
                 role: 'user',
-                projectIds: '',
+                projectIds: [],
             });
             return;
         }
         if (mode === 'edit' && user) {
             setUserForm({
-                username: user.username || '',
+                email: user.email || user.username || '',
                 password: '',
                 role: user.role || 'user',
-                projectIds: Array.isArray(user.projectIds) ? user.projectIds.join(', ') : '',
+                projectIds: normalizeProjectIds(user.projectIds),
             });
             return;
         }
         setUserForm({
-            username: user?.username || '',
+            email: user?.email || user?.username || '',
             password: '',
             role: user?.role || 'user',
-            projectIds: '',
+            projectIds: [],
         });
-    }, []);
+    }, [normalizeProjectIds]);
 
     const closeUserModal = useCallback(() => {
         if (userSaving) return;
@@ -667,23 +809,23 @@ const Admin = () => {
         e.preventDefault();
         const mode = userModal.mode;
         const targetUser = userModal.user;
-        const username = String(userForm.username || '').trim();
+        const email = String(userForm.email || '').trim().toLowerCase();
         const role = String(userForm.role || 'user').trim();
         const password = String(userForm.password || '');
-        const projectIds = parseProjectIds(userForm.projectIds);
+        const projectIds = normalizeProjectIds(userForm.projectIds);
 
         if (mode === 'create') {
-            if (!username || !password) {
-                setUserFormError('Username and password are required.');
+            if (!email || !password) {
+                setUserFormError('Email and password are required.');
                 return;
             }
         } else if (mode === 'reset') {
-            if (!password || password.length < 4) {
-                setUserFormError('Please enter a new password (minimum 4 characters).');
+            if (!password) {
+                setUserFormError('Please enter a new password.');
                 return;
             }
-        } else if (!username) {
-            setUserFormError('Username is required.');
+        } else if (!email) {
+            setUserFormError('Email is required.');
             return;
         }
 
@@ -691,10 +833,10 @@ const Admin = () => {
             setUserSaving(true);
             setUserFormError('');
             if (mode === 'create') {
-                await api.adminCreateUser({ username, password, role });
+                await api.adminCreateUser({ email, password, role });
                 success('User created');
             } else if (mode === 'edit' && targetUser?.id) {
-                await api.adminUpdateUser(targetUser.id, { username, role, projectIds });
+                await api.adminUpdateUser(targetUser.id, { email, role, projectIds });
                 success('User updated');
             } else if (mode === 'reset' && targetUser?.id) {
                 await api.adminResetUserPassword(targetUser.id, password);
@@ -708,19 +850,29 @@ const Admin = () => {
         } finally {
             setUserSaving(false);
         }
-    }, [closeUserModal, isReportsPage, loadAdminUsers, loadReports, parseProjectIds, success, userForm, userModal]);
+    }, [closeUserModal, isReportsPage, loadAdminUsers, loadReports, normalizeProjectIds, success, userForm, userModal]);
 
     const handleDeleteUser = useCallback(async (user) => {
         if (!user?.id) return;
-        const confirmed = window.confirm(`Delete user "${user.username}"?`);
+        const isActive = user.isActive !== false;
+        const confirmed = window.confirm(
+            isActive
+                ? `Deactivate user "${user.username}"? They will keep their history but lose access.`
+                : `Reactivate user "${user.username}"? They will be able to sign in again.`
+        );
         if (!confirmed) return;
         try {
-            await api.adminDeleteUser(user.id);
-            success('User deleted');
+            if (isActive) {
+                await api.adminDeleteUser(user.id);
+                success('User deactivated');
+            } else {
+                await api.adminSetUserActive(user.id, true);
+                success('User reactivated');
+            }
             await loadAdminUsers();
             if (isReportsPage) await loadReports();
         } catch (err) {
-            error(err.message || 'Failed to delete user');
+            error(err.message || `Failed to ${isActive ? 'deactivate' : 'reactivate'} user`);
         }
     }, [error, isReportsPage, loadAdminUsers, loadReports, success]);
 
@@ -800,9 +952,45 @@ const Admin = () => {
     }, [error, isReportsPage, loadInquiries, loadReports, success]);
 
     const visibleUsers = useMemo(() => {
-        if (userRoleFilter === 'all') return adminUsers;
-        return adminUsers.filter((u) => String(u.role || '') === userRoleFilter);
-    }, [adminUsers, userRoleFilter]);
+        return adminUsers.filter((user) => {
+            const matchesRole = userRoleFilter === 'all' || String(user.role || '') === userRoleFilter;
+            const isActive = user.isActive !== false;
+            const matchesStatus = userStatusFilter === 'all'
+                ? true
+                : userStatusFilter === 'active'
+                    ? isActive
+                    : !isActive;
+            return matchesRole && matchesStatus;
+        });
+    }, [adminUsers, userRoleFilter, userStatusFilter]);
+
+    const userStatusCounts = useMemo(() => ({
+        active: adminUsers.filter((user) => user.isActive !== false).length,
+        inactive: adminUsers.filter((user) => user.isActive === false).length,
+    }), [adminUsers]);
+
+    const authActivitySummary = useMemo(() => {
+        return reportActivity.reduce((acc, item) => {
+            const action = String(item?.action || '');
+            if (!action.startsWith('auth.') && !action.startsWith('admin.user_')) {
+                return acc;
+            }
+            if (action === 'auth.bootstrap_admin') acc.bootstrapCompleted += 1;
+            if (action === 'auth.login_failed') acc.failedLogins += 1;
+            if (action === 'auth.forgot_password') acc.resetRequested += 1;
+            if (action === 'auth.reset_password' || action === 'admin.user_reset_password') acc.resetCompleted += 1;
+            if (action === 'admin.user_deactivate') acc.deactivated += 1;
+            if (action === 'admin.user_reactivate') acc.reactivated += 1;
+            return acc;
+        }, {
+            bootstrapCompleted: 0,
+            failedLogins: 0,
+            resetRequested: 0,
+            resetCompleted: 0,
+            deactivated: 0,
+            reactivated: 0,
+        });
+    }, [reportActivity]);
 
     // helper for downloading blobs
     const downloadBlob = useCallback((blob, filename) => {
@@ -819,25 +1007,29 @@ const Admin = () => {
     // export helpers (use server endpoints with params)
     const handleExportActivity = useCallback(async () => {
         try {
-            const blob = await api.adminExportActivity({ limit: 0 }); // 0 => no limit
+            const blob = await api.adminExportActivity({
+                limit: 0,
+                category: reportActivityFilter,
+            });
             downloadBlob(blob, 'activity_logs.csv');
             success('Activity CSV download started');
         } catch (err) {
             error(err.message || 'Failed to export activity');
         }
-    }, [downloadBlob, error, success]);
+    }, [downloadBlob, error, reportActivityFilter, success]);
 
     const handleExportUsersCsv = useCallback(async () => {
         try {
             const params = {};
             if (userRoleFilter && userRoleFilter !== 'all') params.role = userRoleFilter;
+            if (userStatusFilter && userStatusFilter !== 'all') params.active = userStatusFilter;
             const blob = await api.adminExportUsers(params);
             downloadBlob(blob, 'users.csv');
             success('Users CSV download started');
         } catch (err) {
             error(err.message || 'Failed to export users');
         }
-    }, [downloadBlob, error, success, userRoleFilter]);
+    }, [downloadBlob, error, success, userRoleFilter, userStatusFilter]);
 
     const handleExportInquiriesCsv = useCallback(async () => {
         try {
@@ -850,6 +1042,21 @@ const Admin = () => {
             error(err.message || 'Failed to export inquiries');
         }
     }, [downloadBlob, error, inquiryStatusFilter, success]);
+
+    const handleExportAllAdminData = useCallback(async () => {
+        try {
+            setExportingAllData(true);
+            const blob = await api.adminExportAllData();
+            const stamp = new Date().toISOString().slice(0, 10);
+            downloadBlob(blob, `admin-data-export-${stamp}.json`);
+            success('Admin data export started');
+            await loadSystemStatus();
+        } catch (err) {
+            error(err.message || 'Failed to export admin data');
+        } finally {
+            setExportingAllData(false);
+        }
+    }, [downloadBlob, error, loadSystemStatus, success]);
 
     const reportsOverview = useMemo(() => {
         const byRole = reportUsers.reduce((acc, user) => {
@@ -885,6 +1092,74 @@ const Admin = () => {
             completedTotal: projects.filter((p) => p.status === 'completed').length,
         };
     }, [inquiries, projects, reportFiles, reportUsers]);
+
+    const fileProjectIdSet = useMemo(() => {
+        return new Set((projects || []).map((project) => String(project?._id || project?.id || '').trim()).filter(Boolean));
+    }, [projects]);
+
+    const getFileHygieneSummary = useCallback((files) => {
+        const sourceFiles = Array.isArray(files) ? files : [];
+        const stale = sourceFiles.filter((file) => isStaleFile(file));
+        const clientVisibilityIssues = sourceFiles.filter((file) => isClientFileWithoutAssignment(file, fileProjectIdSet));
+        const demoRecords = sourceFiles.filter((file) => looksLikeDemoFile(file));
+        return {
+            stale,
+            clientVisibilityIssues,
+            demoRecords,
+        };
+    }, [fileProjectIdSet]);
+
+    const reportFileHygiene = useMemo(() => getFileHygieneSummary(reportFiles), [getFileHygieneSummary, reportFiles]);
+    const filePageHygiene = useMemo(() => getFileHygieneSummary(fileHealthFiles), [fileHealthFiles, getFileHygieneSummary]);
+
+    const runFileHygieneAction = useCallback(async (file, mode) => {
+        if (!file?._id) return;
+        try {
+            setFileHealthActionId(String(file._id));
+            setFileHealthError('');
+            if (mode === 'review-stale') {
+                await api.updateFile(file._id, {
+                    tags: mergeTags(file.tags, 'reviewed'),
+                    notes: appendReviewNote(file.notes, 'Stale file reviewed by owner action.'),
+                });
+                success(`Marked "${getFileLabel(file)}" as reviewed`);
+            } else if (mode === 'hide-client') {
+                await api.updateFile(file._id, {
+                    visibility: 'private',
+                    tags: mergeTags(file.tags, 'client-hidden'),
+                    notes: appendReviewNote(file.notes, 'Client visibility removed during hygiene review.'),
+                });
+                success(`Removed client visibility from "${getFileLabel(file)}"`);
+            } else if (mode === 'archive-demo') {
+                const currentFolder = String(file.folder || '').trim();
+                const nextFolder = currentFolder.startsWith('archive/')
+                    ? currentFolder
+                    : currentFolder
+                        ? `archive/${currentFolder}`
+                        : 'archive/reviewed';
+                await api.updateFile(file._id, {
+                    folder: nextFolder,
+                    tags: mergeTags(file.tags, 'archived', 'reviewed-cleanup'),
+                    notes: appendReviewNote(file.notes, 'Demo/test record archived during hygiene review.'),
+                });
+                success(`Archived "${getFileLabel(file)}" for cleanup`);
+            } else {
+                return;
+            }
+            await loadFileHealth();
+            if (isReportsPage) await loadReports();
+        } catch (err) {
+            setFileHealthError(err.message || 'Failed to update file hygiene state');
+            error(err.message || 'Failed to update file hygiene state');
+        } finally {
+            setFileHealthActionId('');
+        }
+    }, [error, isReportsPage, loadFileHealth, loadReports, success]);
+
+    const filteredReportActivity = useMemo(() => {
+        if (reportActivityFilter === 'all') return reportActivity;
+        return reportActivity.filter((item) => getActivityFilterKey(item?.action) === reportActivityFilter);
+    }, [reportActivity, reportActivityFilter]);
 
     const reportsStatusSummary = useMemo(() => {
         const totalInquiries = reportsOverview.inquiriesTotal;
@@ -1000,7 +1275,11 @@ const Admin = () => {
                 {
                     label: 'Visible accounts',
                     value: String(visibleUsers.length),
-                    detail: userRoleFilter === 'all' ? 'Across all roles' : `Filtered to ${userRoleFilter}`,
+                    detail: userStatusFilter === 'inactive'
+                        ? `Showing only inactive accounts${userRoleFilter === 'all' ? '' : ` in ${userRoleFilter}`}`
+                        : userRoleFilter === 'all'
+                            ? `${userStatusCounts.inactive} inactive account${userStatusCounts.inactive === 1 ? '' : 's'} need review`
+                            : `Filtered to ${userRoleFilter}`,
                 },
                 {
                     label: 'Inquiry queue',
@@ -1032,6 +1311,15 @@ const Admin = () => {
                     value: String(reportActivity.length),
                     detail: 'Most recent admin events loaded into the report',
                 },
+                {
+                    label: 'File hygiene',
+                    value: reportFileHygiene.stale.length || reportFileHygiene.clientVisibilityIssues.length || reportFileHygiene.demoRecords.length
+                        ? `${reportFileHygiene.stale.length + reportFileHygiene.clientVisibilityIssues.length + reportFileHygiene.demoRecords.length} signals`
+                        : 'Clean',
+                    detail: reportFileHygiene.stale.length || reportFileHygiene.clientVisibilityIssues.length || reportFileHygiene.demoRecords.length
+                        ? `${reportFileHygiene.stale.length} stale • ${reportFileHygiene.clientVisibilityIssues.length} client visibility issues • ${reportFileHygiene.demoRecords.length} demo/test records`
+                        : 'No stale, misassigned, or demo-looking file records detected',
+                },
             ];
         }
 
@@ -1046,6 +1334,15 @@ const Admin = () => {
                     label: 'Audience',
                     value: 'Team + Client',
                     detail: 'Use role-aware file visibility before publishing',
+                },
+                {
+                    label: 'Hygiene signals',
+                    value: filePageHygiene.stale.length || filePageHygiene.clientVisibilityIssues.length || filePageHygiene.demoRecords.length
+                        ? `${filePageHygiene.stale.length + filePageHygiene.clientVisibilityIssues.length + filePageHygiene.demoRecords.length} flagged`
+                        : 'Clean',
+                    detail: filePageHygiene.stale.length || filePageHygiene.clientVisibilityIssues.length || filePageHygiene.demoRecords.length
+                        ? 'Review stale, client-visible, or demo-like records before sharing more files'
+                        : 'No cleanup warnings are active in the current file set',
                 },
             ];
         }
@@ -1080,6 +1377,9 @@ const Admin = () => {
         ongoingProjects.length,
         overdueInquiries.length,
         projects.length,
+        reportFileHygiene.clientVisibilityIssues.length,
+        reportFileHygiene.demoRecords.length,
+        reportFileHygiene.stale.length,
         reportActivity.length,
         reportKpis.new_today,
         reportKpis.overdue_followups,
@@ -1087,7 +1387,12 @@ const Admin = () => {
         selectedProjects.completed.length,
         selectedProjects.ongoing.length,
         userRoleFilter,
+        userStatusCounts.inactive,
+        userStatusFilter,
         visibleUsers.length,
+        filePageHygiene.clientVisibilityIssues.length,
+        filePageHygiene.demoRecords.length,
+        filePageHygiene.stale.length,
     ]);
 
     const handleReminderAction = useCallback(async (inquiry, action) => {
@@ -1304,11 +1609,366 @@ const Admin = () => {
                 </section>
 
                 {isFilesPage && (
-                    <FileManager expectedRole="admin" title="Admin File Management" />
+                    <div className="space-y-6">
+                        <Card data-aos="fade-up" data-aos-delay="70">
+                            <CardHeader className="flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <CardTitle>File Hygiene</CardTitle>
+                                    <p className="mt-1 text-sm text-text-secondary dark:text-gray-400">
+                                        Review stale records, client-visible files without a valid project assignment, and obvious demo/test leftovers before the owner has to guess what is safe to share.
+                                    </p>
+                                </div>
+                                <Button variant="outline" size="sm" onClick={loadFileHealth} loading={fileHealthLoading}>
+                                    Refresh Hygiene
+                                </Button>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {fileHealthLoading && !fileHealthFiles.length ? (
+                                    <p className="text-text-secondary dark:text-gray-400">Loading file hygiene signals...</p>
+                                ) : fileHealthError ? (
+                                    <div className="space-y-3">
+                                        <p className="text-feedback-error">{fileHealthError}</p>
+                                        <Button variant="outline" size="sm" onClick={loadFileHealth}>
+                                            Retry
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                                            {[
+                                                {
+                                                    label: 'Stale Files',
+                                                    value: String(filePageHygiene.stale.length),
+                                                    detail: `No updates in the last ${FILE_STALE_DAYS} days`,
+                                                },
+                                                {
+                                                    label: 'Client Visibility Issues',
+                                                    value: String(filePageHygiene.clientVisibilityIssues.length),
+                                                    detail: 'Client-visible files missing a valid project assignment',
+                                                },
+                                                {
+                                                    label: 'Demo/Test Clutter',
+                                                    value: String(filePageHygiene.demoRecords.length),
+                                                    detail: 'File names, folders, or tags that still look like demo data',
+                                                },
+                                            ].map((item) => (
+                                                <div
+                                                    key={item.label}
+                                                    className="rounded-xl border border-stroke bg-surface-page/70 px-4 py-3 dark:border-gray-700 dark:bg-gray-950/40"
+                                                >
+                                                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted dark:text-gray-500">
+                                                        {item.label}
+                                                    </p>
+                                                    <p className="mt-2 text-2xl font-semibold text-text-primary dark:text-gray-100">
+                                                        {item.value}
+                                                    </p>
+                                                    <p className="mt-1 text-sm text-text-secondary dark:text-gray-400">
+                                                        {item.detail}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {filePageHygiene.stale.length === 0 && filePageHygiene.clientVisibilityIssues.length === 0 && filePageHygiene.demoRecords.length === 0 ? (
+                                            <EmptyState
+                                                title="No file hygiene issues detected"
+                                                description="The current file records do not show stale updates, broken client visibility assignments, or obvious demo/test leftovers."
+                                            />
+                                        ) : (
+                                            <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+                                                <div className="rounded-xl border border-stroke bg-surface-card/80 p-4 dark:border-gray-700 dark:bg-gray-900/60">
+                                                    <p className="text-sm font-semibold text-text-primary dark:text-gray-100">Stale files</p>
+                                                    <div className="mt-3 space-y-2">
+                                                        {filePageHygiene.stale.slice(0, 4).map((file) => (
+                                                            <div key={`stale-${file._id || getFileLabel(file)}`} className="rounded-lg border border-stroke/70 px-3 py-2 dark:border-gray-700">
+                                                                <p className="text-sm font-medium text-text-primary dark:text-gray-100">{getFileLabel(file)}</p>
+                                                                <p className="text-xs text-text-secondary dark:text-gray-400">
+                                                                    Last updated {file.updatedAt ? new Date(file.updatedAt).toLocaleString() : file.createdAt ? new Date(file.createdAt).toLocaleString() : 'unknown'}
+                                                                </p>
+                                                                <div className="mt-2">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => runFileHygieneAction(file, 'review-stale')}
+                                                                        loading={fileHealthActionId === String(file._id)}
+                                                                    >
+                                                                        Mark Reviewed
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        {filePageHygiene.stale.length === 0 ? <p className="text-sm text-text-secondary dark:text-gray-400">No stale files flagged.</p> : null}
+                                                    </div>
+                                                </div>
+
+                                                <div className="rounded-xl border border-stroke bg-surface-card/80 p-4 dark:border-gray-700 dark:bg-gray-900/60">
+                                                    <p className="text-sm font-semibold text-text-primary dark:text-gray-100">Client visibility issues</p>
+                                                    <div className="mt-3 space-y-2">
+                                                        {filePageHygiene.clientVisibilityIssues.slice(0, 4).map((file) => (
+                                                            <div key={`client-issue-${file._id || getFileLabel(file)}`} className="rounded-lg border border-stroke/70 px-3 py-2 dark:border-gray-700">
+                                                                <p className="text-sm font-medium text-text-primary dark:text-gray-100">{getFileLabel(file)}</p>
+                                                                <p className="text-xs text-text-secondary dark:text-gray-400">
+                                                                    {String(file.projectId || '').trim() ? 'Assigned to a project that no longer exists.' : 'No project is assigned for this client-visible file.'}
+                                                                </p>
+                                                                <div className="mt-2">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => runFileHygieneAction(file, 'hide-client')}
+                                                                        loading={fileHealthActionId === String(file._id)}
+                                                                    >
+                                                                        Hide From Clients
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        {filePageHygiene.clientVisibilityIssues.length === 0 ? <p className="text-sm text-text-secondary dark:text-gray-400">No client visibility issues flagged.</p> : null}
+                                                    </div>
+                                                </div>
+
+                                                <div className="rounded-xl border border-stroke bg-surface-card/80 p-4 dark:border-gray-700 dark:bg-gray-900/60">
+                                                    <p className="text-sm font-semibold text-text-primary dark:text-gray-100">Demo/test clutter</p>
+                                                    <div className="mt-3 space-y-2">
+                                                        {filePageHygiene.demoRecords.slice(0, 4).map((file) => (
+                                                            <div key={`demo-${file._id || getFileLabel(file)}`} className="rounded-lg border border-stroke/70 px-3 py-2 dark:border-gray-700">
+                                                                <p className="text-sm font-medium text-text-primary dark:text-gray-100">{getFileLabel(file)}</p>
+                                                                <p className="text-xs text-text-secondary dark:text-gray-400">
+                                                                    {file.folder ? `Folder: ${file.folder}` : 'Check filename or tags for leftover demo wording.'}
+                                                                </p>
+                                                                <div className="mt-2">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => runFileHygieneAction(file, 'archive-demo')}
+                                                                        loading={fileHealthActionId === String(file._id)}
+                                                                    >
+                                                                        Archive Record
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        {filePageHygiene.demoRecords.length === 0 ? <p className="text-sm text-text-secondary dark:text-gray-400">No demo/test clutter flagged.</p> : null}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {fileHealthError ? <p className="text-sm text-feedback-error">{fileHealthError}</p> : null}
+                                    </>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <FileManager expectedRole="admin" title="Admin File Management" />
+                    </div>
                 )}
 
                 {isSettingsPage && (
-                    <AccountSettings mode="admin" />
+                    <div className="space-y-6">
+                        <Card data-aos="fade-up" data-aos-delay="60">
+                            <CardHeader className="flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <CardTitle>System Status</CardTitle>
+                                    <p className="mt-1 text-sm text-text-secondary dark:text-gray-400">
+                                        Check database, reset-email, storage, and first-run setup signals before handing this app to the owner.
+                                    </p>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    <Button variant="outline" size="sm" onClick={loadSystemStatus} loading={systemStatusLoading}>
+                                        Refresh Status
+                                    </Button>
+                                    <Button size="sm" onClick={handleExportAllAdminData} loading={exportingAllData}>
+                                        Export All Admin Data
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {systemStatusLoading && !systemStatus ? (
+                                    <p className="text-text-secondary dark:text-gray-400">Loading system status...</p>
+                                ) : systemStatusError ? (
+                                    <div className="space-y-3">
+                                        <p className="text-feedback-error">{systemStatusError}</p>
+                                        <Button variant="outline" size="sm" onClick={loadSystemStatus}>
+                                            Retry
+                                        </Button>
+                                    </div>
+                                ) : systemStatus ? (
+                                    <>
+                                        <div className="flex flex-wrap gap-2">
+                                            <Button variant="outline" size="sm" onClick={() => navigate('/admin/dashboard/reports')}>
+                                                Open Reports
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => navigate('/admin/dashboard/reports?activityCategory=auth')}
+                                            >
+                                                Review Failed Sign-Ins
+                                            </Button>
+                                            <Button variant="outline" size="sm" onClick={() => navigate('/admin/dashboard/clients')}>
+                                                Open People & Requests
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => navigate('/admin/dashboard/clients?userStatus=inactive')}
+                                            >
+                                                Review Inactive Users
+                                            </Button>
+                                            <Button variant="outline" size="sm" onClick={handleExportAllAdminData} loading={exportingAllData}>
+                                                Export All Data
+                                            </Button>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                            {[
+                                                {
+                                                    label: 'Database',
+                                                    value: systemStatus.dbConnected ? 'Connected' : 'Offline',
+                                                    detail: systemStatus.usingFallback ? 'Fallback mode is active.' : 'Primary MongoDB connection is live.',
+                                                },
+                                                {
+                                                    label: 'Reset Email',
+                                                    value: systemStatus.emailConfigured ? 'Configured' : 'Missing',
+                                                    detail: systemStatus.emailConfigured ? 'Forgot-password can send email.' : 'Reset links will not be emailed.',
+                                                },
+                                                {
+                                                    label: 'Frontend URL',
+                                                    value: systemStatus.frontendUrlConfigured ? 'Configured' : 'Missing',
+                                                    detail: systemStatus.frontendUrlConfigured ? 'Reset links can target the correct frontend.' : 'Password reset links may point to the wrong host.',
+                                                },
+                                                {
+                                                    label: 'Storage',
+                                                    value: systemStatus.cloudStorageEnabled ? 'Cloudinary Ready' : 'Local Uploads',
+                                                    detail: systemStatus.cloudStorageEnabled ? 'Cloud storage is enabled.' : 'Files stay on local server storage.',
+                                                },
+                                                {
+                                                    label: 'File Conversion',
+                                                    value: systemStatus.cloudConvertEnabled ? 'Enabled' : 'Disabled',
+                                                    detail: systemStatus.cloudConvertEnabled ? 'CloudConvert is configured.' : 'No conversion service is configured.',
+                                                },
+                                                {
+                                                    label: 'Admin Setup',
+                                                    value: systemStatus.requiresAdminSetup
+                                                        ? 'Required'
+                                                        : systemStatus.setupComplete
+                                                            ? 'Complete'
+                                                            : `${systemStatus.adminCount || 0} Admin Account${Number(systemStatus.adminCount || 0) === 1 ? '' : 's'}`,
+                                                    detail: systemStatus.requiresAdminSetup
+                                                        ? 'No admin account is ready yet. Complete the first-run setup before handing off the app.'
+                                                        : systemStatus.setupComplete
+                                                            ? `Bootstrap is closed. ${systemStatus.adminCount || 0} admin account${Number(systemStatus.adminCount || 0) === 1 ? '' : 's'} can manage the workspace now.`
+                                                            : (systemStatus.demoSeedEnabled ? 'Demo seed accounts are enabled only for local development.' : 'Production no longer auto-seeds demo accounts.'),
+                                                },
+                                                {
+                                                    label: 'Inactive Users',
+                                                    value: String(systemStatus.inactiveUserCount || 0),
+                                                    detail: Number(systemStatus.inactiveUserCount || 0) > 0
+                                                        ? 'Review deactivated accounts before access requests are missed.'
+                                                        : 'No inactive accounts are waiting for review.',
+                                                },
+                                                {
+                                                    label: 'Failed Sign-Ins (7d)',
+                                                    value: String(systemStatus.recentFailedLogins || 0),
+                                                    detail: Number(systemStatus.recentFailedLogins || 0) > 0
+                                                        ? 'Recent failed sign-ins were recorded in the audit trail.'
+                                                        : 'No failed sign-in activity was recorded this week.',
+                                                },
+                                            ].map((item) => (
+                                                <div
+                                                    key={item.label}
+                                                    className="rounded-2xl border border-stroke bg-surface-page/70 p-4 dark:border-gray-700 dark:bg-gray-950/40"
+                                                >
+                                                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted dark:text-gray-500">
+                                                        {item.label}
+                                                    </p>
+                                                    <p className="mt-2 text-xl font-semibold text-text-primary dark:text-gray-100">
+                                                        {item.value}
+                                                    </p>
+                                                    <p className="mt-1 text-sm text-text-secondary dark:text-gray-400">
+                                                        {item.detail}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="rounded-2xl border border-stroke bg-surface-page/70 p-4 dark:border-gray-700 dark:bg-gray-950/40">
+                                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted dark:text-gray-500">
+                                                Setup State
+                                            </p>
+                                            <p className="mt-2 text-sm text-text-secondary dark:text-gray-400">
+                                                {systemStatus.requiresAdminSetup
+                                                    ? 'First-run admin setup is still open. Only complete it from the protected bootstrap flow.'
+                                                    : 'First-run admin setup is complete. New owner access should now be managed from admin accounts, not the bootstrap screen.'}
+                                            </p>
+                                            <p className="mt-2 text-sm text-text-secondary dark:text-gray-400">
+                                                {systemStatus.setupTokenConfigured
+                                                    ? 'A bootstrap setup token is still configured on this environment.'
+                                                    : 'No bootstrap setup token is currently configured.'}
+                                            </p>
+                                        </div>
+
+                                        <div className="rounded-2xl border border-stroke bg-surface-page/70 p-4 dark:border-gray-700 dark:bg-gray-950/40">
+                                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted dark:text-gray-500">
+                                                Password Policy
+                                            </p>
+                                            <p className="mt-2 text-sm text-text-secondary dark:text-gray-400">
+                                                New passwords must be at least {systemStatus.passwordPolicy?.minLength || 8} characters and include at least one letter and one number.
+                                            </p>
+                                        </div>
+
+                                        <div className="rounded-2xl border border-stroke bg-surface-page/70 p-4 dark:border-gray-700 dark:bg-gray-950/40">
+                                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted dark:text-gray-500">
+                                                Last Exports
+                                            </p>
+                                            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                                                {[
+                                                    { label: 'Users CSV', value: systemStatus.lastExports?.users },
+                                                    { label: 'Inquiries CSV', value: systemStatus.lastExports?.inquiries },
+                                                    { label: 'Activity CSV', value: systemStatus.lastExports?.activity },
+                                                    { label: 'Full Admin Bundle', value: systemStatus.lastExports?.all },
+                                                ].map((item) => (
+                                                    <div
+                                                        key={item.label}
+                                                        className="rounded-xl border border-stroke bg-surface-card/80 px-3 py-3 dark:border-gray-700 dark:bg-gray-900/60"
+                                                    >
+                                                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted dark:text-gray-500">
+                                                            {item.label}
+                                                        </p>
+                                                        <p className="mt-2 text-sm text-text-primary dark:text-gray-100">
+                                                            {formatTimestampLabel(item.value)}
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {Array.isArray(systemStatus.alerts) && systemStatus.alerts.length > 0 ? (
+                                            <div className="space-y-2">
+                                                {systemStatus.alerts.map((alert) => (
+                                                    <div
+                                                        key={`${alert.code}-${alert.message}`}
+                                                        className={`rounded-xl border px-4 py-3 text-sm ${
+                                                            alert.severity === 'error'
+                                                                ? 'border-feedback-error/30 bg-feedback-error/10 text-feedback-error'
+                                                                : alert.severity === 'warning'
+                                                                    ? 'border-feedback-warning/30 bg-feedback-warning/10 text-feedback-warning'
+                                                                    : 'border-stroke bg-surface-page/70 text-text-secondary dark:border-gray-700 dark:bg-gray-950/40 dark:text-gray-300'
+                                                        }`}
+                                                    >
+                                                        {alert.message}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : null}
+                                    </>
+                                ) : (
+                                    <p className="text-text-secondary dark:text-gray-400">No system status is available yet.</p>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <AccountSettings mode="admin" />
+                    </div>
                 )}
 
                 {isClientsPage && (
@@ -1325,6 +1985,16 @@ const Admin = () => {
                                             { value: 'admin', label: 'Admins' },
                                             { value: 'user', label: 'Employees' },
                                             { value: 'client', label: 'Clients' },
+                                        ]}
+                                    />
+                                    <Select
+                                        aria-label="User status filter"
+                                        value={userStatusFilter}
+                                        onChange={(e) => setUserStatusFilter(e.target.value)}
+                                        options={[
+                                            { value: 'all', label: 'All access states' },
+                                            { value: 'active', label: 'Active only' },
+                                            { value: 'inactive', label: 'Inactive only' },
                                         ]}
                                     />
                                     <Button variant="outline" size="sm" onClick={loadAdminUsers} loading={usersLoading}>
@@ -1353,7 +2023,9 @@ const Admin = () => {
                                 ) : visibleUsers.length === 0 ? (
                                     <EmptyState
                                         title="No users found"
-                                        description="Create your first user account to grant dashboard access."
+                                        description={userStatusFilter === 'inactive'
+                                            ? 'No inactive users match the current filters.'
+                                            : 'Create your first user account to grant dashboard access.'}
                                         action={<Button onClick={() => openUserModal('create')}>Add User</Button>}
                                     />
                                 ) : (
@@ -1364,13 +2036,13 @@ const Admin = () => {
                                                 className="rounded-lg border border-stroke dark:border-gray-700 bg-surface-card dark:bg-gray-900 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                                             >
                                                 <div className="min-w-0">
-                                                    <p className="font-medium text-text-primary dark:text-gray-100 truncate">{user.username}</p>
+                                                    <p className="font-medium text-text-primary dark:text-gray-100 truncate">{user.email || user.username}</p>
                                                     <div className="flex items-center gap-2 mt-1">
                                                         <Badge
                                                             size="sm"
-                                                            variant={user.role === 'admin' ? 'warning' : user.role === 'client' ? 'info' : 'secondary'}
+                                                            variant={user.isActive === false ? 'secondary' : user.role === 'admin' ? 'warning' : user.role === 'client' ? 'info' : 'secondary'}
                                                         >
-                                                            {String(user.role || 'user')}
+                                                            {user.isActive === false ? `inactive ${String(user.role || 'user')}` : String(user.role || 'user')}
                                                         </Badge>
                                                         <span className="text-xs text-text-muted dark:text-gray-500">
                                                             {Array.isArray(user.projectIds) ? user.projectIds.length : 0} project assignments
@@ -1384,8 +2056,8 @@ const Admin = () => {
                                                     <Button variant="outline" size="sm" onClick={() => openUserModal('reset', user)}>
                                                         Reset Password
                                                     </Button>
-                                                    <Button variant="danger" size="sm" onClick={() => handleDeleteUser(user)}>
-                                                        Delete
+                                                    <Button variant={user.isActive === false ? 'outline' : 'danger'} size="sm" onClick={() => handleDeleteUser(user)}>
+                                                        {user.isActive === false ? 'Reactivate' : 'Deactivate'}
                                                     </Button>
                                                 </div>
                                             </div>
@@ -1655,6 +2327,40 @@ const Admin = () => {
 
                         {!reportsError && (
                             <>
+                                <Card data-aos="fade-up" data-aos-delay="50">
+                                    <CardHeader className="flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <div>
+                                            <CardTitle>Activity Filters</CardTitle>
+                                            <p className="mt-1 text-sm text-text-secondary dark:text-gray-400">
+                                                Narrow the activity feed to auth, exports, account changes, or inquiry work before exporting or reviewing details.
+                                            </p>
+                                        </div>
+                                        <div className="w-full sm:w-64">
+                                            <Select
+                                                label="Activity category"
+                                                value={reportActivityFilter}
+                                                onChange={(e) => setReportActivityFilter(e.target.value)}
+                                                options={[
+                                                    { value: 'all', label: 'All activity' },
+                                                    { value: 'auth', label: 'Auth events' },
+                                                    { value: 'exports', label: 'Export actions' },
+                                                    { value: 'users', label: 'User changes' },
+                                                    { value: 'inquiries', label: 'Inquiry actions' },
+                                                    { value: 'other', label: 'Other activity' },
+                                                ]}
+                                            />
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="pt-0">
+                                        <p className="text-sm text-text-secondary dark:text-gray-400">
+                                            Showing {filteredReportActivity.length} of {reportActivity.length} activity log{reportActivity.length === 1 ? '' : 's'}.
+                                        </p>
+                                        <p className="mt-2 text-xs text-text-muted dark:text-gray-500">
+                                            Activity export uses this same category filter.
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
                                 <Card data-aos="fade-up" data-aos-delay="60">
                                     <CardHeader className="flex-col items-start gap-3 lg:flex-row lg:items-center lg:justify-between">
                                         <div>
@@ -1693,6 +2399,72 @@ const Admin = () => {
                                                 description="Once projects, inquiries, files, or activity logs are present, this summary will call out whether the next operator focus should be delivery, response, or cleanup."
                                             />
                                         )}
+                                    </CardContent>
+                                </Card>
+
+                                <Card data-aos="fade-up" data-aos-delay="70">
+                                    <CardHeader className="flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <div>
+                                            <CardTitle>File Hygiene Watch</CardTitle>
+                                            <p className="mt-1 text-sm text-text-secondary dark:text-gray-400">
+                                                Keep shared records clean before they become owner confusion, client exposure mistakes, or stale archive noise.
+                                            </p>
+                                        </div>
+                                        <Badge variant={reportFileHygiene.stale.length || reportFileHygiene.clientVisibilityIssues.length || reportFileHygiene.demoRecords.length ? 'warning' : 'success'}>
+                                            {reportFileHygiene.stale.length || reportFileHygiene.clientVisibilityIssues.length || reportFileHygiene.demoRecords.length ? 'Needs cleanup' : 'Clean'}
+                                        </Badge>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+                                            {[
+                                                {
+                                                    title: 'Stale files',
+                                                    count: reportFileHygiene.stale.length,
+                                                    detail: `No updates for more than ${FILE_STALE_DAYS} days.`,
+                                                    items: reportFileHygiene.stale,
+                                                },
+                                                {
+                                                    title: 'Client visibility issues',
+                                                    count: reportFileHygiene.clientVisibilityIssues.length,
+                                                    detail: 'Client-visible files missing a clean project match.',
+                                                    items: reportFileHygiene.clientVisibilityIssues,
+                                                },
+                                                {
+                                                    title: 'Demo/test clutter',
+                                                    count: reportFileHygiene.demoRecords.length,
+                                                    detail: 'Records that still look like demo or QA leftovers.',
+                                                    items: reportFileHygiene.demoRecords,
+                                                },
+                                            ].map((group) => (
+                                                <div
+                                                    key={group.title}
+                                                    className="rounded-xl border border-stroke bg-surface-page/70 px-4 py-3 dark:border-gray-700 dark:bg-gray-950/40"
+                                                >
+                                                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted dark:text-gray-500">
+                                                        {group.title}
+                                                    </p>
+                                                    <p className="mt-2 text-2xl font-semibold text-text-primary dark:text-gray-100">{group.count}</p>
+                                                    <p className="mt-1 text-sm text-text-secondary dark:text-gray-400">{group.detail}</p>
+                                                    <div className="mt-3 space-y-2">
+                                                        {group.items.slice(0, 3).map((file) => (
+                                                            <div key={`${group.title}-${file._id || getFileLabel(file)}`} className="rounded-lg border border-stroke/70 px-3 py-2 dark:border-gray-700">
+                                                                <p className="text-sm font-medium text-text-primary dark:text-gray-100">{getFileLabel(file)}</p>
+                                                                <p className="text-xs text-text-secondary dark:text-gray-400">
+                                                                    {group.title === 'Stale files'
+                                                                        ? `Updated ${file.updatedAt ? new Date(file.updatedAt).toLocaleString() : file.createdAt ? new Date(file.createdAt).toLocaleString() : 'unknown'}`
+                                                                        : group.title === 'Client visibility issues'
+                                                                            ? (String(file.projectId || '').trim() ? 'Assigned project is missing from the live project list.' : 'No project is assigned.')
+                                                                            : (file.folder ? `Folder: ${file.folder}` : 'Check filename or tags for demo wording.')}
+                                                                </p>
+                                                            </div>
+                                                        ))}
+                                                        {group.items.length === 0 ? (
+                                                            <p className="text-sm text-text-secondary dark:text-gray-400">No issues in this group.</p>
+                                                        ) : null}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </CardContent>
                                 </Card>
 
@@ -1763,8 +2535,22 @@ const Admin = () => {
                                     <Card>
                                         <CardHeader><CardTitle size="sm">Activity Logs</CardTitle></CardHeader>
                                         <CardContent className="space-y-1">
-                                            <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{reportActivity.length}</p>
+                                            <p className="text-2xl font-bold text-text-primary dark:text-gray-100">{filteredReportActivity.length}</p>
                                             <p className="text-sm text-text-secondary dark:text-gray-400">Most recent admin events pulled into this report window</p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader><CardTitle size="sm">Auth Events</CardTitle></CardHeader>
+                                        <CardContent className="space-y-1">
+                                            <p className="text-2xl font-bold text-text-primary dark:text-gray-100">
+                                                {authActivitySummary.bootstrapCompleted + authActivitySummary.failedLogins + authActivitySummary.resetRequested + authActivitySummary.resetCompleted + authActivitySummary.deactivated + authActivitySummary.reactivated}
+                                            </p>
+                                            <p className="text-xs text-text-muted dark:text-gray-500">
+                                                {authActivitySummary.bootstrapCompleted} first-admin setup event{authActivitySummary.bootstrapCompleted === 1 ? '' : 's'} recorded in the current report window.
+                                            </p>
+                                            <p className="text-sm text-text-secondary dark:text-gray-400">
+                                                {authActivitySummary.failedLogins} failed sign-ins • {authActivitySummary.resetRequested} reset requests • {authActivitySummary.deactivated} deactivations
+                                            </p>
                                         </CardContent>
                                     </Card>
                                     <Card>
@@ -1843,19 +2629,19 @@ const Admin = () => {
                                         <CardTitle>Recent Activity</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        {reportActivity.length === 0 ? (
+                                        {filteredReportActivity.length === 0 ? (
                                             <EmptyState
-                                                title="No recent admin activity"
-                                                description="Activity logs will appear here after auth events, file changes, or admin updates start flowing through the portal."
+                                                title="No activity for this filter"
+                                                description="Change the activity filter or wait for new auth, export, inquiry, or admin events to flow into the report window."
                                             />
                                         ) : (
                                             <div className="space-y-2">
-                                                {reportActivity.slice(0, 12).map((item) => (
+                                                {filteredReportActivity.slice(0, 12).map((item) => (
                                                     <div
                                                         key={item._id || `${item.action}-${item.createdAt}`}
                                                         className="rounded-lg border border-stroke dark:border-gray-700 p-3 bg-surface-card dark:bg-gray-900"
                                                     >
-                                                        <p className="text-sm font-medium text-text-primary dark:text-gray-100">{item.action || 'activity'}</p>
+                                                        <p className="text-sm font-medium text-text-primary dark:text-gray-100">{formatActivityActionLabel(item.action)}</p>
                                                         <p className="text-sm text-text-secondary dark:text-gray-400">{item.details || 'No details'}</p>
                                                         <p className="text-xs text-text-muted dark:text-gray-500 mt-1">
                                                             {item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}
@@ -2121,8 +2907,8 @@ const Admin = () => {
                         userModal.mode === 'create'
                             ? 'Create User'
                             : userModal.mode === 'edit'
-                                ? `Edit ${userModal.user?.username || 'User'}`
-                                : `Reset Password: ${userModal.user?.username || 'User'}`
+                                ? `Edit ${userModal.user?.email || userModal.user?.username || 'User'}`
+                                : `Reset Password: ${userModal.user?.email || userModal.user?.username || 'User'}`
                     }
                     size="md"
                 >
@@ -2130,9 +2916,12 @@ const Admin = () => {
                         {userModal.mode !== 'reset' && (
                             <>
                                 <Input
-                                    label="Username"
-                                    value={userForm.username}
-                                    onChange={(e) => setUserForm((prev) => ({ ...prev, username: e.target.value }))}
+                                    label="Email"
+                                    name="userEmail"
+                                    type="email"
+                                    value={userForm.email}
+                                    onChange={(e) => setUserForm((prev) => ({ ...prev, email: e.target.value }))}
+                                    autoComplete="email"
                                     required
                                 />
                                 <Select
@@ -2146,24 +2935,86 @@ const Admin = () => {
                                     ]}
                                 />
                                 {userModal.mode === 'edit' && (
-                                    <Input
-                                        label="Assigned Project IDs"
-                                        helperText="Comma-separated project IDs"
-                                        value={userForm.projectIds}
-                                        onChange={(e) => setUserForm((prev) => ({ ...prev, projectIds: e.target.value }))}
-                                    />
+                                    <div className="space-y-2">
+                                        <div>
+                                            <p className="block text-sm font-medium text-text-primary dark:text-gray-200">
+                                                Project Access
+                                            </p>
+                                            <p className="text-sm text-text-muted dark:text-gray-500">
+                                                Choose the projects this account should be able to access.
+                                            </p>
+                                        </div>
+                                        {projects.length === 0 ? (
+                                            <div className="rounded-lg border border-dashed border-stroke bg-surface-page/70 px-3 py-3 text-sm text-text-secondary dark:border-gray-700 dark:bg-gray-950/40 dark:text-gray-400">
+                                                No projects are available yet.
+                                            </div>
+                                        ) : (
+                                            <div className="max-h-52 space-y-2 overflow-y-auto rounded-xl border border-stroke bg-surface-page/70 p-3 dark:border-gray-700 dark:bg-gray-950/40">
+                                                {projects.map((project) => {
+                                                    const projectId = String(project?._id || '').trim();
+                                                    const checked = userForm.projectIds.includes(projectId);
+                                                    return (
+                                                        <label
+                                                            key={projectId}
+                                                            className="flex items-start gap-3 rounded-lg px-2 py-2 text-sm text-text-primary transition-colors hover:bg-surface-card dark:text-gray-200 dark:hover:bg-gray-900"
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                className="mt-1 h-4 w-4 rounded border-stroke text-brand focus:ring-brand/30"
+                                                                checked={checked}
+                                                                onChange={(e) => {
+                                                                    const isChecked = e.target.checked;
+                                                                    setUserForm((prev) => ({
+                                                                        ...prev,
+                                                                        projectIds: isChecked
+                                                                            ? [...prev.projectIds, projectId]
+                                                                            : prev.projectIds.filter((id) => id !== projectId),
+                                                                    }));
+                                                                }}
+                                                            />
+                                                            <span className="min-w-0">
+                                                                <span className="block font-medium text-text-primary dark:text-gray-100">
+                                                                    {project.title || 'Untitled project'}
+                                                                </span>
+                                                                <span className="block text-xs text-text-muted dark:text-gray-500">
+                                                                    {project.location || 'Location not set'}
+                                                                </span>
+                                                            </span>
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                             </>
                         )}
 
                         {(userModal.mode === 'create' || userModal.mode === 'reset') && (
-                            <Input
-                                label={userModal.mode === 'create' ? 'Password' : 'New Password'}
-                                type="password"
-                                value={userForm.password}
-                                onChange={(e) => setUserForm((prev) => ({ ...prev, password: e.target.value }))}
-                                required
-                            />
+                            <>
+                                {userModal.mode === 'reset' && (
+                                    <input
+                                        type="email"
+                                        name="resetUserEmail"
+                                        value={userModal.user?.email || userModal.user?.username || ''}
+                                        autoComplete="username"
+                                        readOnly
+                                        tabIndex={-1}
+                                        className="sr-only"
+                                        aria-hidden="true"
+                                    />
+                                )}
+                                <Input
+                                    label={userModal.mode === 'create' ? 'Password' : 'New Password'}
+                                    name={userModal.mode === 'create' ? 'createUserPassword' : 'resetUserPassword'}
+                                    type="password"
+                                    value={userForm.password}
+                                    onChange={(e) => setUserForm((prev) => ({ ...prev, password: e.target.value }))}
+                                    autoComplete="new-password"
+                                    helperText="Use at least 8 characters with at least one letter and one number."
+                                    required
+                                />
+                            </>
                         )}
 
                         {userFormError && (

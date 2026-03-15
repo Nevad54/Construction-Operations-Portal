@@ -3,15 +3,15 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { api } from '../../services/api';
 
 const roleHome = {
-  admin: '/admin/dashboard',
+  admin: '/admin/dashboard/projects',
   user: '/user/dashboard',
   client: '/client/workspace',
 };
 
 const roleLogin = {
-  admin: '/login/admin',
-  user: '/login/user',
-  client: '/login/client',
+  admin: '/staff/signin',
+  user: '/staff/signin',
+  client: '/signin',
 };
 
 export default function ProtectedRoute({ role, children }) {
@@ -39,7 +39,7 @@ export default function ProtectedRoute({ role, children }) {
     };
   }, []);
 
-  const loginPath = useMemo(() => roleLogin[role] || '/login/user', [role]);
+  const loginPath = useMemo(() => roleLogin[role] || '/signin', [role]);
 
   if (loading) {
     return (

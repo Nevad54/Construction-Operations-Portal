@@ -19,9 +19,9 @@ const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || '';
 
 const canManageByRole = (role) => role === 'admin' || role === 'user';
 const roleHome = {
-  admin: { username: 'admin', password: '1111' },
-  user: { username: 'employee', password: '1111' },
-  client: { username: 'client', password: '1111' },
+  admin: { email: 'admin@construction.local', password: '1111' },
+  user: { email: 'employee@construction.local', password: '1111' },
+  client: { email: 'client@construction.local', password: '1111' },
 };
 
 const formatSize = (value) => {
@@ -258,7 +258,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authForm, setAuthForm] = useState({
-    username: roleHome[expectedRole]?.username || '',
+    email: roleHome[expectedRole]?.email || '',
     password: roleHome[expectedRole]?.password || '',
   });
 
@@ -1796,7 +1796,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
     e.preventDefault();
     try {
       setError('');
-      await api.login(authForm.username, authForm.password);
+      await api.login(authForm.email, authForm.password);
       await loadAuthUser();
     } catch (err) {
       setError(err.message || 'Login failed');
@@ -1822,9 +1822,10 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
         <CardContent>
           <form onSubmit={handleLogin} className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Input
-              label="Username"
-              value={authForm.username}
-              onChange={(e) => setAuthForm((prev) => ({ ...prev, username: e.target.value }))}
+              label="Email"
+              type="email"
+              value={authForm.email}
+              onChange={(e) => setAuthForm((prev) => ({ ...prev, email: e.target.value }))}
               required
             />
             <Input
@@ -1850,7 +1851,7 @@ export default function FileManager({ expectedRole = 'user', title = 'File Manag
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-text-secondary dark:text-gray-400">
-            Logged in as <strong>{authUser.username}</strong> ({authUser.role}). This page requires <strong>{expectedRole}</strong>.
+            Logged in as <strong>{authUser.email || authUser.username}</strong> ({authUser.role}). This page requires <strong>{expectedRole}</strong>.
           </p>
           <p className="text-xs text-text-muted dark:text-gray-500">
             Use the correct login route (Admin vs User) in the sidebar/login page.

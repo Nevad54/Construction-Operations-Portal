@@ -69,6 +69,11 @@ Render / backend:
 
 - `RECAPTCHA_SECRET_KEY` is present in the backend service env.
 - `CORS_ORIGINS` includes the frontend hostname being shipped.
+- `FRONTEND_URL` matches the released frontend origin so password-reset emails point to the right site.
+- `EMAIL_USER` and `EMAIL_PASS` are present so forgot-password sends email instead of falling back to local console logging.
+- `FIRST_ADMIN_SETUP_TOKEN` is present before first production bootstrap.
+- If production has zero admins, complete `/setup/admin` with the deploy-time token before handing the app to the owner.
+- After the first admin is created, remove or rotate `FIRST_ADMIN_SETUP_TOKEN` so the bootstrap path cannot be reused with an old deploy-time secret.
 
 Netlify / frontend:
 

@@ -10,6 +10,7 @@ export default function Input({
   error,
   helperText,
   icon,
+  trailingElement,
   className = '',
   containerClassName = '',
   required = false,
@@ -39,6 +40,12 @@ export default function Input({
             {icon}
           </div>
         )}
+
+        {trailingElement && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
+            {trailingElement}
+          </div>
+        )}
         
         <input
           id={inputId}
@@ -51,6 +58,7 @@ export default function Input({
             'focus:outline-none focus:border-brand dark:focus:border-brand-400 focus:ring-2 focus:ring-brand/20 dark:focus:ring-brand/30 focus:ring-offset-0',
             'disabled:bg-surface-muted dark:disabled:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed',
             icon && 'pl-10',
+            trailingElement && 'pr-16',
             error && 'border-feedback-error dark:border-feedback-error/50 focus:ring-feedback-error/20 dark:focus:ring-feedback-error/20 focus:border-feedback-error',
             className
           )}

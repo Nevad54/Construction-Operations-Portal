@@ -12,7 +12,7 @@ export default function DashboardLayout({
   searchPlaceholder = 'Search workspace',
   searchAriaLabel = 'Search workspace',
   sidebarMenuItems,
-  sidebarHomePath = '/admin/dashboard',
+  sidebarHomePath = '/admin/dashboard/projects',
   sidebarProfileName = 'Admin',
   sidebarProfileEmail = 'admin@construction.local',
   rightSidebar = null,

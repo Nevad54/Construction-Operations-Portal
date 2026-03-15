@@ -115,7 +115,7 @@ const handleResponse = async (response) => {
 
 export const api = {
     // Auth
-    login: async (username, password) => {
+    login: async (email, password) => {
         const response = await fetch(`${API_PREFIX}/auth/login`, {
             method: 'POST',
             headers: {
@@ -123,12 +123,12 @@ export const api = {
                 'Content-Type': 'application/json',
             },
             credentials: 'include',
-            body: JSON.stringify({ username, password }),
+            body: JSON.stringify({ email, password }),
         });
         return handleResponse(response);
     },
 
-    register: async ({ username, password, role = 'user', adminCode = '' }) => {
+    register: async ({ email, password, role = 'user', adminCode = '' }) => {
         const response = await fetch(`${API_PREFIX}/auth/register`, {
             method: 'POST',
             headers: {
@@ -136,7 +136,7 @@ export const api = {
                 'Content-Type': 'application/json',
             },
             credentials: 'include',
-            body: JSON.stringify({ username, password, role, adminCode }),
+            body: JSON.stringify({ email, password, role, adminCode }),
         });
         return handleResponse(response);
     },
@@ -163,6 +163,30 @@ export const api = {
         return handleResponse(response);
     },
 
+    getSetupStatus: async () => {
+        const response = await fetch(`${API_PREFIX}/auth/setup-status`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            },
+            credentials: 'include',
+        });
+        return handleResponse(response);
+    },
+
+    bootstrapAdmin: async ({ email, password, setupToken }) => {
+        const response = await fetch(`${API_PREFIX}/auth/bootstrap-admin`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ email, password, setupToken }),
+        });
+        return handleResponse(response);
+    },
+
     changePassword: async (currentPassword, newPassword) => {
         const response = await fetch(`${API_PREFIX}/auth/change-password`, {
             method: 'POST',
@@ -172,6 +196,32 @@ export const api = {
             },
             credentials: 'include',
             body: JSON.stringify({ currentPassword, newPassword }),
+        });
+        return handleResponse(response);
+    },
+
+    forgotPassword: async ({ email, audience = 'client' }) => {
+        const response = await fetch(`${API_PREFIX}/auth/forgot-password`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ email, audience }),
+        });
+        return handleResponse(response);
+    },
+
+    resetPassword: async ({ token, newPassword }) => {
+        const response = await fetch(`${API_PREFIX}/auth/reset-password`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ token, newPassword }),
         });
         return handleResponse(response);
     },
@@ -188,7 +238,7 @@ export const api = {
         return handleResponse(response);
     },
 
-    adminCreateUser: async ({ username, password, role }) => {
+    adminCreateUser: async ({ email, password, role }) => {
         const response = await fetch(`${API_PREFIX}/admin/users`, {
             method: 'POST',
             headers: {
@@ -196,7 +246,7 @@ export const api = {
                 'Content-Type': 'application/json',
             },
             credentials: 'include',
-            body: JSON.stringify({ username, password, role }),
+            body: JSON.stringify({ email, password, role }),
         });
         return handleResponse(response);
     },
@@ -271,6 +321,18 @@ export const api = {
         }
         return response.blob();
     },
+    adminExportAllData: async () => {
+        const url = new URL(`${API_PREFIX}/admin/export/all`, window.location.origin);
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            credentials: 'include',
+        });
+        if (!response.ok) {
+            const err = await handleResponse(response);
+            throw new Error(err.error || 'Failed to export admin data');
+        }
+        return response.blob();
+    },
 
     adminUpdateUser: async (id, updates = {}) => {
         const response = await fetch(`${API_PREFIX}/admin/users/${encodeURIComponent(id)}`, {
@@ -285,8 +347,23 @@ export const api = {
         return handleResponse(response);
     },
 
+    adminSetUserActive: async (id, isActive) => {
+        return api.adminUpdateUser(id, { isActive });
+    },
+
     adminGetKpis: async () => {
         const response = await fetch(`${API_PREFIX}/admin/kpis`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            },
+            credentials: 'include',
+        });
+        return handleResponse(response);
+    },
+
+    adminSystemStatus: async () => {
+        const response = await fetch(`${API_PREFIX}/admin/system-status`, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',

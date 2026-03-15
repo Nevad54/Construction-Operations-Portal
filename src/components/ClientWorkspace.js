@@ -171,15 +171,15 @@ export default function ClientWorkspace() {
       const warnings = [];
 
       if (filesResult.status === 'rejected') {
-        warnings.push('Shared files are temporarily unavailable. You can refresh or try the file library directly.');
+        warnings.push('Shared files are temporarily unavailable. Refresh the page or open the file library directly.');
       }
 
       if (projectsResult.status === 'rejected') {
-        warnings.push('Project labels could not be loaded, so the workspace is showing file activity without project names.');
+        warnings.push('Project names could not be loaded, so some files may appear without a project label.');
       }
 
       if (followUpsResult.status === 'rejected') {
-        warnings.push('Follow-up status is temporarily unavailable. Requests still go through the contact intake, but status history could not be loaded right now.');
+        warnings.push('Request status is temporarily unavailable. You can still send a request, but recent status updates could not be loaded right now.');
       }
 
       setSummary({
@@ -313,8 +313,8 @@ export default function ClientWorkspace() {
       fileName: candidate?.originalName || 'Shared residential file',
       updatedAt: candidate?.updatedAt || candidate?.createdAt || '',
       summary: String(candidate?.originalName || '').toLowerCase().includes('closeout')
-        ? 'Closeout material is ready for homeowner review, punch follow-up, and final handoff visibility.'
-        : 'Residential owner-facing files are available here so approvals and turnover steps stay visible.',
+        ? 'Closeout material is ready for homeowner review, final checks, and turnover.'
+        : 'Residential owner-facing files are available here so approvals and final steps stay easy to track.',
     };
   }, [files, projectTitleById]);
 
@@ -322,18 +322,18 @@ export default function ClientWorkspace() {
     const actions = [];
 
     if (recentFiles.length > 0) {
-      actions.push(`Review the latest shared document: ${recentFiles[0].originalName || 'recent file'}.`);
+      actions.push(`Review the newest shared file: ${recentFiles[0].originalName || 'recent file'}.`);
     } else {
-      actions.push('Watch for your first shared file drop. The workspace will surface it here as soon as it lands.');
+      actions.push('Watch for your first shared file. It will appear here as soon as the team uploads it.');
     }
 
     if (projectSummaries.length > 0) {
-      actions.push(`Check the current project room for ${projectSummaries[0].title} and confirm the latest handoff items.`);
+      actions.push(`Open ${projectSummaries[0].title} and confirm the latest items that need your review.`);
     } else {
-      actions.push('Use the file library to confirm which project folders are live and ask for anything still missing.');
+      actions.push('Use the file library to confirm which project folders are available and request anything missing.');
     }
 
-    actions.push('Use this workspace as the single record for updates, shared documents, and the next client-side review step.');
+    actions.push('Use this workspace as the main place to check updates, files, and the next step.');
 
     return actions;
   }, [projectSummaries, recentFiles]);
@@ -383,10 +383,10 @@ export default function ClientWorkspace() {
               <p className="text-feedback-error">{loadError}</p>
               <div className="flex flex-wrap gap-3">
                 <Link
-                  to="/login/client"
+                  to="/signin"
                   className="inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-brand-600"
                 >
-                  Return to client login
+                  Return to sign in
                 </Link>
                 <Link
                   to="/client/files"
@@ -412,10 +412,10 @@ export default function ClientWorkspace() {
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand">Client Workspace</p>
                 <div className="space-y-2">
                   <h1 className="text-3xl font-bold tracking-tight text-text-primary dark:text-gray-100">
-                    Keep project visibility, shared files, and next actions in one place.
+                    See what changed, what needs review, and what to do next.
                   </h1>
                   <p className="max-w-3xl text-sm sm:text-base text-text-secondary dark:text-gray-300">
-                    {user?.username ? `${user.username}, this workspace is your current handoff summary.` : 'Use this workspace as your current handoff summary.'} Review what changed recently, which project rooms are active, and where to go next without digging through separate threads.
+                    {user?.username ? `${user.username}, this is your current project summary.` : 'This is your current project summary.'} Review new files, recent requests, and the next action without digging through messages or email.
                   </p>
                 </div>
               </div>
@@ -424,13 +424,13 @@ export default function ClientWorkspace() {
                   to="/client/files"
                   className="inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-brand-600"
                 >
-                  Open shared files
+                  Open file library
                 </Link>
                 <Link
                   to="/client-portal"
                   className="inline-flex items-center justify-center rounded-lg border border-stroke px-4 py-2 text-sm font-medium text-text-primary transition-all hover:bg-surface-muted dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800"
                 >
-                  Review portal overview
+                  Portal overview
                 </Link>
               </div>
             </div>
@@ -521,12 +521,12 @@ export default function ClientWorkspace() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Client Review Queue</CardTitle>
+              <CardTitle>What Needs Your Review</CardTitle>
           </CardHeader>
           <CardContent>
             {reviewQueue.length === 0 ? (
               <p className="text-sm text-text-secondary dark:text-gray-400">
-                No review items are staged yet. As soon as the team shares a client-visible drawing, checklist, photo, or closeout pack, this queue will turn it into an explicit next step.
+                Nothing needs your review yet. When the team shares a drawing, checklist, photo, or closeout file, it will appear here with a clear next step.
               </p>
             ) : (
               <div className="grid gap-4 lg:grid-cols-3">
@@ -589,12 +589,12 @@ export default function ClientWorkspace() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Follow-Up Status</CardTitle>
+              <CardTitle>Your Recent Requests</CardTitle>
           </CardHeader>
           <CardContent>
             {followUpItems.length === 0 ? (
               <p className="text-sm text-text-secondary dark:text-gray-400">
-                Follow-up requests you send from this workspace will appear here with their current status and next response target.
+                Requests you send from this workspace will appear here with the current status and next planned update.
               </p>
             ) : (
               <div className="grid gap-4 lg:grid-cols-3">
@@ -615,7 +615,7 @@ export default function ClientWorkspace() {
                         Status updated {formatDate(item.updatedAt)}
                       </p>
                       <p className="text-sm text-text-secondary dark:text-gray-400">
-                        Owner: {item.owner}
+                        Current owner: {item.owner}
                       </p>
                       {item.notes && (
                         <p className="text-sm text-text-secondary dark:text-gray-400">
@@ -623,7 +623,7 @@ export default function ClientWorkspace() {
                         </p>
                       )}
                       <p className="text-sm text-text-secondary dark:text-gray-400">
-                        {item.nextFollowUpAt ? `Next follow-up target: ${formatDate(item.nextFollowUpAt)}` : 'Next follow-up target pending assignment.'}
+                        {item.nextFollowUpAt ? `Next update planned for: ${formatDate(item.nextFollowUpAt)}` : 'Next update is waiting to be scheduled.'}
                       </p>
                     </div>
                   </div>
@@ -636,14 +636,14 @@ export default function ClientWorkspace() {
         <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <Card>
             <CardHeader>
-              <CardTitle>Current Project Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {projectSummaries.length === 0 ? (
-                <p className="text-sm text-text-secondary dark:text-gray-400">
-                  No project rooms are linked yet. Shared files will start building a project summary here as soon as the first client-visible handoff is attached to a project.
-                </p>
-              ) : (
+              <CardTitle>Projects With Recent Updates</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {projectSummaries.length === 0 ? (
+              <p className="text-sm text-text-secondary dark:text-gray-400">
+                  No project rooms are linked yet. As soon as the first shared file is tied to a project, a summary will appear here.
+              </p>
+            ) : (
                 <div className="space-y-3">
                   {projectSummaries.map((project) => (
                     <div
@@ -671,9 +671,9 @@ export default function ClientWorkspace() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Next Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              <CardTitle>Recommended Next Steps</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
               <ol className="space-y-3">
                 {nextActions.map((action) => (
                   <li
@@ -686,14 +686,14 @@ export default function ClientWorkspace() {
               </ol>
               <div className="rounded-xl border border-dashed border-brand/30 bg-brand/5 px-4 py-3 dark:bg-brand-900/10">
                 <p className="text-sm text-text-secondary dark:text-gray-300">
-                  Need something that is not in the workspace yet? Use the portal as the source of truth, then request the missing handoff item from the project team.
+                  Need something that is not here yet? Send one request and ask the project team to confirm the missing item, current status, and next step.
                 </p>
                 <div className="mt-3">
                   <Link
                     to="/contact?source=client-workspace&context=general-follow-up&message=Need a follow-up on a client workspace item that is not currently visible. Please confirm the missing handoff item, current status, and expected next step."
                     className="inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-brand-600"
                   >
-                    Request a general follow-up
+                    Ask for an update
                   </Link>
                 </div>
               </div>
@@ -703,7 +703,7 @@ export default function ClientWorkspace() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Latest Shared Material</CardTitle>
+              <CardTitle>Latest Shared Files</CardTitle>
           </CardHeader>
           <CardContent>
             {recentFiles.length === 0 ? (

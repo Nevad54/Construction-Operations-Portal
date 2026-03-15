@@ -97,9 +97,12 @@ That framing is stronger than treating the app as a pure brochure site or preten
   - `/solutions/renovation`
   - `/solutions/residential`
 - Auth:
-  - `/login/admin`
-  - `/login/user`
-  - `/login/client`
+  - `/signin`
+  - `/signup`
+  - `/staff/signin`
+  - `/setup/admin`
+  - `/forgot-password`
+  - `/reset-password`
 - Admin:
   - `/admin/dashboard/projects`
   - `/admin/dashboard/files`
@@ -116,6 +119,7 @@ That framing is stronger than treating the app as a pure brochure site or preten
 
 - Health: `GET /api/status`
 - Auth: `POST /api/login`, `POST /api/register`, `POST /api/logout`, `GET /api/me`
+- Password recovery: `POST /api/auth/forgot-password`, `POST /api/auth/reset-password`
 - Projects: `GET/POST/PUT/DELETE /api/projects`
 - Admin users:
   - `GET /api/admin/users`
@@ -151,8 +155,10 @@ Create `.env` in repo root (or copy from deployment templates):
 Required/important keys:
 
 - `MONGO_URI`
+- `FRONTEND_URL`
 - `SESSION_SECRET`
 - `CORS_ORIGINS`
+- `FIRST_ADMIN_SETUP_TOKEN` (required in production before creating the first admin account)
 - `ADMIN_USER`, `ADMIN_PASS`
 - `EMP_USER`, `EMP_PASS`
 - `CLIENT_USER`, `CLIENT_PASS`
@@ -165,6 +171,21 @@ Required/important keys:
 Frontend optional key:
 
 - `REACT_APP_RECAPTCHA_SITE_KEY`
+
+Password reset guardrails:
+
+- `FRONTEND_URL` must be set to the public frontend origin used in reset links, for example `https://your-app.netlify.app`.
+- `EMAIL_USER` and `EMAIL_PASS` are required in production because forgot-password now sends real reset emails.
+- In local development, leaving `EMAIL_USER` and `EMAIL_PASS` blank is supported. The forgot-password screen still shows the generic success response, and the backend logs the reset link to the console for testing.
+- Production startup now fails fast if `FRONTEND_URL`, `EMAIL_USER`, or `EMAIL_PASS` are missing.
+
+First admin bootstrap:
+
+- Production no longer auto-seeds demo admin accounts.
+- Set `FIRST_ADMIN_SETUP_TOKEN` in the backend environment before first release.
+- If `GET /api/auth/setup-status` reports `requiresAdminSetup: true`, open `/setup/admin` and create the first admin account with that token.
+- After the first admin exists, `/setup/admin` is no longer available as a normal setup path.
+- After the first admin is created, remove or rotate `FIRST_ADMIN_SETUP_TOKEN` in the backend environment. Leaving it configured after setup is complete keeps unnecessary bootstrap access available.
 
 reCAPTCHA deployment guardrails:
 
@@ -209,6 +230,8 @@ npm run start:backend:demo
 ```
 
 This command also forces `NODE_ENV=development` and blanks the email env vars, which keeps the local demo contact flow usable by skipping live reCAPTCHA verification and returning the no-email success path locally.
+
+The same no-email local behavior applies to forgot-password. The UI stays generic, and the backend console logs the reset URL so you can test the reset flow without SMTP credentials.
 
 On localhost, the contact page now swaps the live Google reCAPTCHA widget for a local verification control in development mode. Production and deployed preview environments still use the real widget and require a valid site key.
 

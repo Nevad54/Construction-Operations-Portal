@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { DashboardLayout } from './dashboard';
 import { Card, CardContent, CardHeader, CardTitle } from './ui';
 import FileManager from './files/FileManager';
@@ -24,7 +24,7 @@ export default function UserDashboard() {
     if (location.pathname === '/user/dashboard/settings') {
       return { title: 'Settings', description: 'Manage your user preferences and notifications.' };
     }
-    return { title: 'Workspace Overview', description: 'Use the employee workspace to review shared files, watch delivery handoffs, and keep your account settings current.' };
+    return { title: 'Workspace Overview', description: 'This page keeps the employee tools simple: files, account settings, and the current place to start.' };
   }, [location.pathname]);
 
   return (
@@ -43,13 +43,35 @@ export default function UserDashboard() {
           <CardHeader>
             <CardTitle>{pageMeta.title}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <p className="text-text-secondary dark:text-gray-400">{pageMeta.description}</p>
-              <p className="text-text-secondary dark:text-gray-400">
-                This route stays intentionally light until the employee-facing project workspace is mature enough to justify
-                its own navigation section. Files and settings are the useful paths today.
-              </p>
+          <CardContent className="space-y-6">
+            <p className="text-text-secondary dark:text-gray-400">{pageMeta.description}</p>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-xl border border-stroke bg-surface-muted/50 p-4 dark:border-gray-700 dark:bg-gray-900/60">
+                <h2 className="text-base font-semibold text-text-primary dark:text-gray-100">Start here</h2>
+                <p className="mt-2 text-sm text-text-secondary dark:text-gray-400">
+                  Open the file library to review the latest shared documents, downloads, and project material available to your account.
+                </p>
+                <Link
+                  to="/user/dashboard/files"
+                  className="mt-4 inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-brand-600"
+                >
+                  Open my files
+                </Link>
+              </div>
+
+              <div className="rounded-xl border border-stroke bg-surface-muted/50 p-4 dark:border-gray-700 dark:bg-gray-900/60">
+                <h2 className="text-base font-semibold text-text-primary dark:text-gray-100">Keep access current</h2>
+                <p className="mt-2 text-sm text-text-secondary dark:text-gray-400">
+                  Update your password and account settings here if your access, role, or login details need attention.
+                </p>
+                <Link
+                  to="/user/dashboard/settings"
+                  className="mt-4 inline-flex items-center justify-center rounded-lg border border-stroke px-4 py-2 text-sm font-medium text-text-primary transition-all hover:bg-surface-card dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800"
+                >
+                  Open settings
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>

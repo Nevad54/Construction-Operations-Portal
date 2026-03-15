@@ -27,7 +27,7 @@ export default function DashboardTopNav({
 
   const isAdminArea = location.pathname.startsWith('/admin');
   const settingsPath = isAdminArea ? '/admin/dashboard/settings' : '/user/dashboard/settings';
-  const loginPath = isAdminArea ? '/login/admin' : '/login/user';
+  const loginPath = '/staff/signin';
   const profileInitial = String(currentUser?.username || 'A').charAt(0).toUpperCase();
   const showTopBrand = isMobile;
 
@@ -152,18 +152,6 @@ export default function DashboardTopNav({
                 <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zM4.22 4.22a1 1 0 011.415 0l.707.707a1 1 0 01-1.415 1.415l-.707-.707a1 1 0 010-1.415zm11.313 1.414a1 1 0 011.415-1.414l.707.707a1 1 0 11-1.415 1.415l-.707-.707zM10 7a3 3 0 100 6 3 3 0 000-6zm-7 3a1 1 0 11-2 0 1 1 0 012 0zm16 0a1 1 0 11-2 0 1 1 0 012 0zM4.22 15.78a1 1 0 011.415-1.414l.707.707a1 1 0 01-1.415 1.415l-.707-.707a1 1 0 010 1.414zm11.313-1.414a1 1 0 011.415 1.414l-.707.707a1 1 0 11-1.415-1.415l.707-.707zM10 18a1 1 0 011-1h1a1 1 0 110 2h-1a1 1 0 01-1-1z" clipRule="evenodd" />
               </svg>
             )}
-          </button>
-
-          {/* Notifications button */}
-          <button
-            type="button"
-            className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-text-muted dark:text-gray-400 hover:text-text-primary dark:hover:text-gray-200 hover:bg-surface-muted dark:hover:bg-gray-800 active:bg-surface-interactive dark:active:bg-gray-700 transition-colors duration-fast relative"
-            aria-label="Notifications"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            <span className="absolute top-2 right-2 w-2 h-2 bg-feedback-error rounded-full animate-pulse-soft" aria-hidden="true" />
           </button>
 
           {/* Profile menu button */}

@@ -27,6 +27,9 @@ const UserDashboard = lazy(() => import('./components/UserDashboard'));
 const ClientWorkspace = lazy(() => import('./components/ClientWorkspace'));
 const ClientFiles = lazy(() => import('./components/ClientFiles'));
 const RoleLogin = lazy(() => import('./components/auth/RoleLogin'));
+const AdminBootstrap = lazy(() => import('./components/auth/AdminBootstrap'));
+const ForgotPassword = lazy(() => import('./components/auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('./components/auth/ResetPassword'));
 const ProtectedRoute = lazy(() => import('./components/auth/ProtectedRoute'));
 
 // Loading component for Suspense
@@ -68,14 +71,28 @@ function App() {
             <Route path="/safety" element={<Safety />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/login/admin" element={<RoleLogin role="admin" />} />
-            <Route path="/login/user" element={<RoleLogin role="user" />} />
-            <Route path="/login/client" element={<RoleLogin role="client" />} />
+            <Route path="/signin" element={<RoleLogin variant="public" />} />
+            <Route path="/signup" element={<RoleLogin variant="signup" />} />
+            <Route path="/staff/signin" element={<RoleLogin variant="staff" />} />
+            <Route path="/setup/admin" element={<AdminBootstrap />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/login/admin" element={<Navigate to="/staff/signin" replace />} />
+            <Route path="/login/user" element={<Navigate to="/staff/signin" replace />} />
+            <Route path="/login/client" element={<Navigate to="/signin" replace />} />
             <Route
               path="/admin"
               element={(
                 <ProtectedRoute role="admin">
                   <Admin />
+                </ProtectedRoute>
+              )}
+            />
+            <Route
+              path="/admin/dashboard"
+              element={(
+                <ProtectedRoute role="admin">
+                  <Navigate to="/admin/dashboard/projects" replace />
                 </ProtectedRoute>
               )}
             />

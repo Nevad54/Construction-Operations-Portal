@@ -71,19 +71,19 @@ describe('ClientWorkspace', () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByRole('heading', { name: /keep project visibility, shared files, and next actions in one place/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /see what changed, what needs review, and what to do next/i })).toBeInTheDocument();
     expect(screen.getByText('North Plant Retrofit')).toBeInTheDocument();
     expect(screen.getAllByText('South Tower Closeout').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Permit Set A.pdf').length).toBeGreaterThan(0);
-    expect(screen.getByRole('heading', { name: 'Client Review Queue' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'What Needs Your Review' })).toBeInTheDocument();
     expect(screen.getByText('Approval review')).toBeInTheDocument();
     expect(screen.getByText('Closeout review')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Follow-Up Status' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Your Recent Requests' })).toBeInTheDocument();
     expect(screen.getByText('In Progress')).toBeInTheDocument();
     expect(screen.getByText(/Need confirmation on permit sequencing/i)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Next Actions' })).toBeInTheDocument();
-    expect(screen.getByText(/review the latest shared document/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /open shared files/i })).toHaveAttribute('href', '/client/files');
+    expect(screen.getByRole('heading', { name: 'Recommended Next Steps' })).toBeInTheDocument();
+    expect(screen.getByText(/review the newest shared file/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /open file library/i })).toHaveAttribute('href', '/client/files');
     expect(screen.getAllByRole('link', { name: /request follow-up/i })[0]).toHaveAttribute(
       'href',
       expect.stringContaining('/contact?')
@@ -124,11 +124,11 @@ describe('ClientWorkspace', () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByRole('heading', { name: 'Current Project Status' })).toBeInTheDocument();
-    expect(screen.getByText(/project labels could not be loaded/i)).toBeInTheDocument();
-    expect(screen.getByText(/follow-up status is temporarily unavailable/i)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Projects With Recent Updates' })).toBeInTheDocument();
+    expect(screen.getByText(/project names could not be loaded/i)).toBeInTheDocument();
+    expect(screen.getByText(/request status is temporarily unavailable/i)).toBeInTheDocument();
     expect(screen.getAllByText('Updated Site Photo.jpg').length).toBeGreaterThan(0);
-    expect(screen.getByRole('link', { name: /review portal overview/i })).toHaveAttribute('href', '/client-portal');
+    expect(screen.getByRole('link', { name: /portal overview/i })).toHaveAttribute('href', '/client-portal');
   });
 
   test('surfaces a residential handoff spotlight when homeowner-facing closeout files exist', async () => {
@@ -206,7 +206,7 @@ describe('ClientWorkspace', () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByRole('heading', { name: 'Follow-Up Status' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Your Recent Requests' })).toBeInTheDocument();
     expect(screen.getByText('Approved')).toBeInTheDocument();
     expect(screen.getByText('Changes Requested')).toBeInTheDocument();
     expect(screen.getByText(/Tracking note: approval-approved/i)).toBeInTheDocument();
