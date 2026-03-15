@@ -8,3 +8,8 @@ backend/uploads/
 .cursor/
 .windsurf/
 skills/
+backend/backend-run.out.log
+backend/backend-run.err.log
+frontend-run.out.log
+frontend-run.err.log
+frontend-vite-3101.log
