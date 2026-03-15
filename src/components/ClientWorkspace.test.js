@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import ClientWorkspace from './ClientWorkspace';
@@ -11,6 +11,7 @@ vi.mock('../services/api', () => ({
     getFiles: vi.fn(),
     getProjects: vi.fn(),
     getClientFollowUps: vi.fn(),
+    logout: vi.fn(),
   },
 }));
 
@@ -22,6 +23,7 @@ const memoryRouterFutureFlags = {
 describe('ClientWorkspace', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    api.logout.mockResolvedValue({ ok: true });
   });
 
   test('renders a client workspace summary with status, files, and next actions', async () => {
@@ -211,5 +213,27 @@ describe('ClientWorkspace', () => {
     expect(screen.getByText('Changes Requested')).toBeInTheDocument();
     expect(screen.getByText(/Tracking note: approval-approved/i)).toBeInTheDocument();
     expect(screen.getByText(/Tracking note: approval-changes/i)).toBeInTheDocument();
+  });
+
+  test('provides a visible client sign-out action that clears the session', async () => {
+    api.me.mockResolvedValueOnce({
+      user: { id: 'client-1', username: 'client@example.com', role: 'client' },
+    });
+    api.getFiles.mockResolvedValueOnce([]);
+    api.getProjects.mockResolvedValueOnce([]);
+    api.getClientFollowUps.mockResolvedValueOnce({ items: [] });
+
+    render(
+      <MemoryRouter future={memoryRouterFutureFlags}>
+        <ClientWorkspace />
+      </MemoryRouter>
+    );
+
+    const button = await screen.findByRole('button', { name: /sign out/i });
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(api.logout).toHaveBeenCalledTimes(1);
+    });
   });
 });

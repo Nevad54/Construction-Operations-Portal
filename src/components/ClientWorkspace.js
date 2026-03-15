@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { Badge, Card, CardContent, CardHeader, CardTitle } from './ui';
 
@@ -135,8 +135,10 @@ const buildWorkspaceActionLink = ({ fileName, projectTitle, label, note, context
 };
 
 export default function ClientWorkspace() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [loggingOut, setLoggingOut] = useState(false);
   const [summary, setSummary] = useState({
     user: null,
     files: [],
@@ -203,6 +205,18 @@ export default function ClientWorkspace() {
   const files = summary.files;
   const projects = summary.projects;
   const followUps = summary.followUps;
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await api.logout();
+      navigate('/signin', { replace: true });
+    } catch (_err) {
+      setLoadError('Could not sign out right now. Please try again.');
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   const projectTitleById = useMemo(() => {
     const map = {};
@@ -432,6 +446,14 @@ export default function ClientWorkspace() {
                 >
                   Portal overview
                 </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="inline-flex items-center justify-center rounded-lg border border-stroke px-4 py-2 text-sm font-medium text-text-primary transition-all hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800"
+                >
+                  {loggingOut ? 'Signing out...' : 'Sign out'}
+                </button>
               </div>
             </div>
           </div>
