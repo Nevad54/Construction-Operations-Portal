@@ -55,6 +55,13 @@ Internal teams and clients get:
 
 That full journey is what makes the repo feel like a business platform instead of disconnected pages.
 
+## Quality Signals
+
+- frontend build verified locally
+- frontend test suite passing
+- backend test suite passing
+- root and backend dependency audits refreshed to resolve current local npm audit findings
+
 ## Screenshots
 
 - `docs/screenshots/home-light-hero.png` - Public homepage hero (light mode)
