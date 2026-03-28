@@ -9,6 +9,13 @@ A full-stack hybrid construction operations platform: public contractor marketin
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Product](https://img.shields.io/badge/Product-Hybrid%20Operations-2563eb)
 
+## Why It Lands
+
+- shows both the public-facing brand experience and the internal system behind delivery
+- feels more credible than a brochure site because it includes actual client and admin workflows
+- communicates a clear business story for contractors, clients, and internal teams
+- works well as both a product concept and a portfolio-ready full-stack showcase
+
 ## At A Glance
 
 - combines public-facing construction marketing with authenticated operational tooling
@@ -45,6 +52,13 @@ Internal teams and clients get:
 - API status endpoint: `https://mastertech-app-32jm.onrender.com/api/status`
 - Demo video: coming soon
 
+## Built For
+
+- construction businesses that need a stronger digital front door
+- teams that want cleaner client handoffs and file visibility
+- internal staff managing projects, accounts, inquiries, and reporting
+- recruiters, collaborators, and clients evaluating real product depth
+
 ## Demo Flow
 
 1. A public visitor lands on the marketing site and explores services, proof, and sector positioning.
@@ -63,6 +77,8 @@ That full journey is what makes the repo feel like a business platform instead o
 - root and backend dependency audits refreshed to resolve current local npm audit findings
 
 ## Screenshots
+
+The screenshots below show the full hybrid story: public marketing, client visibility, and operational dashboards in one product.
 
 - `docs/screenshots/home-light-hero.png` - Public homepage hero (light mode)
 - `docs/screenshots/home-dark-hero.png` - Public homepage hero (dark mode)
