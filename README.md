@@ -150,6 +150,10 @@ Construction Operations Portal is a strong portfolio piece because it shows:
 - real business positioning, not just technical implementation
 - a polished, credible story for clients, recruiters, and collaborators
 
+## Contributors
+
+This project is developed with support from `Claude` and `Codex` for implementation, iteration, debugging, and QA workflows.
+
 ## Tech Stack
 
 - Frontend: React 18, React Router 6, Vite, Vitest, Tailwind CSS, AOS, Font Awesome
