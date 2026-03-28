@@ -1,5 +1,9 @@
 # Contributing
 
+## Collaboration Note
+
+This project is developed with support from `Claude` and `Codex` for implementation, iteration, debugging, and QA workflows.
+
 Thanks for your interest in improving `construction-operations-portal`.
 
 ## Development Setup
