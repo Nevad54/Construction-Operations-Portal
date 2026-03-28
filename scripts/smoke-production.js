@@ -82,7 +82,8 @@ const checkContactProbe = async () => {
     recaptchaToken: 'invalid-production-smoke-token',
   };
 
-  const contactResult = await fetchText(`${frontendUrl}/api/contact`, {
+  const contactTarget = backendUrl || frontendUrl;
+  const contactResult = await fetchText(`${contactTarget}/api/contact`, {
     method: 'POST',
     headers: {
       Accept: 'application/json',
@@ -95,7 +96,7 @@ const checkContactProbe = async () => {
     throw new Error(`/api/contact expected HTTP 400 for invalid reCAPTCHA token but received ${contactResult.response.status}`);
   }
 
-  const contactPayload = expectJson(contactResult.text, `${frontendUrl}/api/contact`);
+  const contactPayload = expectJson(contactResult.text, `${contactTarget}/api/contact`);
   if (!contactPayload || contactPayload.error !== 'reCAPTCHA verification failed. Please try again.') {
     throw new Error('/api/contact did not return the expected invalid reCAPTCHA error payload');
   }
