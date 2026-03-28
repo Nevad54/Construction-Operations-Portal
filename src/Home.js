@@ -102,7 +102,7 @@ const Home = memo(() => {
       }}
     >
       {/* ── Hero ── */}
-      <section className="hero" role="banner" aria-labelledby="hero-heading">
+      <section className="hero" aria-labelledby="hero-heading">
         <div className="hero-shell">
           <div className="hero-content">
             <p className="hero-eyebrow">

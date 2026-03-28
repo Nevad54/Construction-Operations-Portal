@@ -195,9 +195,9 @@ describe('public route rendering', () => {
     });
 
     expect(screen.getByRole('heading', {
-      name: /Construction and industrial delivery with one clearer operating view/i,
+      name: /One platform for active construction work, client updates, and field closeout/i,
     })).toBeInTheDocument();
-    expect(within(screen.getByRole('main')).getByRole('link', { name: /Request a site assessment/i })).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getAllByRole('link', { name: /Request a site assessment/i }).length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', {
       name: /Execution models shaped for four construction environments/i,
     })).toBeInTheDocument();
@@ -205,14 +205,15 @@ describe('public route rendering', () => {
       name: /Core service lines built to keep scopes moving from planning through handoff/i,
     })).toBeInTheDocument();
     expect(screen.getByRole('heading', {
-      name: /Field coordination from one operating base/i,
+      name: /Ready to bring your site under one operating view/i,
     })).toBeInTheDocument();
   });
 
   test('home route keeps the brand wordmark beside the logo in the public header', async () => {
     renderPublicRoute('/', <Home />);
 
-    const brandLink = screen.getByRole('link', { name: /Construction Operations Portal/i });
+    const header = screen.getByRole('banner');
+    const brandLink = within(header).getByRole('link', { name: /Construction Operations Portal/i });
     expect(brandLink).toHaveClass('logo-link');
 
     const wordmark = within(brandLink).getByText('Construction').closest('.logo-wordmark');
@@ -253,16 +254,15 @@ describe('public route rendering', () => {
       expect(document.documentElement.classList.contains('dark')).toBe(true);
     });
 
-    const brandLink = screen.getByRole('link', { name: /Construction Operations Portal/i });
+    const headerBanner = screen.getByRole('banner');
+    const brandLink = within(headerBanner).getByRole('link', { name: /Construction Operations Portal/i });
     expect(within(brandLink).getByText('Construction')).toBeInTheDocument();
     expect(within(brandLink).getByText('Ops')).toBeInTheDocument();
-
-    const headerBanner = screen.getByRole('banner');
     const portalLink = within(headerBanner).getByRole('link', { name: /Client Portal/i });
     expect(portalLink).toHaveAttribute('aria-current', 'page');
     expect(portalLink.closest('li')).toHaveClass('active');
     expect(within(headerBanner).getByRole('link', { name: /^Sign in$/i })).toHaveAttribute('href', '/signin');
-    expect(within(headerBanner).getByRole('link', { name: /^Create account$/i })).toHaveAttribute('href', '/signup');
+    expect(within(headerBanner).getByRole('link', { name: /^Get Started$/i })).toHaveAttribute('href', '/contact');
 
     expect(screen.getAllByRole('button', { name: /Switch to light mode/i }).length).toBeGreaterThan(0);
   });
@@ -313,7 +313,7 @@ describe('public route rendering', () => {
     renderPublicRoute('/solutions/industrial', <IndustrialLandingPage />);
 
     const secondaryCta = within(screen.getByRole('main')).getByRole('link', { name: /View projects/i });
-    expect(secondaryCta).toHaveClass('btn-secondary');
+    expect(secondaryCta).toHaveClass('btn--ghost');
     expect(secondaryCta.closest('.landing-hero-actions')).not.toBeNull();
   });
 
