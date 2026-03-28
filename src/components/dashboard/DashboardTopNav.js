@@ -163,7 +163,7 @@ export default function DashboardTopNav({
               aria-expanded={profileOpen}
               onClick={() => setProfileOpen((open) => !open)}
             >
-              <div className="w-8 h-8 rounded-lg bg-brand dark:bg-brand-600 flex items-center justify-center text-white font-semibold text-sm">
+              <div className="w-8 h-8 rounded-lg bg-blue-600 dark:bg-blue-700 flex items-center justify-center text-white font-semibold text-sm">
                 {profileInitial}
               </div>
             </button>

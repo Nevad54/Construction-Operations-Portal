@@ -1,32 +1,44 @@
 /* ============================================
-   Construction Operations - Corporate Green/Gray Design System
-   Trustworthy, clean, SaaS-like
+   Construction Operations Portal — Enterprise Design System
+   Swiss Minimalism · Plus Jakarta Sans · Enterprise Blue + Construction Green
    ============================================ */
 
 :root {
-  /* Primary - Muted corporate green */
-  --primary-50: #e6f0e9;
-  --primary-100: #d7e7dc;
-  --primary-200: #b5d0bf;
-  --primary-300: #94b9a2;
-  --primary-400: #5f8c6d;
-  --primary-500: #2f6b3f;
-  --primary-600: #285a35;
-  --primary-700: #214c2c;
-  --primary-800: #183820;
-  --primary-900: #122a18;
+  /* Primary — Enterprise Blue */
+  --primary-50:  #EFF6FF;
+  --primary-100: #DBEAFE;
+  --primary-200: #BFDBFE;
+  --primary-300: #93C5FD;
+  --primary-400: #60A5FA;
+  --primary-500: #2563EB;
+  --primary-600: #1D4ED8;
+  --primary-700: #1E40AF;
+  --primary-800: #1E3A8A;
+  --primary-900: #1E3076;
   --primary: var(--primary-500);
   --primary-dark: var(--primary-700);
 
-  /* Accent - Soft green (subtle only) */
-  --accent-100: #f3faee;
-  --accent-200: #e9f7df;
-  --accent-300: #d4efbf;
-  --accent-400: #9fdd70;
-  --accent-500: #6bcf2c;
-  --accent-600: #59b125;
-  --accent-700: #478c1e;
-  --accent-800: #356817;
+  /* Brand green — construction identity, used for accents & success */
+  --brand-50:  #F0F9F1;
+  --brand-100: #DCEFDE;
+  --brand-200: #B6DFBA;
+  --brand-300: #7EC387;
+  --brand-400: #4AA356;
+  --brand-500: #2F6B3F;
+  --brand-600: #285A35;
+  --brand-700: #214C2C;
+  --brand-800: #183820;
+  --brand-900: #122A18;
+  --brand: var(--brand-500);
+  --brand-strong: var(--brand-600);
+
+  /* Accent — vibrant CTA orange */
+  --accent-100: #FFF7ED;
+  --accent-200: #FFEDD5;
+  --accent-300: #FED7AA;
+  --accent-400: #FB923C;
+  --accent-500: #F97316;
+  --accent-600: #EA6C0D;
   --accent: var(--accent-500);
   --accent-hover: var(--accent-600);
 
@@ -92,9 +104,9 @@
   --radius-full: 9999px;
   --radius: var(--radius-md);
 
-  /* Typography */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-heading: var(--font-sans);
+  /* Typography — Plus Jakarta Sans (enterprise SaaS standard) */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;

@@ -8,7 +8,7 @@
     "size": 65000,
     "ownerId": "admin-1",
     "visibility": "team",
-    "folder": "Projects/Ongoing",
+    "folder": "Projects/Ongoing/Drainage",
     "projectId": "prj-sample-001",
     "sharedWithUsers": [],
     "sharedWithRoles": [
@@ -18,7 +18,9 @@
     "linkAccess": "view",
     "tags": [
       "construction",
-      "ongoing"
+      "ongoing",
+      "drainage",
+      "site"
     ],
     "notes": "Current drainage package for active site works, tie-ins, and review checkpoints.",
     "cloudProvider": "",
@@ -27,8 +29,8 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-03-03T13:48:11.643Z",
-    "updatedAt": "2026-03-08T13:48:11.643Z"
+    "createdAt": "2026-03-23T04:31:36.887Z",
+    "updatedAt": "2026-03-28T04:31:36.887Z"
   },
   {
     "_id": "file-sample-002",
@@ -60,8 +62,8 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-03-02T13:48:11.643Z",
-    "updatedAt": "2026-03-07T13:48:11.643Z"
+    "createdAt": "2026-03-22T04:31:36.887Z",
+    "updatedAt": "2026-03-27T04:31:36.887Z"
   },
   {
     "_id": "file-sample-003",
@@ -72,7 +74,7 @@
     "size": 75346,
     "ownerId": "user-1",
     "visibility": "private",
-    "folder": "Projects/Ongoing",
+    "folder": "Projects/Ongoing/Utilities",
     "projectId": "prj-sample-003",
     "sharedWithUsers": [],
     "sharedWithRoles": [
@@ -82,7 +84,9 @@
     "linkAccess": "none",
     "tags": [
       "construction",
-      "ongoing"
+      "ongoing",
+      "utilities",
+      "scope"
     ],
     "notes": "Updated scope package covering live utility renewal work and current field coordination.",
     "cloudProvider": "",
@@ -91,8 +95,8 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-03-01T13:48:11.643Z",
-    "updatedAt": "2026-03-06T13:48:11.643Z"
+    "createdAt": "2026-03-21T04:31:36.887Z",
+    "updatedAt": "2026-03-26T04:31:36.887Z"
   },
   {
     "_id": "file-sample-004",
@@ -103,7 +107,7 @@
     "size": 80519,
     "ownerId": "admin-1",
     "visibility": "team",
-    "folder": "Projects/Ongoing",
+    "folder": "Projects/Ongoing/Fit-Out",
     "projectId": "prj-sample-004",
     "sharedWithUsers": [],
     "sharedWithRoles": [
@@ -113,7 +117,9 @@
     "linkAccess": "view",
     "tags": [
       "construction",
-      "ongoing"
+      "ongoing",
+      "fitout",
+      "checklist"
     ],
     "notes": "Active fit-out checklist covering current rooms, inspections, and handoff dependencies.",
     "cloudProvider": "",
@@ -122,8 +128,8 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-28T13:48:11.643Z",
-    "updatedAt": "2026-03-05T13:48:11.643Z"
+    "createdAt": "2026-03-20T04:31:36.887Z",
+    "updatedAt": "2026-03-25T04:31:36.887Z"
   },
   {
     "_id": "file-sample-005",
@@ -155,8 +161,8 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-27T13:48:11.643Z",
-    "updatedAt": "2026-03-08T13:48:11.643Z"
+    "createdAt": "2026-03-19T04:31:36.887Z",
+    "updatedAt": "2026-03-28T04:31:36.887Z"
   },
   {
     "_id": "file-sample-006",
@@ -167,7 +173,7 @@
     "size": 90865,
     "ownerId": "user-1",
     "visibility": "private",
-    "folder": "Projects/Ongoing",
+    "folder": "Projects/Ongoing/Civil",
     "projectId": "prj-sample-006",
     "sharedWithUsers": [],
     "sharedWithRoles": [
@@ -177,7 +183,9 @@
     "linkAccess": "none",
     "tags": [
       "construction",
-      "ongoing"
+      "ongoing",
+      "civil",
+      "progress"
     ],
     "notes": "Progress register for the active civil package, current blockers, and next review items.",
     "cloudProvider": "",
@@ -186,8 +194,8 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-26T13:48:11.643Z",
-    "updatedAt": "2026-03-07T13:48:11.643Z"
+    "createdAt": "2026-03-18T04:31:36.887Z",
+    "updatedAt": "2026-03-27T04:31:36.887Z"
   },
   {
     "_id": "file-sample-007",
@@ -198,7 +206,7 @@
     "size": 96038,
     "ownerId": "admin-1",
     "visibility": "team",
-    "folder": "Projects/Completed",
+    "folder": "Projects/Completed/Turnover",
     "projectId": "prj-sample-007",
     "sharedWithUsers": [],
     "sharedWithRoles": [
@@ -208,7 +216,9 @@
     "linkAccess": "view",
     "tags": [
       "construction",
-      "completed"
+      "completed",
+      "retrofit",
+      "turnover"
     ],
     "notes": "Turnover summary capturing the completed retrofit scope, final observations, and handoff status.",
     "cloudProvider": "",
@@ -217,8 +227,8 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-25T13:48:11.643Z",
-    "updatedAt": "2026-03-06T13:48:11.643Z"
+    "createdAt": "2026-03-17T04:31:36.887Z",
+    "updatedAt": "2026-03-26T04:31:36.887Z"
   },
   {
     "_id": "file-sample-008",
@@ -250,8 +260,8 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-24T13:48:11.643Z",
-    "updatedAt": "2026-03-05T13:48:11.643Z"
+    "createdAt": "2026-03-16T04:31:36.887Z",
+    "updatedAt": "2026-03-25T04:31:36.887Z"
   },
   {
     "_id": "file-sample-009",
@@ -262,7 +272,7 @@
     "size": 106384,
     "ownerId": "user-1",
     "visibility": "private",
-    "folder": "Projects/Completed",
+    "folder": "Projects/Completed/Closeout",
     "projectId": "prj-sample-009",
     "sharedWithUsers": [],
     "sharedWithRoles": [
@@ -272,7 +282,9 @@
     "linkAccess": "none",
     "tags": [
       "construction",
-      "completed"
+      "completed",
+      "upgrade",
+      "closeout"
     ],
     "notes": "Closeout package for the completed facility upgrade, including final observations and next maintenance steps.",
     "cloudProvider": "",
@@ -281,8 +293,8 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-23T13:48:11.643Z",
-    "updatedAt": "2026-03-08T13:48:11.643Z"
+    "createdAt": "2026-03-15T04:31:36.887Z",
+    "updatedAt": "2026-03-28T04:31:36.887Z"
   },
   {
     "_id": "file-sample-010",
@@ -293,7 +305,7 @@
     "size": 111557,
     "ownerId": "admin-1",
     "visibility": "team",
-    "folder": "Projects/Completed",
+    "folder": "Projects/Completed/Commissioning",
     "projectId": "prj-sample-010",
     "sharedWithUsers": [],
     "sharedWithRoles": [
@@ -303,7 +315,9 @@
     "linkAccess": "view",
     "tags": [
       "construction",
-      "completed"
+      "completed",
+      "commissioning",
+      "readiness"
     ],
     "notes": "Commissioning readiness log capturing final checks, sign-offs, and closeout status.",
     "cloudProvider": "",
@@ -312,8 +326,8 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-22T13:48:11.643Z",
-    "updatedAt": "2026-03-07T13:48:11.643Z"
+    "createdAt": "2026-03-14T04:31:36.887Z",
+    "updatedAt": "2026-03-27T04:31:36.887Z"
   },
   {
     "_id": "file-sample-011",
@@ -345,8 +359,8 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-21T13:48:11.643Z",
-    "updatedAt": "2026-03-06T13:48:11.643Z"
+    "createdAt": "2026-03-13T04:31:36.887Z",
+    "updatedAt": "2026-03-26T04:31:36.887Z"
   },
   {
     "_id": "file-sample-012",
@@ -378,7 +392,7 @@
     "previewUrl": "",
     "previewMimeType": "",
     "previewExpiresAt": null,
-    "createdAt": "2026-02-20T13:48:11.643Z",
-    "updatedAt": "2026-03-05T13:48:11.643Z"
+    "createdAt": "2026-03-12T04:31:36.887Z",
+    "updatedAt": "2026-03-25T04:31:36.887Z"
   }
 ]

@@ -54,7 +54,7 @@ export default function UserDashboard() {
                 </p>
                 <Link
                   to="/user/dashboard/files"
-                  className="mt-4 inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-brand-600"
+                  className="mt-4 inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-blue-700"
                 >
                   Open my files
                 </Link>

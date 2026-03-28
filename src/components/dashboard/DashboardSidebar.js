@@ -27,14 +27,14 @@ function SidebarItem({ item, expanded, isActive, onClick }) {
         flex min-h-11 items-center rounded-xl border transition-all duration-200 ease-out
         ${expanded ? 'justify-start gap-3 px-3' : 'justify-center px-0'}
         ${isActive
-          ? 'border-brand/40 bg-brand-50 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 font-medium'
+          ? 'border-blue-200 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold'
           : 'border-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
         }
       `}
       aria-current={isActive ? 'page' : undefined}
       title={!expanded ? item.label : undefined}
     >
-      <span className={isActive ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500 dark:text-gray-500'}>
+      <span className={isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-500'}>
         <Icon d={item.icon} />
       </span>
       {expanded && <span className="min-w-0 truncate text-sm font-medium">{item.label}</span>}
@@ -112,7 +112,7 @@ export default function DashboardSidebar({
 
           <div className="p-3 border-t border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center text-white text-sm font-semibold shadow-lg">A</div>
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-sm font-semibold shadow-lg">A</div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">{profileName}</p>
                 <p className="truncate text-xs text-gray-500 dark:text-gray-400">{profileEmail}</p>
@@ -187,7 +187,7 @@ export default function DashboardSidebar({
 
         <div className="p-3 border-t border-gray-200 dark:border-gray-800">
           <div className={`flex items-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 ${expanded ? 'gap-3 p-2.5' : 'justify-center px-2 py-2.5'}`}>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-600 flex items-center justify-center text-white text-sm font-semibold shadow-lg">A</div>
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-sm font-semibold shadow-lg">A</div>
             {expanded && (
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">{profileName}</p>

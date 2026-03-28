@@ -387,7 +387,7 @@ const Contact = () => {
                   {submitStatus.message}
                   {submitStatus.type === 'success' && prefillMeta.source === 'client-workspace' && (
                     <div className="mt-3">
-                      <Link to="/client/workspace" className="btn btn-secondary">
+                      <Link to="/client/workspace" className="btn btn--ghost btn--sm">
                         Return to client workspace
                       </Link>
                     </div>
@@ -558,7 +558,7 @@ const Contact = () => {
 
                 <button
                   type="submit"
-                  className={`btn contact-submit-btn ${canSubmit ? 'contact-submit-btn--ready' : 'contact-submit-btn--locked'}`}
+                  className={`btn btn--primary btn--lg contact-submit-btn ${canSubmit ? 'contact-submit-btn--ready' : 'contact-submit-btn--locked'}`}
                   disabled={!canSubmit}
                 >
                   {submitButtonLabel}
@@ -601,7 +601,7 @@ const Contact = () => {
                     <span><a href="tel:+63467001842">(046) 700 1842</a> / <a href="tel:+639185021436">0918 502 1436</a></span>
                   </div>
                 </div>
-                <a className="btn btn-secondary" href={officeMapsUrl} target="_blank" rel="noreferrer">
+                <a className="btn btn--ghost btn--sm" href={officeMapsUrl} target="_blank" rel="noreferrer">
                   Open in Google Maps
                 </a>
               </div>

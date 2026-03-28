@@ -33,35 +33,31 @@ export default function ClientPortal() {
         description: 'See how the client portal supports project visibility, shared files, follow-up accountability, and cleaner construction communication.',
       }}
     >
-      <section className="portal-page">
+      <section className="portal-page" aria-labelledby="portal-heading">
         <div className="container">
+
+          {/* Hero */}
           <section className="portal-hero">
             <div className="portal-hero-copy">
               <p className="portal-kicker">Client Experience</p>
-              <h1>Client visibility built into the delivery workflow, not bolted on after the fact.</h1>
+              <h1 id="portal-heading">Client visibility built into the delivery workflow, not bolted on after the fact.</h1>
               <p className="portal-lead">
                 A client-facing workspace for files, updates, and follow-ups once the work is moving.
               </p>
               <div className="hero-actions">
-                <Link to="/contact" className="btn" aria-label="Request a site assessment">
+                <Link to="/contact" className="btn btn--primary btn--lg" aria-label="Request a site assessment">
                   Request Site Assessment
                 </Link>
-                <Link to="/projects" className="btn btn-secondary" aria-label="View project proof">
+                <Link to="/projects" className="btn btn--ghost btn--lg" aria-label="View project proof">
                   View Project Proof
                 </Link>
               </div>
               <div className="portal-auth-actions" aria-label="Portal account access">
-                <Link to="/signin" className="portal-auth-link">
-                  Sign in
-                </Link>
-                <Link to="/signup" className="portal-auth-link">
-                  Create account
-                </Link>
-                <Link to="/staff/signin" className="portal-auth-link">
-                  Staff sign-in
-                </Link>
+                <Link to="/signin" className="portal-auth-link">Sign in</Link>
+                <Link to="/signup" className="portal-auth-link">Create account</Link>
+                <Link to="/staff/signin" className="portal-auth-link">Staff sign-in</Link>
               </div>
-              <p className="portal-lead">Clients use the public account path. Staff use staff sign-in.</p>
+              <p className="portal-lead" style={{marginTop:'0.5rem'}}>Clients use the public account path. Staff use staff sign-in.</p>
             </div>
             <div className="portal-hero-panel" aria-label="Client portal value summary">
               <div className="portal-highlight">
@@ -75,6 +71,7 @@ export default function ClientPortal() {
             </div>
           </section>
 
+          {/* Why it matters */}
           <section className="portal-section">
             <div className="portal-section-header">
               <p className="portal-kicker">Why it matters</p>
@@ -91,6 +88,7 @@ export default function ClientPortal() {
             </div>
           </section>
 
+          {/* Current capabilities */}
           <section className="portal-section portal-section-muted">
             <div className="portal-section-header">
               <p className="portal-kicker">Current capabilities</p>
@@ -99,7 +97,12 @@ export default function ClientPortal() {
             <div className="portal-feature-shell">
               <ul className="portal-feature-list">
                 {portalFeatures.map((item) => (
-                  <li key={item}>{item}</li>
+                  <li key={item}>
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true" style={{flexShrink:0}}>
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    {item}
+                  </li>
                 ))}
               </ul>
               <div className="portal-proof-card">
@@ -108,6 +111,7 @@ export default function ClientPortal() {
               </div>
             </div>
           </section>
+
         </div>
       </section>
     </PageLayout>
