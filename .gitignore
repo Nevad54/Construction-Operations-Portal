@@ -8,6 +8,9 @@ backend/uploads/
 .cursor/
 .windsurf/
 skills/
+.claude/
+.augment/
+.agent/
 backend/backend-run.out.log
 backend/backend-run.err.log
 frontend-run.out.log
