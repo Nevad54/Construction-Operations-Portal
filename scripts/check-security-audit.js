@@ -9,22 +9,24 @@ const audits = [
 
 const npmCli = process.env.npm_execpath;
 
-if (!npmCli) {
-  console.error('Security audit check failed.');
-  console.error('Unable to locate npm CLI from the current environment.');
-  process.exit(1);
-}
-
-const runnerCommand = process.execPath;
+// When invoked directly with `node`, npm_execpath is unset — fall back to shell npm.
+const useShellFallback = !npmCli;
 
 for (const audit of audits) {
   console.log(`Running npm audit for ${audit.label}...`);
-  const result = spawnSync(runnerCommand, [npmCli, 'audit', '--json'], {
-    cwd: audit.cwd,
-    encoding: 'utf8',
-    env: process.env,
-    shell: false,
-  });
+  const result = useShellFallback
+    ? spawnSync('npm audit --json', [], {
+        cwd: audit.cwd,
+        encoding: 'utf8',
+        env: process.env,
+        shell: true,
+      })
+    : spawnSync(process.execPath, [npmCli, 'audit', '--json'], {
+        cwd: audit.cwd,
+        encoding: 'utf8',
+        env: process.env,
+        shell: false,
+      });
 
   if (result.status !== 0 && !result.stdout) {
     console.error('Security audit check failed.');
