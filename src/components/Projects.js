@@ -1,9 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './Projects.css';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faSort } from '@fortawesome/free-solid-svg-icons';
 import PageLayout from './PageLayout';
 import { useProjects } from '../context/ProjectContext';
 
@@ -135,16 +131,6 @@ const Projects = () => {
   const [sortOrder, setSortOrder] = useState('desc');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  useEffect(() => {
-    // Initialize AOS
-    AOS.init({
-      duration: 800,
-      once: true,
-      offset: 100,
-      easing: 'ease-in-out'
-    });
-  }, []);
-
   const normalizedProjects = projects.map(normalizeProject);
 
   const filteredProjects = normalizedProjects
@@ -210,14 +196,14 @@ const Projects = () => {
     >
       <div className="animate-fade-in">
       <div className="projects-container">
-        <section className="projects-intro" data-aos="fade-up">
+        <section className="projects-intro">
           <div className="projects-intro-copy">
             <p className="projects-story-eyebrow">Project Proof</p>
             <h1>Selected work visitors can scan fast.</h1>
             <p>Type, place, status, and a quick use case.</p>
           </div>
         </section>
-        <section className="projects-toolbar" data-aos="fade-up" data-aos-delay="40">
+        <section className="projects-toolbar">
           <div className="projects-summary" aria-label="Project summary">
             {projectSummary.map((item) => (
               <div key={item.label} className="projects-summary-chip">
@@ -229,7 +215,7 @@ const Projects = () => {
           </div>
           <div className="controls-container">
             <label className="search-box hover-lift" aria-label="Search projects">
-            <FontAwesomeIcon icon={faSearch} />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             <input
               type="text"
               className="search-input"
@@ -244,7 +230,7 @@ const Projects = () => {
               onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
               aria-label={`Sort projects ${sortOrder === 'desc' ? 'oldest first' : 'newest first'}`}
             >
-              <FontAwesomeIcon icon={faSort} />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" /></svg>
               {sortOrder === 'desc' ? 'Oldest first' : 'Newest first'}
             </button>
           
@@ -264,7 +250,7 @@ const Projects = () => {
         </section>
 
         {loading && (
-          <div className="projects-inline-status projects-inline-status--loading" data-aos="fade-up" role="status" aria-live="polite">
+          <div className="projects-inline-status projects-inline-status--loading" role="status" aria-live="polite">
             <div className="loading-spinner" aria-hidden="true"></div>
             <div>
               <h3>Loading project data</h3>
@@ -274,7 +260,7 @@ const Projects = () => {
         )}
 
         {!loading && error && (
-          <section className="projects-inline-status projects-inline-status--error" data-aos="fade-up">
+          <section className="projects-inline-status projects-inline-status--error">
             <div className="projects-inline-status-copy">
               <p className="projects-story-eyebrow">Project Data Unavailable</p>
               <h3>Case study cards could not be loaded right now</h3>
@@ -291,7 +277,7 @@ const Projects = () => {
 
         {!loading && !error && (ongoingProjects.length === 0 && completedProjects.length === 0) && (
           hasProjects ? (
-            <section className="projects-inline-status projects-inline-status--empty" data-aos="fade-up" role="status" aria-live="polite">
+            <section className="projects-inline-status projects-inline-status--empty" role="status" aria-live="polite">
               <div className="projects-inline-status-copy">
                 <p className="projects-story-eyebrow">No Matching Projects</p>
                 <h3>No projects match the current search or status filter</h3>
@@ -305,7 +291,7 @@ const Projects = () => {
               </div>
             </section>
           ) : (
-            <p className="projects-empty-message" data-aos="fade-up">
+            <p className="projects-empty-message">
               No projects to show yet. Add the first real project from the admin side before using this page as proof.
             </p>
           )
@@ -314,7 +300,7 @@ const Projects = () => {
         {!loading && !error && hasFilteredResults && (
         <div className="projects-sections">
           <div className="projects-section">
-            <div className="section-header" data-aos="fade-up" data-aos-delay="200">
+            <div className="section-header">
               <h2 className="section-title">Ongoing Projects</h2>
               <span className="section-count">{ongoingProjects.length}</span>
             </div>
@@ -323,7 +309,7 @@ const Projects = () => {
                 <div
                   key={project._id}
                   className="project-card hover-lift"
-                  data-aos="fade-up"
+                 
                   data-aos-delay={500 + (index * 100)}
                 >
                   {project.hasImage ? (
@@ -368,14 +354,14 @@ const Projects = () => {
               ))}
             </div>
             {ongoingProjects.length === 0 && (
-              <p className="projects-section-empty" data-aos="fade-up">
+              <p className="projects-section-empty">
                 No ongoing projects match the current view. Clear filters or switch the status filter to review completed work.
               </p>
             )}
           </div>
 
           <div className="projects-section">
-            <div className="section-header" data-aos="fade-up" data-aos-delay="200">
+            <div className="section-header">
               <h2 className="section-title">Completed Projects</h2>
               <span className="section-count">{completedProjects.length}</span>
             </div>
@@ -384,7 +370,7 @@ const Projects = () => {
                 <div
                   key={project._id}
                   className="project-card hover-lift"
-                  data-aos="fade-up"
+                 
                   data-aos-delay={500 + (index * 100)}
                 >
                   {project.hasImage ? (
@@ -429,7 +415,7 @@ const Projects = () => {
               ))}
             </div>
             {completedProjects.length === 0 && (
-              <p className="projects-section-empty" data-aos="fade-up">
+              <p className="projects-section-empty">
                 No completed projects match the current view. Clear filters or switch back to ongoing work.
               </p>
             )}

@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import ReCAPTCHA from 'react-google-recaptcha';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
 import PageLayout from './components/PageLayout';
 import { trackEvent } from './utils/analytics';
 import './styles.css';
@@ -45,15 +43,6 @@ const isLocalDevelopmentHost = () => {
 
 const Contact = () => {
   const location = useLocation();
-
-  useEffect(() => {
-    AOS.init({
-      duration: 800,
-      once: true,
-      offset: 100,
-      easing: 'ease-in-out',
-    });
-  }, []);
 
   const RECAPTCHA_SITE_KEY =
     process.env.REACT_APP_RECAPTCHA_SITE_KEY || '6Ld6MSErAAAAALZQPgxDGLtC86B1JPq4STi-EURa';
@@ -340,7 +329,7 @@ const Contact = () => {
     >
       <section className="contact contact-page">
         <div className="container">
-          <div className="contact-hero" data-aos="fade-up">
+          <div className="contact-hero">
             <div className="contact-hero-copy">
               <p className="contact-kicker">Project Intake</p>
               <h1>Request a Site Assessment</h1>
@@ -366,7 +355,7 @@ const Contact = () => {
           </div>
 
           <div className="contact-content contact-content--modern">
-            <div className="contact-form contact-form--modern" data-aos="fade-right" data-aos-delay="80">
+            <div className="contact-form contact-form--modern">
               <div className="contact-panel-header">
                 <h2>Quick Inquiry</h2>
                 <p>Start with the essentials. We will gather scope, site, and timing in the follow-up.</p>
@@ -566,7 +555,7 @@ const Contact = () => {
               </form>
             </div>
 
-            <div className="contact-info contact-info--modern" data-aos="fade-left" data-aos-delay="120">
+            <div className="contact-info contact-info--modern">
               <div className="contact-info-card">
                 <h2>What happens next</h2>
                 <div className="trust-list" aria-label="Contact intake standards">

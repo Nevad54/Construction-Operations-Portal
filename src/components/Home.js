@@ -16,7 +16,7 @@ const Home = () => {
   return (
     <div className="home">
       <section className="hero">
-        <div className="hero-content" data-aos="fade-up">
+        <div className="hero-content">
           <h1>Welcome to Construction Operations Portal</h1>
           <p className="hero-subtitle">Your Partner in Engineering Excellence</p>
           <a href="/contact" className="btn">Get Started</a>
@@ -24,17 +24,17 @@ const Home = () => {
       </section>
 
       <section className="services">
-        <h2 data-aos="fade-up">Our Services</h2>
+        <h2>Our Services</h2>
         <div className="service-list">
-          <div className="service-item" data-aos="fade-up" data-aos-delay="100">
+          <div className="service-item">
             <h3>Engineering Solutions</h3>
             <p>Comprehensive engineering services tailored to your needs.</p>
           </div>
-          <div className="service-item" data-aos="fade-up" data-aos-delay="200">
+          <div className="service-item">
             <h3>Construction Management</h3>
             <p>Expert management of construction projects from start to finish.</p>
           </div>
-          <div className="service-item" data-aos="fade-up" data-aos-delay="300">
+          <div className="service-item">
             <h3>Technical Consulting</h3>
             <p>Professional guidance and technical expertise.</p>
           </div>
@@ -44,12 +44,12 @@ const Home = () => {
       <section className="about-preview">
         <div className="container">
           <div className="about-content">
-            <div className="about-text" data-aos="fade-right">
+            <div className="about-text">
               <h2>About Us</h2>
               <p>We are your trusted partner in engineering and construction excellence.</p>
               <a href="/about" className="btn">Learn More</a>
             </div>
-            <div className="about-image" data-aos="fade-left">
+            <div className="about-image">
               <img src="/images/about-preview.jpg" alt="About Us" loading="lazy" />
             </div>
           </div>
@@ -57,23 +57,23 @@ const Home = () => {
       </section>
 
       <section className="projects-preview">
-        <h2 data-aos="fade-up">Featured Projects</h2>
+        <h2>Featured Projects</h2>
         <div className="project-gallery">
           {/* Add data-aos attributes to your project items */}
-          <div className="project-item" data-aos="zoom-in" data-aos-delay="100">
+          <div className="project-item">
             {/* Project content */}
           </div>
-          <div className="project-item" data-aos="zoom-in" data-aos-delay="200">
+          <div className="project-item">
             {/* Project content */}
           </div>
-          <div className="project-item" data-aos="zoom-in" data-aos-delay="300">
+          <div className="project-item">
             {/* Project content */}
           </div>
         </div>
       </section>
 
       <section className="contact-preview">
-        <div className="container" data-aos="fade-up">
+        <div className="container">
           <h2>Ready to Start Your Project?</h2>
           <p>Contact us today for a consultation</p>
           <a href="/contact" className="btn">Contact Us</a>

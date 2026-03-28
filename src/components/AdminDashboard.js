@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useProjects } from '../context/ProjectContext';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
 import { DashboardLayout } from './dashboard';
 import { Button, Card, CardHeader, CardTitle, CardContent, Modal, ModalFooter, Input, Textarea, Select, EmptyState, Badge, useToast, ToastContainer } from './ui';
 import ProjectCard from './ProjectCard';
@@ -291,26 +289,6 @@ const Admin = () => {
     const [systemStatusError, setSystemStatusError] = useState('');
     const [exportingAllData, setExportingAllData] = useState(false);
     const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-
-    // Initialize AOS
-    useEffect(() => {
-        AOS.init({
-            duration: 800,
-            once: true,
-            offset: 100,
-            easing: 'ease-in-out'
-        });
-    }, []);
-
-    // Refresh AOS on route/content changes (SPA navigation won't remount everything).
-    useEffect(() => {
-        // In some environments AOS may not be available during SSR/build.
-        try {
-            AOS.refreshHard();
-        } catch (_) {
-            try { AOS.refresh(); } catch (__) {}
-        }
-    }, [location.pathname, projects.length, loading]);
 
     // Fetch API status (to detect fallback mode)
     useEffect(() => {
@@ -1536,7 +1514,7 @@ const Admin = () => {
         >
             <div className="space-y-6 animate-fade-in">
                 <section
-                    data-aos="fade-up"
+                   
                     className="rounded-[1.75rem] border border-stroke bg-gradient-to-br from-surface-card via-surface-card to-surface-muted/70 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 p-5 shadow-sm sm:p-6"
                 >
                     <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -1610,7 +1588,7 @@ const Admin = () => {
 
                 {isFilesPage && (
                     <div className="space-y-6">
-                        <Card data-aos="fade-up" data-aos-delay="70">
+                        <Card>
                             <CardHeader className="flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                     <CardTitle>File Hygiene</CardTitle>
@@ -1764,7 +1742,7 @@ const Admin = () => {
 
                 {isSettingsPage && (
                     <div className="space-y-6">
-                        <Card data-aos="fade-up" data-aos-delay="60">
+                        <Card>
                             <CardHeader className="flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                     <CardTitle>System Status</CardTitle>
@@ -1973,7 +1951,7 @@ const Admin = () => {
 
                 {isClientsPage && (
                     <>
-                        <Card data-aos="fade-up" data-aos-delay="80">
+                        <Card>
                             <CardHeader className="flex-col items-start sm:flex-row sm:items-center sm:justify-between">
                                 <CardTitle>Accounts</CardTitle>
                                 <div className="flex items-center gap-2">
@@ -2067,7 +2045,7 @@ const Admin = () => {
                             </CardContent>
                         </Card>
 
-                        <Card data-aos="fade-up" data-aos-delay="120">
+                        <Card>
                             <CardHeader className="flex-col items-start sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                     <CardTitle>Contact Inquiries</CardTitle>
@@ -2303,7 +2281,7 @@ const Admin = () => {
 
                 {isReportsPage && (
                     <>
-                        <div className="flex justify-end" data-aos="fade-up">
+                        <div className="flex justify-end">
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -2327,7 +2305,7 @@ const Admin = () => {
 
                         {!reportsError && (
                             <>
-                                <Card data-aos="fade-up" data-aos-delay="50">
+                                <Card>
                                     <CardHeader className="flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
                                             <CardTitle>Activity Filters</CardTitle>
@@ -2361,7 +2339,7 @@ const Admin = () => {
                                     </CardContent>
                                 </Card>
 
-                                <Card data-aos="fade-up" data-aos-delay="60">
+                                <Card>
                                     <CardHeader className="flex-col items-start gap-3 lg:flex-row lg:items-center lg:justify-between">
                                         <div>
                                             <CardTitle>Operations Summary</CardTitle>
@@ -2402,7 +2380,7 @@ const Admin = () => {
                                     </CardContent>
                                 </Card>
 
-                                <Card data-aos="fade-up" data-aos-delay="70">
+                                <Card>
                                     <CardHeader className="flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
                                             <CardTitle>File Hygiene Watch</CardTitle>
@@ -2468,7 +2446,7 @@ const Admin = () => {
                                     </CardContent>
                                 </Card>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4" data-aos="fade-up" data-aos-delay="80">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                                     <Card>
                                         <CardHeader><CardTitle size="sm">New Today</CardTitle></CardHeader>
                                         <CardContent className="space-y-1">
@@ -2567,7 +2545,7 @@ const Admin = () => {
                                     </Card>
                                 </div>
 
-                                <Card data-aos="fade-up" data-aos-delay="110">
+                                <Card>
                                     <CardHeader className="flex-col items-start sm:flex-row sm:items-center sm:justify-between">
                                         <div>
                                             <CardTitle>Overdue Follow-up Queue</CardTitle>
@@ -2624,7 +2602,7 @@ const Admin = () => {
                                     </CardContent>
                                 </Card>
 
-                                <Card data-aos="fade-up" data-aos-delay="120">
+                                <Card>
                                     <CardHeader>
                                         <CardTitle>Recent Activity</CardTitle>
                                     </CardHeader>
@@ -2685,7 +2663,7 @@ const Admin = () => {
                 )}
 
                 {/* Ongoing Projects */}
-                <Card data-aos="fade-up" data-aos-delay="100">
+                <Card>
                     <CardHeader className="flex-col items-start sm:flex-row sm:items-center sm:justify-between">
                         <CardTitle>Ongoing Projects</CardTitle>
                         <div className="flex flex-wrap gap-2">
@@ -2742,7 +2720,7 @@ const Admin = () => {
                 </Card>
 
                 {/* Completed Projects */}
-                <Card data-aos="fade-up" data-aos-delay="150">
+                <Card>
                     <CardHeader className="flex-col items-start sm:flex-row sm:items-center sm:justify-between">
                         <CardTitle>Completed Projects</CardTitle>
                         <div className="flex flex-wrap gap-2">
